@@ -1,0 +1,152 @@
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const SLACK_BUG_CHANNEL = process.env.SLACK_BUG_CHANNEL ?? '#triarch-bugs';
+const SLACK_FEATURE_CHANNEL = process.env.SLACK_FEATURE_CHANNEL ?? '#triarch-features';
+
+interface SlackMessage {
+  channel: string;
+  text: string;
+  blocks?: unknown[];
+}
+
+async function postSlackMessage(message: SlackMessage): Promise<{ ok: boolean; ts?: string; error?: string }> {
+  if (!SLACK_BOT_TOKEN) {
+    console.warn('[slack] SLACK_BOT_TOKEN not set — skipping notification');
+    return { ok: false, error: 'no_token' };
+  }
+
+  const res = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SLACK_BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(message),
+  });
+
+  return res.json() as Promise<{ ok: boolean; ts?: string; error?: string }>;
+}
+
+const SEVERITY_EMOJI: Record<string, string> = {
+  critical: ':red_circle:',
+  high: ':large_orange_circle:',
+  medium: ':large_yellow_circle:',
+  low: ':white_circle:',
+};
+
+export async function notifyBugReport(bug: {
+  id: string;
+  title: string;
+  description: string;
+  project: string;
+  severity: string;
+  priority: string;
+  reportedByName?: string | null;
+  stepsToReproduce?: string | null;
+}) {
+  const severityEmoji = SEVERITY_EMOJI[bug.severity] ?? ':grey_question:';
+  const priorityLabel = bug.priority === 'fix_now' ? 'Fix Now' : 'Fix Later';
+
+  return postSlackMessage({
+    channel: SLACK_BUG_CHANNEL,
+    text: `Bug Report: ${bug.title}`,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `:bug: *Bug Report: ${bug.title}*\n*Project:* ${bug.project}\n*Severity:* ${severityEmoji} ${bug.severity}\n*Priority:* ${priorityLabel}\n*Reported by:* ${bug.reportedByName ?? 'Unknown'}`,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `> ${bug.description.slice(0, 300)}${bug.description.length > 300 ? '...' : ''}`,
+        },
+      },
+      ...(bug.stepsToReproduce ? [{
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*Steps to reproduce:*\n${bug.stepsToReproduce.slice(0, 300)}`,
+        },
+      }] : []),
+      {
+        type: 'actions',
+        block_id: `bug_actions_${bug.id}`,
+        elements: [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Approve Fix' },
+            style: 'primary',
+            action_id: 'approve_fix',
+            value: bug.id,
+          },
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Defer to Next Build' },
+            action_id: 'defer_fix',
+            value: bug.id,
+          },
+        ],
+      },
+    ],
+  });
+}
+
+export async function notifyFeatureRequest(feature: {
+  id: string;
+  title: string;
+  description: string;
+  project: string;
+  priority: string;
+  requestedByName?: string | null;
+  estimatedEffort?: string | null;
+}) {
+  return postSlackMessage({
+    channel: SLACK_FEATURE_CHANNEL,
+    text: `Feature Request: ${feature.title}`,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `:bulb: *Feature Request: ${feature.title}*\n*Project:* ${feature.project}\n*Priority:* ${feature.priority}\n*Requested by:* ${feature.requestedByName ?? 'Unknown'}${feature.estimatedEffort ? `\n*Estimated effort:* ${feature.estimatedEffort}` : ''}`,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `> ${feature.description.slice(0, 300)}${feature.description.length > 300 ? '...' : ''}`,
+        },
+      },
+      {
+        type: 'actions',
+        block_id: `feature_actions_${feature.id}`,
+        elements: [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Approve for Next Build' },
+            style: 'primary',
+            action_id: 'approve_feature',
+            value: feature.id,
+          },
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Needs Discussion' },
+            action_id: 'discuss_feature',
+            value: feature.id,
+          },
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Decline' },
+            style: 'danger',
+            action_id: 'decline_feature',
+            value: feature.id,
+          },
+        ],
+      },
+    ],
+  });
+}

@@ -1,0 +1,32 @@
+runConfig:
+  runtime: nodejs22
+  concurrency: 10
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+
+env:
+  - variable: NEXTAUTH_URL
+    value: https://admin.triarch.dev
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: ADMIN_EMAIL
+    value: mike@triarchsecurity.com
+    availability:
+      - RUNTIME
+
+  # Secrets — set via: firebase apphosting:secrets:set <KEY>
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+
+  - variable: NEXTAUTH_SECRET
+    secret: NEXTAUTH_SECRET
+
+  - variable: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID
+
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: GOOGLE_CLIENT_SECRET

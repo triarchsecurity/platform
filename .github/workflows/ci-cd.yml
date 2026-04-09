@@ -1,0 +1,61 @@
+name: Triarch Dev CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - 'hotfix/**'
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    uses: MyAlterLego/shared-workflows/.github/workflows/quality-gate.yml@v1
+    with:
+      run_qa_tests: false
+      run_pentest: false
+      needs_server: false
+    secrets: inherit
+
+  flush-changelog:
+    needs: quality-gate
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Flush changelog to triarch-dev
+        env:
+          TRIARCH_API_KEY: ${{ secrets.TRIARCH_API_KEY }}
+          TRIARCH_API_URL: https://www.triarch.dev
+        run: npx tsx scripts/triarch-ingest.ts flush-changelog
+        continue-on-error: true
+
+  deploy:
+    needs: quality-gate
+    if: github.event_name == 'push'
+    uses: MyAlterLego/shared-workflows/.github/workflows/deploy-firebase.yml@v1
+    with:
+      firebase_project_id: triarch-dev-website
+      deploy_command: apphosting
+    secrets: inherit
+    permissions:
+      contents: write
+
+  notify:
+    needs: [quality-gate, deploy]
+    if: always() && github.event_name == 'push'
+    uses: MyAlterLego/shared-workflows/.github/workflows/notify.yml@v1
+    with:
+      status: ${{ needs.deploy.result }}
+      project_name: Triarch Dev
+      version: ${{ needs.deploy.outputs.version }}
+    secrets: inherit

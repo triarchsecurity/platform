@@ -1,0 +1,62 @@
+CREATE TABLE "bug_reports" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"project" varchar(64) NOT NULL,
+	"reported_by_user_id" varchar(128) NOT NULL,
+	"reported_by_name" varchar(256),
+	"reported_by_email" varchar(256),
+	"title" varchar(256) NOT NULL,
+	"description" text NOT NULL,
+	"steps_to_reproduce" text,
+	"expected_behavior" text,
+	"actual_behavior" text,
+	"severity" varchar(16) DEFAULT 'medium' NOT NULL,
+	"priority" varchar(16) DEFAULT 'fix_later' NOT NULL,
+	"status" varchar(32) DEFAULT 'submitted' NOT NULL,
+	"screenshot_urls" jsonb DEFAULT '[]'::jsonb,
+	"page_url" varchar(512),
+	"browser_info" jsonb DEFAULT '{}'::jsonb,
+	"slack_message_ts" varchar(64),
+	"slack_channel_id" varchar(64),
+	"fix_commit_sha" varchar(64),
+	"fix_version" varchar(32),
+	"triarch_notes" text,
+	"resolved_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "feature_requests" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"project" varchar(64) NOT NULL,
+	"requested_by_user_id" varchar(128) NOT NULL,
+	"requested_by_name" varchar(256),
+	"requested_by_email" varchar(256),
+	"title" varchar(256) NOT NULL,
+	"description" text NOT NULL,
+	"use_case" text,
+	"priority" varchar(16) DEFAULT 'normal',
+	"status" varchar(32) DEFAULT 'submitted' NOT NULL,
+	"build_plan" jsonb,
+	"build_plan_status" varchar(16) DEFAULT 'pending',
+	"estimated_effort" varchar(16),
+	"slack_message_ts" varchar(64),
+	"slack_channel_id" varchar(64),
+	"target_version" varchar(32),
+	"shipped_version" varchar(32),
+	"triarch_notes" text,
+	"upvotes" integer DEFAULT 0,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "workflow_transitions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"entity_type" varchar(32) NOT NULL,
+	"entity_id" uuid NOT NULL,
+	"from_status" varchar(32),
+	"to_status" varchar(32) NOT NULL,
+	"transitioned_by" varchar(128),
+	"reason" text,
+	"metadata" jsonb DEFAULT '{}'::jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
