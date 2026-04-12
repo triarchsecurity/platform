@@ -1,6 +1,6 @@
 {
   "name": "triarch-dev",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,7 +12,7 @@
     "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
-    "@myalterlego/shared-ui": "file:../triarchsecurity-admin/packages/shared-ui",
+    "@myalterlego/shared-ui": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",
