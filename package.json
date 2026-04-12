@@ -12,6 +12,7 @@
     "db:seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
+    "@myalterlego/shared-ui": "file:../triarchsecurity-admin/packages/shared-ui",
     "drizzle-orm": "^0.45.2",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",
