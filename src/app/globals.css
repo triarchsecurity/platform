@@ -1,33 +1,47 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Triarch brand colors — shared across marketing + admin */
-  --color-background: #0c0a08;
-  --color-foreground: #f0ebe5;
-  --color-muted: #9a8e80;
-  --color-accent: #c97b2a;
-  --color-accent-hover: #e8b44a;
-  --color-accent-dim: #b5572a;
-  --color-surface: #141210;
-  --color-border: #2a2420;
+  /* Triarchsecurity base palette — per DEV-02 */
+  --bg-base: #020d12;
+  --bg-surface: #071318;
+  --bg-elevated: #0d1f26;
+  --accent-teal: #00e5b4;
+  --accent-teal-dim: #00b38c;
+  --accent-teal-hover: #33ebc3;
+  --text-primary: #e8f4f0;
+  --text-muted: #6b9a8e;
+  --border-subtle: #0d2a23;
+  --border-default: #0f3329;
 
-  /* Admin-specific semantic tokens */
-  --color-admin-bg: #0c0a08;
-  --color-admin-surface: #141210;
-  --color-admin-surface-hover: #1c1a16;
-  --color-admin-border: #2a2420;
-  --color-admin-text: #f0ebe5;
-  --color-admin-text-muted: #9a8e80;
-  --color-admin-accent: #c97b2a;
-  --color-admin-accent-hover: #e8b44a;
+  /* Semantic aliases — keeps existing var() references working */
+  --color-background: var(--bg-base);
+  --color-foreground: var(--text-primary);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent-teal);
+  --color-accent-hover: var(--accent-teal-hover);
+  --color-accent-dim: var(--accent-teal-dim);
+  --color-surface: var(--bg-surface);
+  --color-border: var(--border-default);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Admin semantic tokens */
+  --color-admin-bg: var(--bg-base);
+  --color-admin-surface: var(--bg-surface);
+  --color-admin-surface-hover: var(--bg-elevated);
+  --color-admin-border: var(--border-default);
+  --color-admin-text: var(--text-primary);
+  --color-admin-text-muted: var(--text-muted);
+  --color-admin-accent: var(--accent-teal);
+  --color-admin-accent-hover: var(--accent-teal-hover);
+
+  /* Typography — per DEV-03 */
+  --font-sans: var(--font-exo2);
+  --font-heading: var(--font-rajdhani);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  background: var(--bg-base);
+  color: var(--text-primary);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
