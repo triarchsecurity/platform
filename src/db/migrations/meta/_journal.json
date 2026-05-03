@@ -50,6 +50,13 @@
       "when": 1775756350306,
       "tag": "0006_little_ser_duncan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777831109113,
+      "tag": "0007_flashy_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

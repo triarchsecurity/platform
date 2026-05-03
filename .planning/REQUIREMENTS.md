@@ -12,27 +12,27 @@ Foundation for everything else. Database extensions + access control move to a D
 
 ### Schema additions
 
-- [ ] **REL-A1**: `releaseLogs.env` column added (text enum: `dev` | `prod`); existing rows backfilled to `dev`
-- [ ] **REL-A2**: `releaseLogs.status` column added (text enum: `dev` | `pending_approval` | `approved` | `rejected` | `promoted`); existing rows backfilled to `dev`
-- [ ] **REL-A3**: `releaseLogs.commit_sha` column added (text, nullable for legacy rows); populated for new rows from CI payload
-- [ ] **REL-A4**: `releaseLogs.deployed_at` column added (timestamp, nullable); populated for new rows from CI payload
-- [ ] **REL-A5**: Existing release ingest endpoint (`/api/platform/ingest/release-logs`) accepts `env` and writes it; defaults to `dev` if omitted (backwards-compatible)
+- [x] **REL-A1**: `releaseLogs.env` column added (text enum: `dev` | `prod`); existing rows backfilled to `dev`
+- [x] **REL-A2**: `releaseLogs.status` column added (text enum: `dev` | `pending_approval` | `approved` | `rejected` | `promoted`); existing rows backfilled to `dev`
+- [x] **REL-A3**: `releaseLogs.commit_sha` column added (text, nullable for legacy rows); populated for new rows from CI payload
+- [x] **REL-A4**: `releaseLogs.deployed_at` column added (timestamp, nullable); populated for new rows from CI payload
+- [x] **REL-A5**: Existing release ingest endpoint (`/api/platform/ingest/release-logs`) accepts `env` and writes it; defaults to `dev` if omitted (backwards-compatible)
 
 ### Membership model
 
-- [ ] **MEMBER-01**: `project_members` table created — columns (id, project_key, email, role, created_at), unique index on (project_key, lower(email))
-- [ ] **MEMBER-02**: Per-project access enforced — page and API guards verify the requesting user is a member of the project (or has staff role) before returning project-scoped data
-- [ ] **MEMBER-03**: `staff` role replaces hardcoded `email.endsWith('@triarchsecurity.com')` check in `src/lib/auth.ts`; staff users are seeded via membership rows where `project_key = '*'` (wildcard) or via a parallel `users.role` column on the existing user model — implementer chooses the cleaner shape
-- [ ] **MEMBER-04**: Backfill — for every existing project in `projects` table, insert a `project_members` row for the project's creator email (or `mike@triarchsecurity.com` if creator unknown) with role `admin`
+- [x] **MEMBER-01**: `project_members` table created — columns (id, project_key, email, role, created_at), unique index on (project_key, lower(email))
+- [x] **MEMBER-02**: Per-project access enforced — page and API guards verify the requesting user is a member of the project (or has staff role) before returning project-scoped data
+- [x] **MEMBER-03**: `staff` role replaces hardcoded `email.endsWith('@triarchsecurity.com')` check in `src/lib/auth.ts`; staff users are seeded via membership rows where `project_key = '*'` (wildcard) or via a parallel `users.role` column on the existing user model — implementer chooses the cleaner shape
+- [x] **MEMBER-04**: Backfill — for every existing project in `projects` table, insert a `project_members` row for the project's creator email (or `mike@triarchsecurity.com` if creator unknown) with role `admin`
 
 ### Audit-trail tables
 
-- [ ] **FEEDBACK-01**: `release_feedback` table created — columns (id, release_id, author_email, body, created_at), foreign key to `releaseLogs.id`
-- [ ] **APPROVAL-01**: `release_approvals` table created — columns (id, release_id, approver_email, approved_at, ip_address, user_agent), foreign key to `releaseLogs.id`
+- [x] **FEEDBACK-01**: `release_feedback` table created — columns (id, release_id, author_email, body, created_at), foreign key to `releaseLogs.id`
+- [x] **APPROVAL-01**: `release_approvals` table created — columns (id, release_id, approver_email, approved_at, ip_address, user_agent), foreign key to `releaseLogs.id`
 
 ### Manage-members admin page
 
-- [ ] **ADMIN-01**: `/admin/platform/projects/{key}/members` page — staff-only — list members for a project, add member by email + role, remove member; minimal UI mirroring existing admin patterns
+- [x] **ADMIN-01**: `/admin/platform/projects/{key}/members` page — staff-only — list members for a project, add member by email + role, remove member; minimal UI mirroring existing admin patterns
 
 ---
 
@@ -106,10 +106,13 @@ Captured in `BACKLOG.md`:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REL-A1, REL-A2, REL-A3, REL-A4, REL-A5 | Phase 1 | Pending |
-| MEMBER-01, MEMBER-02, MEMBER-03, MEMBER-04 | Phase 1 | Pending |
-| FEEDBACK-01, APPROVAL-01 | Phase 1 | Pending |
-| ADMIN-01 | Phase 1 | Pending |
+| REL-A1, REL-A2, REL-A3, REL-A4 | Phase 1 | Complete (01-01) |
+| REL-A5 | Phase 1 | Pending (01-04) |
+| MEMBER-01, MEMBER-04 | Phase 1 | Complete (01-01) |
+| MEMBER-03 | Phase 1 | Complete (01-02) |
+| MEMBER-02 | Phase 1 | Pending (01-04) |
+| FEEDBACK-01, APPROVAL-01 | Phase 1 | Complete (01-01) |
+| ADMIN-01 | Phase 1 | Complete |
 | GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06 | Phase 2 | Pending |
 | REJECT-01 | Phase 2 | Pending |
 | GATE-07, GATE-08, GATE-09, GATE-09a | Phase 3 | Pending |

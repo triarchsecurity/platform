@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.14.0
+milestone_name: milestone
+status: executing
+last_updated: "2026-05-03T18:11:19.741Z"
+progress:
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 4
+  completed_plans: 4
+---
+
 # Triarch Dev Admin — Project State
 
 ## Project Reference
@@ -5,14 +18,36 @@
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Milestone v1.14.0 — Customer Release Gating, ready for Phase 1.
+**Current focus:** Phase 01 complete — all 4 plans (01-01, 01-02, 01-03, 01-04) code-complete; awaiting Mike's db:push + backfill SQL
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 5
 **Requirements:** 32
-**Status:** Not started
+**Status:** Phase 01 code-complete — all 4 plans done (01-03 manage-members page + API routes)
+
+## Decisions
+
+| Date | Phase/Plan | Decision |
+|------|-----------|----------|
+| 2026-05-03 | 01-01 | New releaseLogs columns (env/status/commit_sha/deployed_at) are nullable — legacy rows NULL until Mike runs backfill SQL |
+| 2026-05-03 | 01-01 | project_members email uniqueness is case-insensitive via lower(email) in uniqueIndex — stored as-entered |
+| 2026-05-03 | 01-01 | staff role uses wildcard project_key='*' row — single table for all access control |
+| 2026-05-03 | 01-01 | Backfill SQL uses WHERE NOT EXISTS (not ON CONFLICT) — consistent idempotency across all three statements |
+| 2026-05-03 | 01-01 | No Drizzle relations() for new tables in Phase 1 — Phase 2 adds them when customer releases page consumes them |
+| 2026-05-03 | 01-02 | getCurrentUserContext returns null (not fallback context) on DB error — caller decides fallback policy |
+| 2026-05-03 | 01-02 | env-allowlist fallback in signIn is intentional for v1.14 rollout — slated for removal in v1.15 once staff seeding stable |
+| 2026-05-03 | 01-04 | Non-staff with empty memberships returns { projects: [] } (200) not 403 |
+| 2026-05-03 | 01-04 | env validation silently coerces invalid values to 'dev' for CI backwards compat |
+| 2026-05-03 | 01-04 | status='dev' is server-controlled on insert; Phase 2 gating is only transition path |
+
+- [Phase 01]: requireStaff() helper is local to each route file (copy-paste is fine per Plan 04 note — no shared import coupling)
+- [Phase 01]: Manage Members button rendered for all /admin users (access enforced server-side); conditional isStaff render deferred to post-pilot if /admin widens access
+
+## Stopped At
+
+Completed 01-schema-membership-migration/01-04-PLAN.md — Plans 01-01, 01-02, 01-04 done (01-03 ran in parallel). Phase 01 code-complete pending 01-03 final commit and Mike's db:push + backfill SQL.
 
 ## Repository state
 

@@ -9,7 +9,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // ── Control Plane: Projects Registry ──────────────────────────────
 
@@ -142,7 +142,43 @@ export const releaseLogs = pgTable('release_logs', {
   releasedBy: varchar('released_by', { length: 128 }),
   summary: text('summary'),
   entries: jsonb('entries').notNull().default([]),
+  // ── v1.14.0 customer release gating ──
+  env: varchar('env', { length: 8 }),                     // 'dev' | 'prod' — nullable for legacy rows; backfill sets 'dev'
+  status: varchar('status', { length: 24 }),              // 'dev' | 'pending_approval' | 'approved' | 'rejected' | 'promoted' — nullable for legacy rows; backfill sets 'dev'
+  commitSha: varchar('commit_sha', { length: 64 }),       // populated for new CI rows
+  deployedAt: timestamp('deployed_at', { withTimezone: true }),  // populated for new CI rows; backfill copies createdAt
   metadata: jsonb('metadata').default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ── v1.14.0: Customer Release Gating (membership + audit) ─────────
+
+export const projectMembers = pgTable('project_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectKey: varchar('project_key', { length: 64 }).notNull(),  // '*' = wildcard staff row per CONTEXT.md decisions
+  email: varchar('email', { length: 256 }).notNull(),            // stored as-entered; lookups via lower(email)
+  role: varchar('role', { length: 16 }).notNull(),               // 'admin' | 'viewer' | 'staff'
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex('project_members_unique_idx').on(table.projectKey, sql`lower(${table.email})`),
+]);
+
+export const releaseFeedback = pgTable('release_feedback', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  releaseId: uuid('release_id').notNull().references(() => releaseLogs.id, { onDelete: 'cascade' }),
+  authorEmail: varchar('author_email', { length: 256 }).notNull(),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const releaseApprovals = pgTable('release_approvals', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  releaseId: uuid('release_id').notNull().references(() => releaseLogs.id, { onDelete: 'cascade' }),
+  approverEmail: varchar('approver_email', { length: 256 }).notNull(),
+  decision: varchar('decision', { length: 16 }).notNull(),       // 'approved' | 'rejected' — REJECT-01 lives in same table per Phase 2
+  approvedAt: timestamp('approved_at', { withTimezone: true }).notNull().defaultNow(),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: varchar('user_agent', { length: 512 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
