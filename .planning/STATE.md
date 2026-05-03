@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-03T23:06:22.625Z"
+last_updated: "2026-05-03T23:11:01.758Z"
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
+  completed_plans: 9
 ---
 
 # Triarch Dev Admin — Project State
@@ -49,10 +49,11 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 01.1]: access-logs classified staff-only despite project column — audit trail is internal accountability, not customer data
 - [Phase 01.1]: reports/[id] DELETE restricted to staff-only within Plan 05 despite project-detail classification
 - [Phase 01.1]: projects/route.ts GET keeps existing membership filter; POST uses requireStaff — dual method treatment within Plan 04
+- [Phase 01.1-04]: reports/route.ts classified project-list (not staff-only) — reports are customer-deliverable, non-staff see only their project's reports
 
 ## Stopped At
 
-Completed 01-schema-membership-migration/01-04-PLAN.md — Plans 01-01, 01-02, 01-04 done (01-03 ran in parallel). Phase 01 code-complete pending 01-03 final commit and Mike's db:push + backfill SQL.
+Completed 01.1-04-PLAN.md and 01.1-05-PLAN.md (parallel wave) — 5 project-list endpoints (release-logs, bug-reports, feature-requests, projects, reports) membership-filtered on GET, POST body.project validated. 4 project-detail endpoints fetch-then-membership. Build green.
 
 ## Repository state
 

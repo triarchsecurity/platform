@@ -61,7 +61,7 @@ This phase closes the gap — every existing endpoint gets the right access poli
   - `GET /api/platform/release-logs` — filter `WHERE project IN (memberships)` for non-staff
   - `GET /api/platform/bug-reports` — same filter
   - `GET /api/platform/feature-requests` — same filter
-- [ ] **MEMBER-AUDIT-07**: Project-scoped DETAIL endpoints — verify membership before returning row:
+- [x] **MEMBER-AUDIT-07**: Project-scoped DETAIL endpoints — verify membership before returning row:
   - `GET/PUT /api/platform/release-logs/[id]` — fetch row, check `requireMembership(row.project)` for non-staff (404 not 403 to non-members, mirroring page-level pattern from Phase 1)
   - `GET/PUT /api/platform/bug-reports/[id]` — same
   - `GET/PUT /api/platform/feature-requests/[id]` — same
