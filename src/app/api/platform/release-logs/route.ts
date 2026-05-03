@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireSignedIn } from '@/lib/api-auth';
+import { getCurrentUserContext } from '@/lib/auth-context';
 import { db } from '@/lib/db';
 import { releaseLogs } from '@/db/schema';
-import { eq, desc, and, like, sql } from 'drizzle-orm';
+import { eq, desc, and, like, sql, inArray } from 'drizzle-orm';
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error, session } = await requireSignedIn();
   if (error) return error;
+
+  const ctx = await getCurrentUserContext(session);
 
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project');
@@ -20,6 +23,20 @@ export async function GET(req: NextRequest) {
   }
   if (search) {
     conditions.push(like(releaseLogs.summary, `%${search}%`));
+  }
+
+  // Membership filter: staff or DB-error fallback see everything; non-staff are scoped.
+  if (ctx && !ctx.isStaff) {
+    const projectKeys = ctx.memberships
+      .filter((m) => m.project_key !== '*')
+      .map((m) => m.project_key);
+
+    if (projectKeys.length === 0) {
+      // Non-staff with no memberships: empty result, NOT 403.
+      return NextResponse.json({ releases: [], total: 0, limit, offset });
+    }
+
+    conditions.push(inArray(releaseLogs.project, projectKeys));
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -46,7 +63,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error, session } = await requireSignedIn();
   if (error) return error;
 
   const body = await req.json();
@@ -54,6 +71,14 @@ export async function POST(req: NextRequest) {
 
   if (!project || !version || !releaseType) {
     return NextResponse.json({ error: 'project, version, and releaseType are required' }, { status: 400 });
+  }
+
+  const ctx = await getCurrentUserContext(session);
+  if (ctx && !ctx.isStaff) {
+    const isMember = ctx.memberships.some((m) => m.project_key === project);
+    if (!isMember) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
   }
 
   const [release] = await db.insert(releaseLogs).values({
