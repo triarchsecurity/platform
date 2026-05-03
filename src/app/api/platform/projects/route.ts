@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/api-auth';
+import { requireSignedIn, requireStaff } from '@/lib/api-auth';
 import { getCurrentUserContext } from '@/lib/auth-context';
 import { db } from '@/lib/db';
 import { projects } from '@/db/schema';
@@ -7,7 +7,7 @@ import { asc, inArray } from 'drizzle-orm';
 import crypto from 'crypto';
 
 export async function GET() {
-  const { error, session } = await requireAdmin();
+  const { error, session } = await requireSignedIn();
   if (error) return error;
 
   const ctx = await getCurrentUserContext(session);
@@ -40,7 +40,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireStaff();
   if (error) return error;
 
   const body = await req.json();
