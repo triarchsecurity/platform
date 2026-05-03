@@ -44,9 +44,9 @@ This phase closes the gap — every existing endpoint gets the right access poli
 
 ### Helpers
 
-- [ ] **MEMBER-AUDIT-01**: Rename `requireAdmin` → `requireSignedIn` in `src/lib/api-auth.ts` (it only checks for a session — name was misleading). Keep a single-line `requireAdmin` re-export aliased to `requireSignedIn` so any in-flight branch isn't broken; remove the alias in v1.15.
-- [ ] **MEMBER-AUDIT-02**: Add `requireStaff` to `src/lib/api-auth.ts` — calls `getCurrentUserContext(session)`; returns 401 if unauthenticated, 403 if `!ctx.isStaff`, otherwise returns `{error: null, session, ctx}`.
-- [ ] **MEMBER-AUDIT-03**: Add `requireMembership(projectKey)` to `src/lib/api-auth.ts` — staff bypass; otherwise verifies `ctx.memberships.some(m => m.project_key === projectKey)`; 403 if non-member.
+- [x] **MEMBER-AUDIT-01**: Rename `requireAdmin` → `requireSignedIn` in `src/lib/api-auth.ts` (it only checks for a session — name was misleading). Keep a single-line `requireAdmin` re-export aliased to `requireSignedIn` so any in-flight branch isn't broken; remove the alias in v1.15.
+- [x] **MEMBER-AUDIT-02**: Add `requireStaff` to `src/lib/api-auth.ts` — calls `getCurrentUserContext(session)`; returns 401 if unauthenticated, 403 if `!ctx.isStaff`, otherwise returns `{error: null, session, ctx}`.
+- [x] **MEMBER-AUDIT-03**: Add `requireMembership(projectKey)` to `src/lib/api-auth.ts` — staff bypass; otherwise verifies `ctx.memberships.some(m => m.project_key === projectKey)`; 403 if non-member.
 
 ### Endpoint classification + updates
 

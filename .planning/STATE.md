@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-03T18:11:19.741Z"
+last_updated: "2026-05-03T23:04:51.472Z"
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 10
+  completed_plans: 5
 ---
 
 # Triarch Dev Admin — Project State
@@ -18,14 +18,14 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 01 deployed (live revision triarch-dev-build-2026-05-03-005). Phase 1.1 (membership enforcement audit) inserted after live test with mike@mikegeehan.com revealed access leak — 32 endpoints currently allow any signed-in user, including destructive operations.
+**Current focus:** Phase 01.1 — membership-enforcement-audit
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 6 (Phase 1.1 inserted)
 **Requirements:** 42 (32 original + 10 added in Phase 1.1)
-**Status:** Phase 01 complete + deployed. Phase 1.1 scope defined, ready for plan/execute.
+**Status:** Executing Phase 01.1
 
 ## Decisions
 
@@ -44,6 +44,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 - [Phase 01]: requireStaff() helper is local to each route file (copy-paste is fine per Plan 04 note — no shared import coupling)
 - [Phase 01]: Manage Members button rendered for all /admin users (access enforced server-side); conditional isStaff render deferred to post-pilot if /admin widens access
+- [Phase 01.1-01]: requireAdmin preserved as deprecated alias of requireSignedIn — identical signature keeps 32 callsites compiling through v1.14.x rollout
+- [Phase 01.1-01]: DB unreachable in requireStaff/requireMembership returns 403 (fail-closed) — cannot prove role without successful lookup
 
 ## Stopped At
 
