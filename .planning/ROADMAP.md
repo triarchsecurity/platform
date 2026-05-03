@@ -9,6 +9,7 @@ Build order: schema and access control first (everything depends on them), then 
 ## Phases
 
 - [x] **Phase 1: Schema + Membership Migration** — `releaseLogs` schema additions, `project_members` / `release_feedback` / `release_approvals` tables, DB-backed staff role, manage-members admin page (completed 2026-05-03)
+- [ ] **Phase 1.1: Membership Enforcement Audit** — close access-control gap exposed by Phase 1's auth cutover; `requireAdmin` rename, new `requireStaff` + `requireMembership` helpers, classify and update all 32 endpoints currently checking only signed-in state, page-level audit
 - [ ] **Phase 2: Customer Releases Page** — `/projects/{slug}/releases` UI, feedback submission, approval/reject actions, audit trail
 - [ ] **Phase 3: Slack Interactive Approval** — Slack App config, signed message with Approve/Reject buttons, signature-verified callback handler
 - [ ] **Phase 4: GitHub App Promotion** — GitHub App install, installation-token auth, `workflow_dispatch` of `deploy-prod.yml`
@@ -33,6 +34,21 @@ Build order: schema and access control first (everything depends on them), then 
 - [x] 01-02-PLAN.md — auth-context helper + auth.ts signIn cutover with env-allowlist fallback
 - [x] 01-03-PLAN.md — manage-members admin page + API (GET/POST/DELETE) + projects-page nav button
 - [x] 01-04-PLAN.md — projects list membership filtering + release-logs ingest accepts env/commitSha/deployedAt
+
+### Phase 1.1: Membership Enforcement Audit
+**Goal**: Close the access-control gap exposed by Phase 1's auth cutover. Pre-Phase 1, the only sign-in path was `endsWith('@triarchsecurity.com')`, so every endpoint gated by `requireAdmin()` (which only checks for a session) was implicitly staff-only. Phase 1 legitimately allowed customer-member emails to sign in — and now those signed-in non-staff users can read all projects' bug/feature/release data and call destructive endpoints (`/destroy`, `/scaffold-repo`, `/provision-*`, navigation editing). Verified live 2026-05-03 with `mike@mikegeehan.com` (darksouls-rpg admin, non-staff). This phase audits + corrects every endpoint and admin page so that customer members see only their project's data and cannot call platform-admin operations.
+**Depends on**: Phase 1
+**Requirements**: MEMBER-AUDIT-01..10
+**Success Criteria** (what must be TRUE):
+  1. `src/lib/api-auth.ts` exports `requireSignedIn` (renamed from `requireAdmin`), `requireStaff` (DB-backed staff check), `requireMembership(projectKey)` (membership-aware project access)
+  2. Every endpoint previously using `requireAdmin` is classified `staff-only` / `project-list` / `project-detail` / `unclear`; classification recorded in PLAN.md
+  3. All staff-only endpoints (provisioning, destruction, navigation, settings, access-logs, backfills, etc.) reject non-staff with 403
+  4. Project-scoped LIST endpoints (release-logs, bug-reports, feature-requests) filter results by `getCurrentUserContext().memberships` for non-staff; staff see everything
+  5. Project-scoped DETAIL endpoints verify membership on the requested project; non-members get 404 (not 403, mirroring page-level pattern)
+  6. Server-component admin pages either route through the now-membership-aware API or have inline membership filters where they read the DB directly
+  7. With `mike@mikegeehan.com` signed in: project list, release-logs page, bug-reports page, feature-requests page each show only darksouls-rpg data; direct API calls to other projects' destructive endpoints return 403
+  8. Triarch staff (mike@triarchsecurity.com) experience unchanged — sees all data across all projects
+**Plans**: TBD
 
 ### Phase 2: Customer Releases Page
 **Goal**: Customer admins can see, comment on, and approve/reject their project's dev releases at a project-scoped URL that enforces membership.
@@ -88,11 +104,12 @@ Build order: schema and access control first (everything depends on them), then 
 
 ## Progress
 
-**Execution Order:** Phases execute in order: 1 → 2 → 3 → 4 → 5. No parallelization — each phase strictly depends on the previous.
+**Execution Order:** Phases execute in order: 1 → 1.1 → 2 → 3 → 4 → 5. No parallelization — each phase strictly depends on the previous.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema + Membership Migration | 4/4 | Complete   | 2026-05-03 |
+| 1.1. Membership Enforcement Audit | 0/0 | Not started | - |
 | 2. Customer Releases Page | 0/0 | Not started | - |
 | 3. Slack Interactive Approval | 0/0 | Not started | - |
 | 4. GitHub App Promotion | 0/0 | Not started | - |

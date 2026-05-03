@@ -5,7 +5,7 @@ milestone_name: milestone
 status: executing
 last_updated: "2026-05-03T18:11:19.741Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 1
   total_plans: 4
   completed_plans: 4
@@ -18,14 +18,14 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 01 complete — all 4 plans (01-01, 01-02, 01-03, 01-04) code-complete; awaiting Mike's db:push + backfill SQL
+**Current focus:** Phase 01 deployed (live revision triarch-dev-build-2026-05-03-005). Phase 1.1 (membership enforcement audit) inserted after live test with mike@mikegeehan.com revealed access leak — 32 endpoints currently allow any signed-in user, including destructive operations.
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
-**Phases:** 5
-**Requirements:** 32
-**Status:** Phase 01 code-complete — all 4 plans done (01-03 manage-members page + API routes)
+**Phases:** 6 (Phase 1.1 inserted)
+**Requirements:** 42 (32 original + 10 added in Phase 1.1)
+**Status:** Phase 01 complete + deployed. Phase 1.1 scope defined, ready for plan/execute.
 
 ## Decisions
 
@@ -65,3 +65,5 @@ See `.planning/BACKLOG.md` for items punted from this milestone (PROJ-03, BUG-03
 | 2026-05-03 | First scope expansion: added customer membership and release gating (7 phases, 56 reqs). Treated project as greenfield. |
 | 2026-05-03 | Audit: codebase actually at `v1.13.1` with foundation/projects/bugs/features/releases already shipped. Greenfield plan would re-implement existing work. |
 | 2026-05-03 | Scope reset to single milestone v1.14.0 — Customer Release Gating only. 5 phases, 32 reqs, no rework of v1.13. Pre-existing gaps (project detail page, bug Kanban, etc.) moved to BACKLOG.md. |
+| 2026-05-03 | Phase 01 deployed live — apphosting.yaml fix (PR #6) bound NODE_AUTH_TOKEN→GITHUB_PACKAGES_TOKEN secret; first successful FAH rollout in 2 days. Cloud Run revision triarch-dev-build-2026-05-03-005 serving traffic. UAT items 1, 2, 7 verified. |
+| 2026-05-03 | Live test with mike@mikegeehan.com (darksouls-rpg admin, non-staff) revealed access-control gap: 32 endpoints using requireAdmin() check session-only, not staff role. Inserted Phase 1.1 (Membership Enforcement Audit) before Phase 2; added MEMBER-AUDIT-01..10 reqs. |
