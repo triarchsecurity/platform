@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.14.0
+milestone_name: milestone
+status: executing
+last_updated: "2026-05-03T18:00:00Z"
+progress:
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 1
+---
+
 # Triarch Dev Admin — Project State
 
 ## Project Reference
@@ -5,14 +18,28 @@
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Milestone v1.14.0 — Customer Release Gating, ready for Phase 1.
+**Current focus:** Phase 01 — schema-membership-migration (Plan 01 complete, Plan 02 next)
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 5
 **Requirements:** 32
-**Status:** Not started
+**Status:** Executing Phase 01 — Plan 01-01 complete
+
+## Decisions
+
+| Date | Phase/Plan | Decision |
+|------|-----------|----------|
+| 2026-05-03 | 01-01 | New releaseLogs columns (env/status/commit_sha/deployed_at) are nullable — legacy rows NULL until Mike runs backfill SQL |
+| 2026-05-03 | 01-01 | project_members email uniqueness is case-insensitive via lower(email) in uniqueIndex — stored as-entered |
+| 2026-05-03 | 01-01 | staff role uses wildcard project_key='*' row — single table for all access control |
+| 2026-05-03 | 01-01 | Backfill SQL uses WHERE NOT EXISTS (not ON CONFLICT) — consistent idempotency across all three statements |
+| 2026-05-03 | 01-01 | No Drizzle relations() for new tables in Phase 1 — Phase 2 adds them when customer releases page consumes them |
+
+## Stopped At
+
+Completed 01-schema-membership-migration/01-01-PLAN.md — Plan 01-01 done. Next: 01-02 (auth-context helper + auth.ts cutover).
 
 ## Repository state
 
