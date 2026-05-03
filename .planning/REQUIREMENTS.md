@@ -36,6 +36,53 @@ Foundation for everything else. Database extensions + access control move to a D
 
 ---
 
+## Phase 1.1 — Membership Enforcement Audit
+
+**Why this phase exists:** Phase 1's `auth.ts` cutover legitimately allows project-member emails to sign in. But 32 existing endpoints still gate via `requireAdmin()` — a misnomer that only checks for a session, not staff status. Pre-Phase 1 this was implicitly safe (only `@triarchsecurity.com` could sign in). Post-Phase 1 it's not: a customer member like `mike@mikegeehan.com` (verified live 2026-05-03) can read all projects' release logs / bug reports / feature requests, AND call destructive endpoints like `/destroy`, `/scaffold-repo`, `/provision-*`, navigation editing, etc.
+
+This phase closes the gap — every existing endpoint gets the right access policy.
+
+### Helpers
+
+- [ ] **MEMBER-AUDIT-01**: Rename `requireAdmin` → `requireSignedIn` in `src/lib/api-auth.ts` (it only checks for a session — name was misleading). Keep a single-line `requireAdmin` re-export aliased to `requireSignedIn` so any in-flight branch isn't broken; remove the alias in v1.15.
+- [ ] **MEMBER-AUDIT-02**: Add `requireStaff` to `src/lib/api-auth.ts` — calls `getCurrentUserContext(session)`; returns 401 if unauthenticated, 403 if `!ctx.isStaff`, otherwise returns `{error: null, session, ctx}`.
+- [ ] **MEMBER-AUDIT-03**: Add `requireMembership(projectKey)` to `src/lib/api-auth.ts` — staff bypass; otherwise verifies `ctx.memberships.some(m => m.project_key === projectKey)`; 403 if non-member.
+
+### Endpoint classification + updates
+
+- [ ] **MEMBER-AUDIT-04**: Classify all 32 endpoints currently using `requireAdmin` into `staff-only` / `project-list` / `project-detail` / `unclear`. Document classification in PLAN.md.
+- [ ] **MEMBER-AUDIT-05**: Staff-only endpoints — ALL destructive + provisioning + platform-admin (~17–20 endpoints) — switch to `requireStaff`. Specifically (non-exhaustive):
+  - `/api/platform/projects/[id]` (PUT/DELETE), `/destroy`
+  - `/scaffold-repo`, `/provision-db`, `/provision-dns`, `/sync-state`, `/tools/*`
+  - `/navigation/*` (sections, pages, subpages, reorder, admin)
+  - `/settings`, `/access-logs`, `/release-logs/backfill`, `/webhooks/backfill`
+  - `/report-section-types`, `/service-offerings`, `/service-offerings/[id]` (unless they're project-scoped — verify in classification step)
+- [ ] **MEMBER-AUDIT-06**: Project-scoped LIST endpoints — return only data the current user can see:
+  - `GET /api/platform/release-logs` — filter `WHERE project IN (memberships)` for non-staff
+  - `GET /api/platform/bug-reports` — same filter
+  - `GET /api/platform/feature-requests` — same filter
+- [ ] **MEMBER-AUDIT-07**: Project-scoped DETAIL endpoints — verify membership before returning row:
+  - `GET/PUT /api/platform/release-logs/[id]` — fetch row, check `requireMembership(row.project)` for non-staff (404 not 403 to non-members, mirroring page-level pattern from Phase 1)
+  - `GET/PUT /api/platform/bug-reports/[id]` — same
+  - `GET/PUT /api/platform/feature-requests/[id]` — same
+
+### Page-level audit
+
+- [ ] **MEMBER-AUDIT-08**: Audit server-component pages under `src/app/admin/modules/` and `src/app/admin/platform/` for direct DB reads or session-only checks; route everything through the API endpoints (which are now membership-aware) OR add inline membership checks where the page reads the DB directly.
+
+### Verification
+
+- [ ] **MEMBER-AUDIT-09**: With `mike@mikegeehan.com` signed in (darksouls-rpg admin, non-staff):
+  - Project list shows only darksouls
+  - Release-logs page/API shows only darksouls' release logs
+  - Bug-reports page/API shows only darksouls' bugs
+  - Feature-requests page/API shows only darksouls' features
+  - Direct API calls to `/api/platform/projects/{otherId}/destroy`, `/scaffold-repo`, etc. return 403
+  - Existing Triarch staff (mike@triarchsecurity.com) experience unchanged — sees everything
+- [ ] **MEMBER-AUDIT-10**: Update `01-HUMAN-UAT.md` items 4 + 5 with results from MEMBER-AUDIT-09.
+
+---
+
 ## Phase 2 — Customer Releases Page
 
 Customer-facing gating UI lives at `/projects/{slug}/releases`.
@@ -113,6 +160,7 @@ Captured in `BACKLOG.md`:
 | MEMBER-02 | Phase 1 | Pending (01-04) |
 | FEEDBACK-01, APPROVAL-01 | Phase 1 | Complete (01-01) |
 | ADMIN-01 | Phase 1 | Complete |
+| MEMBER-AUDIT-01..10 | Phase 1.1 | Pending |
 | GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06 | Phase 2 | Pending |
 | REJECT-01 | Phase 2 | Pending |
 | GATE-07, GATE-08, GATE-09, GATE-09a | Phase 3 | Pending |
@@ -124,9 +172,9 @@ Captured in `BACKLOG.md`:
 | PILOT-01, PILOT-02 | Phase 5 | Pending |
 
 **Coverage:**
-- v1.14.0 requirements: 32 total
-- Mapped to phases: 32
+- v1.14.0 requirements: 42 total (32 original + 10 added in Phase 1.1)
+- Mapped to phases: 42
 - Unmapped: 0
 
 ---
-*Defined 2026-05-03 — scope set post-audit of v1.13.1 codebase.*
+*Defined 2026-05-03 — scope set post-audit of v1.13.1 codebase. Updated 2026-05-03 with Phase 1.1 (membership enforcement audit) after live test with `mike@mikegeehan.com` revealed broader access leak.*
