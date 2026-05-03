@@ -63,3 +63,81 @@ blocked: 0
 
 - **Item 5 wording vs. implementation**: page.tsx uses `redirect('/admin')` for non-staff signed-in users; spec said 404. No information leak either way, but worth clarifying intent in v1.15.
 - **Item 7c minor deviation**: ingest endpoint defaults to `env='dev'` for invalid env values rather than rejecting with 400. Backwards-compat-friendly, slightly less strict than the spec.
+
+---
+
+## Phase 1.1: Membership Enforcement Audit — Live UAT (MEMBER-AUDIT-09 / MEMBER-AUDIT-10)
+
+**Status:** pending — execute after Phase 1.1 deploys to live
+**Test account A:** mike@triarchsecurity.com (staff — wildcard project_members row)
+**Test account B:** mike@mikegeehan.com (darksouls-rpg admin, NOT staff)
+**Prerequisite:** Phase 1.1 plans 01.1-01 .. 01.1-06 are merged + deployed; backfill SQL from Phase 1 has been applied (project_members has the wildcard staff row + the darksouls-rpg admin row).
+
+### Live tests
+
+#### MEMBER-AUDIT-09a — Non-staff project list scoped to memberships
+**Steps:** Sign into admin.triarch.dev with mike@mikegeehan.com → land on /admin/platform/projects.
+**Expected:** Project list shows ONLY darksouls-rpg. No other Triarch projects visible.
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09b — Non-staff dashboard scoped
+**Steps:** With mike@mikegeehan.com signed in, navigate to /admin (the dashboard).
+**Expected:** Stats card counts (Projects / Releases / Open Bugs / Pending Features) reflect ONLY darksouls-rpg. Project Health grid shows ONLY darksouls-rpg.
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09c — Non-staff release-logs scoped
+**Steps:** With mike@mikegeehan.com signed in, navigate to /admin/modules/release-logs.
+**Expected:** Release-logs page shows ONLY darksouls-rpg releases. Project filter dropdown either omits other projects or returns empty results when one is selected.
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09d — Non-staff bug-reports scoped
+**Steps:** With mike@mikegeehan.com signed in, navigate to /admin/modules/bug-reports.
+**Expected:** Bug-reports page shows ONLY darksouls-rpg bugs.
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09e — Non-staff feature-requests scoped
+**Steps:** With mike@mikegeehan.com signed in, navigate to /admin/modules/feature-requests.
+**Expected:** Feature-requests page shows ONLY darksouls-rpg features.
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09f — Non-staff blocked from destructive endpoints
+**Steps:** With mike@mikegeehan.com signed in (i.e., session cookie set), open DevTools → Console and run:
+```javascript
+fetch('/api/platform/projects/{some-non-darksouls-project-id}/destroy', { method: 'POST' })
+  .then(r => r.status);
+```
+Try at least three different staff-only endpoints from CLASSIFICATION.md (e.g., `/destroy`, `/scaffold-repo`, `/provision-db`).
+**Expected:** Each returns HTTP 403.
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09g — Non-staff blocked from cross-project detail reads
+**Steps:** With mike@mikegeehan.com signed in, attempt to GET a release-log id, bug id, or feature id that belongs to a Triarch (non-darksouls) project. (Get the id by signing in as staff first to copy one.)
+**Expected:** GET returns HTTP 404 (mirrors the no-leak page pattern — does not reveal whether the row exists).
+**Result:** [pending]
+
+#### MEMBER-AUDIT-09h — Staff experience unchanged
+**Steps:** Sign into admin.triarch.dev with mike@triarchsecurity.com.
+**Expected:** Dashboard shows ALL projects + ALL stats. /admin/platform/projects lists every project. Release-logs / bug-reports / feature-requests pages show every record. Manage-members page works for any project. /destroy and other destructive endpoints work as they always have.
+**Result:** [pending]
+
+### MEMBER-AUDIT-10: Update Phase 1 UAT items 4 and 5
+
+Phase 1's items 4 and 5 (in this same file, above) were left "pending — requires non-staff Google account + browser sign-in". Once 09a-09h above run, copy the relevant outcomes UP into items 4 and 5 to close them out:
+- **Item 4 ("Non-staff member sees only their projects")** is satisfied iff 09a passes.
+- **Item 5 ("Non-member returns 404 for /projects/{slug}/members")** is satisfied iff a sign-in attempt by mike@mikegeehan.com to /admin/platform/projects/{otherProject}/members produces 404 (or the page-level 'redirect to /admin' equivalent already noted in the existing item-5 implementation note).
+
+### Out of scope for this UAT block
+
+- Database migration verification (item 1) — already passed in Phase 1
+- Backfill verification (item 2) — already passed in Phase 1
+- Release-logs ingest env param (item 7) — already passed in Phase 1
+- Customer-self-serve member management — deferred to v1.15+
+
+### Summary slot for post-test update
+
+total: 8 (09a-09h)
+passed: [tbd]
+issues: [tbd]
+pending: 8 (all items)
+skipped: 0
+blocked: 0

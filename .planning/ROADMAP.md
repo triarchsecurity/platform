@@ -9,7 +9,7 @@ Build order: schema and access control first (everything depends on them), then 
 ## Phases
 
 - [x] **Phase 1: Schema + Membership Migration** — `releaseLogs` schema additions, `project_members` / `release_feedback` / `release_approvals` tables, DB-backed staff role, manage-members admin page (completed 2026-05-03)
-- [ ] **Phase 1.1: Membership Enforcement Audit** — close access-control gap exposed by Phase 1's auth cutover; `requireAdmin` rename, new `requireStaff` + `requireMembership` helpers, classify and update all 32 endpoints currently checking only signed-in state, page-level audit
+- [x] **Phase 1.1: Membership Enforcement Audit** — close access-control gap exposed by Phase 1's auth cutover; `requireAdmin` rename, new `requireStaff` + `requireMembership` helpers, classify and update all 32 endpoints currently checking only signed-in state, page-level audit (completed 2026-05-03)
 - [ ] **Phase 2: Customer Releases Page** — `/projects/{slug}/releases` UI, feedback submission, approval/reject actions, audit trail
 - [ ] **Phase 3: Slack Interactive Approval** — Slack App config, signed message with Approve/Reject buttons, signature-verified callback handler
 - [ ] **Phase 4: GitHub App Promotion** — GitHub App install, installation-token auth, `workflow_dispatch` of `deploy-prod.yml`
@@ -48,7 +48,13 @@ Build order: schema and access control first (everything depends on them), then 
   6. Server-component admin pages either route through the now-membership-aware API or have inline membership filters where they read the DB directly
   7. With `mike@mikegeehan.com` signed in: project list, release-logs page, bug-reports page, feature-requests page each show only darksouls-rpg data; direct API calls to other projects' destructive endpoints return 403
   8. Triarch staff (mike@triarchsecurity.com) experience unchanged — sees all data across all projects
-**Plans**: TBD
+**Plans:** 6/6 plans complete
+- [x] 01.1-01-PLAN.md — api-auth helpers (requireSignedIn / requireStaff / requireMembership) with deprecated requireAdmin alias
+- [x] 01.1-02-PLAN.md — Endpoint classification (CLASSIFICATION.md table covering all 32 endpoints)
+- [x] 01.1-03-PLAN.md — Migrate staff-only endpoints (~23 files: destroy, provisioning, navigation, settings, access-logs, backfills, service-offerings)
+- [x] 01.1-04-PLAN.md — Migrate project-list endpoints (release-logs, bug-reports, feature-requests, projects, reports) — GET filter + POST body.project membership check
+- [x] 01.1-05-PLAN.md — Migrate project-detail endpoints (release-logs/[id], bug-reports/[id], feature-requests/[id], reports/[id]) — fetch row, then membership check, 404 to non-members
+- [x] 01.1-06-PLAN.md — Page-level audit (PAGE-AUDIT.md), scope src/app/admin/page.tsx dashboard for non-staff, append MEMBER-AUDIT-09 UAT block to 01-HUMAN-UAT.md
 
 ### Phase 2: Customer Releases Page
 **Goal**: Customer admins can see, comment on, and approve/reject their project's dev releases at a project-scoped URL that enforces membership.
@@ -109,7 +115,7 @@ Build order: schema and access control first (everything depends on them), then 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Schema + Membership Migration | 4/4 | Complete   | 2026-05-03 |
-| 1.1. Membership Enforcement Audit | 0/0 | Not started | - |
+| 1.1. Membership Enforcement Audit | 5/6 | Complete    | 2026-05-03 |
 | 2. Customer Releases Page | 0/0 | Not started | - |
 | 3. Slack Interactive Approval | 0/0 | Not started | - |
 | 4. GitHub App Promotion | 0/0 | Not started | - |

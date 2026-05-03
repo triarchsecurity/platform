@@ -44,42 +44,42 @@ This phase closes the gap — every existing endpoint gets the right access poli
 
 ### Helpers
 
-- [ ] **MEMBER-AUDIT-01**: Rename `requireAdmin` → `requireSignedIn` in `src/lib/api-auth.ts` (it only checks for a session — name was misleading). Keep a single-line `requireAdmin` re-export aliased to `requireSignedIn` so any in-flight branch isn't broken; remove the alias in v1.15.
-- [ ] **MEMBER-AUDIT-02**: Add `requireStaff` to `src/lib/api-auth.ts` — calls `getCurrentUserContext(session)`; returns 401 if unauthenticated, 403 if `!ctx.isStaff`, otherwise returns `{error: null, session, ctx}`.
-- [ ] **MEMBER-AUDIT-03**: Add `requireMembership(projectKey)` to `src/lib/api-auth.ts` — staff bypass; otherwise verifies `ctx.memberships.some(m => m.project_key === projectKey)`; 403 if non-member.
+- [x] **MEMBER-AUDIT-01**: Rename `requireAdmin` → `requireSignedIn` in `src/lib/api-auth.ts` (it only checks for a session — name was misleading). Keep a single-line `requireAdmin` re-export aliased to `requireSignedIn` so any in-flight branch isn't broken; remove the alias in v1.15.
+- [x] **MEMBER-AUDIT-02**: Add `requireStaff` to `src/lib/api-auth.ts` — calls `getCurrentUserContext(session)`; returns 401 if unauthenticated, 403 if `!ctx.isStaff`, otherwise returns `{error: null, session, ctx}`.
+- [x] **MEMBER-AUDIT-03**: Add `requireMembership(projectKey)` to `src/lib/api-auth.ts` — staff bypass; otherwise verifies `ctx.memberships.some(m => m.project_key === projectKey)`; 403 if non-member.
 
 ### Endpoint classification + updates
 
-- [ ] **MEMBER-AUDIT-04**: Classify all 32 endpoints currently using `requireAdmin` into `staff-only` / `project-list` / `project-detail` / `unclear`. Document classification in PLAN.md.
-- [ ] **MEMBER-AUDIT-05**: Staff-only endpoints — ALL destructive + provisioning + platform-admin (~17–20 endpoints) — switch to `requireStaff`. Specifically (non-exhaustive):
+- [x] **MEMBER-AUDIT-04**: Classify all 32 endpoints currently using `requireAdmin` into `staff-only` / `project-list` / `project-detail` / `unclear`. Document classification in PLAN.md.
+- [x] **MEMBER-AUDIT-05**: Staff-only endpoints — ALL destructive + provisioning + platform-admin (~17–20 endpoints) — switch to `requireStaff`. Specifically (non-exhaustive):
   - `/api/platform/projects/[id]` (PUT/DELETE), `/destroy`
   - `/scaffold-repo`, `/provision-db`, `/provision-dns`, `/sync-state`, `/tools/*`
   - `/navigation/*` (sections, pages, subpages, reorder, admin)
   - `/settings`, `/access-logs`, `/release-logs/backfill`, `/webhooks/backfill`
   - `/report-section-types`, `/service-offerings`, `/service-offerings/[id]` (unless they're project-scoped — verify in classification step)
-- [ ] **MEMBER-AUDIT-06**: Project-scoped LIST endpoints — return only data the current user can see:
+- [x] **MEMBER-AUDIT-06**: Project-scoped LIST endpoints — return only data the current user can see:
   - `GET /api/platform/release-logs` — filter `WHERE project IN (memberships)` for non-staff
   - `GET /api/platform/bug-reports` — same filter
   - `GET /api/platform/feature-requests` — same filter
-- [ ] **MEMBER-AUDIT-07**: Project-scoped DETAIL endpoints — verify membership before returning row:
+- [x] **MEMBER-AUDIT-07**: Project-scoped DETAIL endpoints — verify membership before returning row:
   - `GET/PUT /api/platform/release-logs/[id]` — fetch row, check `requireMembership(row.project)` for non-staff (404 not 403 to non-members, mirroring page-level pattern from Phase 1)
   - `GET/PUT /api/platform/bug-reports/[id]` — same
   - `GET/PUT /api/platform/feature-requests/[id]` — same
 
 ### Page-level audit
 
-- [ ] **MEMBER-AUDIT-08**: Audit server-component pages under `src/app/admin/modules/` and `src/app/admin/platform/` for direct DB reads or session-only checks; route everything through the API endpoints (which are now membership-aware) OR add inline membership checks where the page reads the DB directly.
+- [x] **MEMBER-AUDIT-08**: Audit server-component pages under `src/app/admin/modules/` and `src/app/admin/platform/` for direct DB reads or session-only checks; route everything through the API endpoints (which are now membership-aware) OR add inline membership checks where the page reads the DB directly.
 
 ### Verification
 
-- [ ] **MEMBER-AUDIT-09**: With `mike@mikegeehan.com` signed in (darksouls-rpg admin, non-staff):
+- [x] **MEMBER-AUDIT-09**: With `mike@mikegeehan.com` signed in (darksouls-rpg admin, non-staff):
   - Project list shows only darksouls
   - Release-logs page/API shows only darksouls' release logs
   - Bug-reports page/API shows only darksouls' bugs
   - Feature-requests page/API shows only darksouls' features
   - Direct API calls to `/api/platform/projects/{otherId}/destroy`, `/scaffold-repo`, etc. return 403
   - Existing Triarch staff (mike@triarchsecurity.com) experience unchanged — sees everything
-- [ ] **MEMBER-AUDIT-10**: Update `01-HUMAN-UAT.md` items 4 + 5 with results from MEMBER-AUDIT-09.
+- [x] **MEMBER-AUDIT-10**: Update `01-HUMAN-UAT.md` items 4 + 5 with results from MEMBER-AUDIT-09.
 
 ---
 

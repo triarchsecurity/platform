@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
-status: executing
-last_updated: "2026-05-03T18:11:19.741Z"
+status: planning
+last_updated: "2026-05-03T23:22:32.772Z"
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # Triarch Dev Admin — Project State
@@ -18,14 +18,14 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 01 deployed (live revision triarch-dev-build-2026-05-03-005). Phase 1.1 (membership enforcement audit) inserted after live test with mike@mikegeehan.com revealed access leak — 32 endpoints currently allow any signed-in user, including destructive operations.
+**Current focus:** Phase 01.1 — membership-enforcement-audit
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 6 (Phase 1.1 inserted)
 **Requirements:** 42 (32 original + 10 added in Phase 1.1)
-**Status:** Phase 01 complete + deployed. Phase 1.1 scope defined, ready for plan/execute.
+**Status:** Ready to plan
 
 ## Decisions
 
@@ -44,10 +44,21 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 - [Phase 01]: requireStaff() helper is local to each route file (copy-paste is fine per Plan 04 note — no shared import coupling)
 - [Phase 01]: Manage Members button rendered for all /admin users (access enforced server-side); conditional isStaff render deferred to post-pilot if /admin widens access
+- [Phase 01.1-01]: requireAdmin preserved as deprecated alias of requireSignedIn — identical signature keeps 32 callsites compiling through v1.14.x rollout
+- [Phase 01.1-01]: DB unreachable in requireStaff/requireMembership returns 403 (fail-closed) — cannot prove role without successful lookup
+- [Phase 01.1]: access-logs classified staff-only despite project column — audit trail is internal accountability, not customer data
+- [Phase 01.1]: reports/[id] DELETE restricted to staff-only within Plan 05 despite project-detail classification
+- [Phase 01.1]: projects/route.ts GET keeps existing membership filter; POST uses requireStaff — dual method treatment within Plan 04
+- [Phase 01.1-04]: reports/route.ts classified project-list (not staff-only) — reports are customer-deliverable, non-staff see only their project's reports
+- [Phase 01.1-03]: settings/route.ts and service-offerings/route.ts POST preserve { error, session } destructure — session used for userId/createdBy
+- [Phase 01.1-03]: No ctx added speculatively to any callsite — none of the 23 handlers use ctx in body logic
+- [Phase 01.1-06]: Task 3 was no-op — 13 of 14 admin pages are client components delegating to the now-membership-aware API; only the dashboard needed an inline filter
+- [Phase 01.1-06]: Dashboard DB-error fallback (!ctx) passes null projectKeys → full view, mirrors API convention from Plans 03/04/05
+- [Phase 01.1-06]: Empty memberships for non-staff → zeros + empty Project Health grid (not 403/redirect), consistent with API empty-list behavior
 
 ## Stopped At
 
-Completed 01-schema-membership-migration/01-04-PLAN.md — Plans 01-01, 01-02, 01-04 done (01-03 ran in parallel). Phase 01 code-complete pending 01-03 final commit and Mike's db:push + backfill SQL.
+Completed 01.1-06-PLAN.md (Wave 3) — page-level audit (14 pages), dashboard membership filter, MEMBER-AUDIT-09/10 UAT spec appended. Phase 01.1 code is complete. Remaining work: deploy v1.14 + run MEMBER-AUDIT-09a-09h live tests post-deploy.
 
 ## Repository state
 
