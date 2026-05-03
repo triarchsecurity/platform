@@ -50,10 +50,12 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 01.1]: reports/[id] DELETE restricted to staff-only within Plan 05 despite project-detail classification
 - [Phase 01.1]: projects/route.ts GET keeps existing membership filter; POST uses requireStaff — dual method treatment within Plan 04
 - [Phase 01.1-04]: reports/route.ts classified project-list (not staff-only) — reports are customer-deliverable, non-staff see only their project's reports
+- [Phase 01.1-03]: settings/route.ts and service-offerings/route.ts POST preserve { error, session } destructure — session used for userId/createdBy
+- [Phase 01.1-03]: No ctx added speculatively to any callsite — none of the 23 handlers use ctx in body logic
 
 ## Stopped At
 
-Completed 01.1-04-PLAN.md and 01.1-05-PLAN.md (parallel wave) — 5 project-list endpoints (release-logs, bug-reports, feature-requests, projects, reports) membership-filtered on GET, POST body.project validated. 4 project-detail endpoints fetch-then-membership. Build green.
+Completed 01.1-03-PLAN.md (wave 2 parallel) — all 23 staff-only endpoints migrated to requireStaff(). Build green. Phase 01.1 code execution complete; Plan 06 (UAT + deploy) is next.
 
 ## Repository state
 
