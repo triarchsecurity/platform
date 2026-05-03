@@ -52,8 +52,6 @@ exclusively — do not add ad-hoc pixel values.
 Exceptions:
 - `px-3 py-2` (12px/8px) for secondary action buttons — mirrors existing
   `bg-teal-600` button in projects/page.tsx line 131.
-- `px-2.5 py-1.5` (10px/6px) for row-level action buttons — mirrors
-  provisioning buttons in projects/page.tsx lines 263–288.
 - Table row minimum touch target: 44px height via `py-3` + `text-sm` line height.
 
 ---
@@ -476,6 +474,13 @@ not a provisioning action. Icon: `Users` size 12.
 The server component handles the staff guard (redirect to `/admin` if not staff)
 and passes `projectName`, `projectKey`, and initial `members[]` as props to
 `MembersClient`. The client component owns all mutation state.
+
+**Implementation note — "Manage Members" nav button styling:** The button in
+`projects/page.tsx` that links to the members page uses `px-2.5 py-1.5 text-xs`
+to match the existing provisioning button pattern at lines 263–288. This is a
+code-level implementation detail that mirrors existing buttons in that file — it
+is not a declared spacing contract value. The Spacing Scale contract above
+governs new spacing decisions on the members page itself.
 
 **Imports required (new to this page):**
 - `Users`, `UserPlus`, `Trash2`, `Loader2`, `X`, `AlertCircle` from `lucide-react`
