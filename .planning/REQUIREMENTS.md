@@ -57,7 +57,7 @@ This phase closes the gap — every existing endpoint gets the right access poli
   - `/navigation/*` (sections, pages, subpages, reorder, admin)
   - `/settings`, `/access-logs`, `/release-logs/backfill`, `/webhooks/backfill`
   - `/report-section-types`, `/service-offerings`, `/service-offerings/[id]` (unless they're project-scoped — verify in classification step)
-- [ ] **MEMBER-AUDIT-06**: Project-scoped LIST endpoints — return only data the current user can see:
+- [x] **MEMBER-AUDIT-06**: Project-scoped LIST endpoints — return only data the current user can see:
   - `GET /api/platform/release-logs` — filter `WHERE project IN (memberships)` for non-staff
   - `GET /api/platform/bug-reports` — same filter
   - `GET /api/platform/feature-requests` — same filter
