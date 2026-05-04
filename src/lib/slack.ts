@@ -29,6 +29,74 @@ async function postSlackMessage(message: SlackMessage): Promise<{ ok: boolean; t
   return res.json() as Promise<{ ok: boolean; ts?: string; error?: string }>;
 }
 
+/**
+ * Post a threaded reply to an existing Slack message.
+ * Used for promotion dispatch result reporting (Phase 4).
+ * Graceful no-op when SLACK_BOT_TOKEN is missing.
+ */
+export async function postSlackThreadedReply(input: {
+  channel: string;
+  thread_ts: string;
+  text: string;
+}): Promise<{ ok: boolean; ts?: string; error?: string }> {
+  if (!SLACK_BOT_TOKEN) {
+    console.warn('[slack] SLACK_BOT_TOKEN not set - skipping threaded reply');
+    return { ok: false, error: 'no_token' };
+  }
+  const res = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SLACK_BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      channel: input.channel,
+      thread_ts: input.thread_ts,
+      text: input.text,
+    }),
+  });
+  const data = await res.json() as { ok: boolean; ts?: string; error?: string };
+  if (!data.ok) {
+    console.warn(`[slack] threaded reply failed: ${data.error}`);
+  }
+  return data;
+}
+
+/**
+ * Update an existing Slack message in place (chat.update).
+ * Used to amend the original "Approved" message when a downstream dispatch fails (Phase 4 CONTEXT.md Area 3).
+ * Graceful no-op when SLACK_BOT_TOKEN is missing.
+ */
+export async function updateSlackMessage(input: {
+  channel: string;
+  ts: string;
+  text: string;
+  blocks?: unknown[];
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!SLACK_BOT_TOKEN) {
+    console.warn('[slack] SLACK_BOT_TOKEN not set - skipping message update');
+    return { ok: false, error: 'no_token' };
+  }
+  const res = await fetch('https://slack.com/api/chat.update', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${SLACK_BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      channel: input.channel,
+      ts: input.ts,
+      text: input.text,
+      ...(input.blocks ? { blocks: input.blocks } : {}),
+    }),
+  });
+  const data = await res.json() as { ok: boolean; error?: string };
+  if (!data.ok) {
+    console.warn(`[slack] message update failed: ${data.error}`);
+  }
+  return data;
+}
+
 const SEVERITY_EMOJI: Record<string, string> = {
   critical: ':red_circle:',
   high: ':large_orange_circle:',
