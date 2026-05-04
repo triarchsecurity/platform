@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
-status: planning
-last_updated: "2026-05-04T14:35:06.460Z"
+status: executing
+last_updated: "2026-05-04T14:59:36.273Z"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 24
+  completed_plans: 21
 ---
 
 # Triarch Dev Admin — Project State
@@ -18,14 +18,14 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 03 — slack-interactive-approval
+**Current focus:** Phase 04 — github-app-promotion
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 6 (Phase 1.1 inserted)
 **Requirements:** 42 (32 original + 10 added in Phase 1.1)
-**Status:** Ready to plan
+**Status:** Executing Phase 04
 
 ## Decisions
 
@@ -74,10 +74,11 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 03-slack-interactive-approval]: req.text() is the only body read — formData() would consume the stream and break HMAC verification
 - [Phase 03-slack-interactive-approval]: Reject reason fixed as 'Rejected via Slack' for v1.14 — modal input deferred per CONTEXT.md Area 4
 - [Phase 03-slack-interactive-approval]: vitest.config.ts added to resolve @/ alias for test imports (Rule 3 fix)
+- [Phase 04-github-app-promotion]: promotionDispatchedAt + promotionDispatchedBy columns nullable — legacy rows and dev-only releases keep NULL; DB push deferred to Mike post-merge per Phase 01-01 and 02-01 precedent
 
 ## Stopped At
 
-Completed 03-04-PLAN.md (Wave 2 final) — Signature-verified POST /api/slack/interact handler + 12-test Vitest suite. Phase 03 slack-interactive-approval is feature-complete (all 5 plans done). Pending: HUMAN-UAT (plan 03-05) — Mike must populate SLACK_USER_MAP, configure Firebase secrets, and exercise the end-to-end flow.
+Completed 04-01-PLAN.md (Wave 1) — Schema delta: two nullable promotion dispatch audit columns (promotionDispatchedAt, promotionDispatchedBy) added to releaseLogs; migration 0009_promotion_dispatch_audit.sql generated; tsc + build + 32/32 tests all pass. DB push deferred to Mike per precedent.
 
 ## Repository state
 
