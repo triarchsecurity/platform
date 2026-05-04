@@ -60,10 +60,6 @@ Inherits Phase 1 contract exactly. Tailwind v4 utility classes map to the 8-poin
 | Feedback textarea height | auto, min 80px | `min-h-[80px]` | 3 lines visible by default; user can resize |
 | Reject reason textarea height | auto, min 80px | `min-h-[80px]` | Same; required field |
 
-**Exceptions:**
-- `px-1.5 py-0.5` (6px/2px) for status badges — implementation-level detail matching existing badge pattern in `projects/page.tsx`.
-- `px-2.5 py-1.5` (10px/6px) for small secondary action buttons — mirrors existing provisioning button pattern.
-
 ---
 
 ## Typography
@@ -84,7 +80,7 @@ Inherits Phase 1 contract. No new sizes introduced.
 | Page h1 | `text-2xl font-bold text-white` + Rajdhani | e.g. "Truth+Treason Releases" |
 | Page subtext | `text-sm text-zinc-500` | e.g. "14 releases · Truth+Treason" |
 | Table header row | `text-[10px] text-zinc-500 uppercase tracking-wide` | Columns: Version / Env / Status / Commit / Deployed / Approver |
-| Table row version | `font-mono text-sm font-semibold text-teal-400` | e.g. "v1.3.2" — matches release-logs viewer line 299 |
+| Table row version | `font-mono text-sm font-bold text-teal-400` | e.g. "v1.3.2" — weight 700 stays within the 2-weight contract (400 + 700) |
 | Table row body | `text-sm text-zinc-200` | deployed_at, approver email |
 | Commit SHA cell | `text-[10px] font-mono text-zinc-500` | 7-char short SHA, e.g. "a3f2b1c" |
 | Status badge text | `text-[10px]` | Inside colored badge |
@@ -106,12 +102,11 @@ Inherits Phase 1 contract. All tokens from `globals.css` `@theme`. No new colors
 |------|-------|---------|-------|
 | Dominant (60%) | `#0a0a0c` | `--bg-base` | Page background (`bg-zinc-950`) |
 | Secondary (30%) | `#111114` / `#1a1a1e` | `--bg-surface` / `--bg-elevated` | Table container, expanded panel, feedback card (`bg-zinc-900/50`, `bg-zinc-900`) |
-| Accent (10%) | `#d4a029` | `--accent-gold` | `promoted` status badge ONLY — not used elsewhere on this page |
+| Accent (10%) | `#d4a029` | `--accent-gold` | Sidebar wordmark ONLY (Phase 1 reservation) — NOT used on this page |
 | Action teal | `rgb(20 184 166)` | Tailwind `teal-600` | Approve CTA (primary button), version text, teal icon in page header |
 | Destructive | `rgb(239 68 68)` | Tailwind `red-400/red-500` | Reject button (secondary ghost), reject form confirm button, reject status badge |
 
-**Accent (`--accent-gold`) is reserved on this page for the `promoted` status badge only.**
-It must not appear on buttons, links, or any interactive elements.
+**`--accent-gold` is NOT used on this page.** Its Phase 1 reservation (sidebar wordmark only) holds. The `promoted` badge uses `bg-amber-400/20 text-amber-300 border-amber-400/30` — amber-400 Tailwind utilities — as a gold-toned semantic approximation. This is a deliberate code-level choice; it does not constitute a use of the `--accent-gold` token.
 
 **Status badge color map (locked in CONTEXT.md Area 1 Q4):**
 
@@ -121,7 +116,7 @@ It must not appear on buttons, links, or any interactive elements.
 | `pending_approval` | `bg-amber-500/20` | `text-amber-400` | `border-amber-500/30` | Amber = needs attention |
 | `approved` | `bg-teal-500/20` | `text-teal-400` | `border-teal-500/30` | Teal = approved/success; matches role-admin badge |
 | `rejected` | `bg-red-500/20` | `text-red-400` | `border-red-500/30` | Red = rejected/destructive |
-| `promoted` | `bg-amber-400/20` | `text-amber-300` | `border-amber-400/30` | Gold-toned amber — closest to `--accent-gold` without using it directly |
+| `promoted` | `bg-amber-400/20` | `text-amber-300` | `border-amber-400/30` | Gold-toned amber approximation — does NOT use `--accent-gold` token |
 
 **Env badge color map:**
 
@@ -279,7 +274,7 @@ Click anywhere on the row toggles expansion. Chevron column shows `ChevronRight`
 px-4 py-3
 ```
 
-- Version: `font-mono text-sm font-semibold text-teal-400`
+- Version: `font-mono text-sm font-bold text-teal-400`
 - Env badge: `px-1.5 py-0.5 rounded text-[10px] border {ENV_BADGE_COLORS[env]}`
 - Status badge: `px-1.5 py-0.5 rounded text-[10px] border {STATUS_BADGE_COLORS[status]}`
 - Commit SHA: `text-[10px] font-mono text-zinc-500` — display first 7 chars only
@@ -313,7 +308,7 @@ Revealed below the collapsed row, rendered as a separate `<tr>` with `colSpan={7
     <div className="px-4 py-4 space-y-4">
       [Audit trail line]        ← conditional; shown for approved/rejected/promoted
       [Feedback list]           ← chronological, newest at bottom
-      [Feedback textarea + Post button]  ← admin + viewer can read; admin-only can post
+      [Feedback textarea + Post Comment button]  ← admin + viewer can read; admin-only can post
       [Action buttons row]      ← admin-only; varies by status
     </div>
   </td>
@@ -391,7 +386,7 @@ Rendered for admin role only (viewer sees the list read-only, no textarea):
                  rounded-md hover:bg-teal-500 disabled:opacity-50"
     >
       {submitting ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
-      Post
+      Post Comment
     </button>
   </div>
 </div>
@@ -461,13 +456,13 @@ On click: transition button to confirmation state, start 5-second countdown usin
 - `aria-label="Confirm release approval"` on Step 2 button.
 - `aria-live="polite"` on the countdown text so screen readers announce the change.
 - Focus moves to the Step 2 button automatically on transition (call `.focus()` after state update).
-- Tab order: Approve button → Reject button → Post button. Action buttons come after the feedback compose area in DOM order.
+- Tab order: Approve button → Reject button → Post Comment button. Action buttons come after the feedback compose area in DOM order.
 
 ---
 
 ## Reject Inline Form
 
-Revealed by clicking the Reject button. Renders below the action buttons row within the same expanded panel section. The Reject button is replaced by the form.
+Revealed by clicking the Reject Release button. Renders below the action buttons row within the same expanded panel section. The Reject Release button is replaced by the form.
 
 ```tsx
 <div className="mt-3 p-4 rounded-md bg-zinc-900 border border-red-500/20 space-y-3">
@@ -513,9 +508,9 @@ Revealed by clicking the Reject button. Renders below the action buttons row wit
 
 - Character limit: 500 chars. Server enforces; client warns at 450.
 - `autoFocus` on the textarea so the user can immediately type.
-- Cancel button: text-only, zinc styling. Closes form, clears draft.
+- Cancel button: text-only, zinc styling. Closes form, clears draft. "Cancel" is acceptable here as a tertiary form-dismiss action — it cancels the in-progress reject form, not a destructive data operation, and no confirmation is needed.
 - Empty/whitespace-only submit: button disabled (`!rejectReason.trim()`). No server call.
-- Focus returns to the Reject button if user cancels.
+- Focus returns to the Reject Release button if user cancels.
 
 ---
 
@@ -634,12 +629,12 @@ Rendered below the table when `hasMore = true`.
 | Table col: approver | `Approver` |
 | Approve button (step 1) | `Approve for Production` |
 | Approve button (step 2 countdown) | `Confirm approval ({N}s…)` |
-| Reject button (step 1) | `Reject` |
+| Reject button (step 1) | `Reject Release` |
 | Reject form instruction | `Provide a reason for rejection. This will be recorded in the audit trail.` |
 | Reject reason placeholder | `e.g. Performance regression in checkout flow — needs investigation before prod.` |
 | Reject form cancel | `Cancel` |
 | Reject form confirm button | `Confirm Rejection` |
-| Post feedback button | `Post` |
+| Post feedback button | `Post Comment` |
 | Feedback textarea placeholder | `Leave a comment for the Triarch team…` |
 | Feedback: no comments yet | `No feedback yet.` |
 | Feedback delete aria-label | `Delete comment` |
@@ -662,6 +657,13 @@ Rendered below the table when `hasMore = true`.
 
 ---
 
+## Interaction Contracts
+
+**Feedback delete — no confirmation modal:**
+Clicking the Trash2 icon on a comment fires the delete immediately with no confirmation dialog. Rationale: comments are scoped to the author and deletable only within 24 hours. The 24-hour window is the sole safeguard. A "Comment deleted." toast fires on success. This mirrors the existing provisioning UX in the project list where destructive row actions are immediate with a toast. No undo. No confirmation step.
+
+---
+
 ## Accessibility Contract
 
 | Element | Requirement |
@@ -674,7 +676,7 @@ Rendered below the table when `hasMore = true`.
 | Reject button | `aria-label="Reject release {version}"` |
 | Reject form textarea | `aria-required="true"` + `aria-label="Rejection reason"` |
 | Feedback textarea | `aria-label="Leave a comment"` |
-| Post button | `aria-label="Post comment for release {version}"` |
+| Post Comment button | `aria-label="Post comment for release {version}"` |
 | Delete comment | `aria-label="Delete comment"` |
 | Toast | `role="status"` + `aria-live="polite"` |
 | Error banner | `role="alert"` + `aria-live="assertive"` |
@@ -683,7 +685,7 @@ Rendered below the table when `hasMore = true`.
 **Focus management:**
 - When the approve button transitions to step 2, call `.focus()` on the new button element.
 - When the reject form opens, `autoFocus` on the textarea handles initial focus.
-- When the reject form is cancelled, return focus to the Reject button.
+- When the reject form is cancelled, return focus to the Reject Release button.
 - When a feedback comment is deleted, return focus to the first remaining comment or the textarea.
 
 **Role gating in markup:**
@@ -704,6 +706,10 @@ Rendered below the table when `hasMore = true`.
 | `ReleaseRow` | Sub-component of `ReleasesClient` | inline or extracted | Collapsed row + chevron + badges |
 | `ReleaseExpandedPanel` | Sub-component of `ReleasesClient` | inline or extracted | Feedback list + compose + action buttons |
 | `Toast` | Client component | `src/components/Toast.tsx` | Hand-rolled; reusable for future phases |
+
+**Badge padding (implementation note):** Status and env badges use `px-1.5 py-0.5` (6px / 2px) to match the existing badge pattern from `projects/page.tsx`. This is a code-level detail that mirrors the existing pattern — it is NOT a declared spacing contract value. The spacing scale governs new spacing decisions on the page.
+
+**Secondary action button padding (implementation note):** Small secondary action buttons use `px-2.5 py-1.5` (10px / 6px) to match the existing provisioning button pattern. Code-level detail mirroring existing UI — NOT a declared spacing contract value.
 
 **Imports required (new to this phase):**
 - `CheckCircle`, `XCircle`, `GitBranch`, `MessageSquare`, `ChevronDown`, `ChevronRight`, `Trash2`, `Loader2`, `X`, `AlertCircle` from `lucide-react`
