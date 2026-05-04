@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: planning
+status: executing
 stopped_at: Completed 03-02-PLAN.md — slackActionAudit table + migration 0011
-last_updated: "2026-05-04T22:20:25.821Z"
+last_updated: "2026-05-04T23:12:32.634Z"
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 3
+  total_plans: 9
   completed_plans: 3
 ---
 
@@ -19,19 +19,19 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 03 — schema-github-app-permissions
+**Current focus:** Phase 01 — central-secrets-vault
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 01 (central-secrets-vault) — EXECUTING
+Plan: 1 of 6
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to plan
+**Status:** Executing Phase 01
 
 ## Performance Metrics
 

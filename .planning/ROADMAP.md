@@ -45,7 +45,13 @@
   3. `triarch-dev` admin reads Slack and GitHub App credentials from `@myalterlego/secrets` — no per-project Firebase secrets for those seven keys
   4. `triarchsecurity-admin` (CRM) reads the same Slack/GitHub creds from `@myalterlego/secrets` — `settings` table no longer holds credentials
   5. `docs/onboarding-projects.md` runbook documents the vault access pattern for new projects
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 01-01-PLAN.md — HUMAN provision triarch-vault GCP project + create 7 secrets (VAULT-01, VAULT-02)
+- [ ] 01-02-PLAN.md — Build & publish @myalterlego/secrets v0.1.0 to GitHub Packages (VAULT-04)
+- [ ] 01-03-PLAN.md — HUMAN grant secretAccessor IAM to consumer SAs + functional impersonation test (VAULT-03)
+- [ ] 01-04-PLAN.md — Migrate triarch-dev admin to vault + add /api/platform/health/secrets endpoint (VAULT-05)
+- [ ] 01-05-PLAN.md — Migrate triarchsecurity-admin CRM to vault + add .npmrc + NODE_AUTH_TOKEN wiring (VAULT-06)
+- [ ] 01-06-PLAN.md — Update onboarding-projects.md Step 7 + create secrets-vault.md deep-dive (VAULT-07)
 
 ### Phase 2: shared-workflows Hardening
 **Goal**: Every deploy in shared-workflows notifies the admin control plane — dev deploys POST to release-logs ingest, prod deploys POST to the promoted endpoint, and non-main branch deploys trigger FAH branch preview URLs
@@ -136,7 +142,7 @@
 | 3. Slack Interactive Approval | v1.14.0 | 3/3 | Complete    | 2026-05-04 |
 | 4. GitHub App Promotion | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 4/4 | Complete | 2026-05-04 |
-| 1. Central Secrets Vault | v2.0 | 0/TBD | Not started | - |
+| 1. Central Secrets Vault | v2.0 | 0/6 | Planned | - |
 | 2. shared-workflows Hardening | v2.0 | 0/TBD | Not started | - |
 | 3. Schema + GitHub App Permissions | v2.0 | 0/TBD | Not started | - |
 | 4. promote-branch Workflow | v2.0 | 0/TBD | Not started | - |
