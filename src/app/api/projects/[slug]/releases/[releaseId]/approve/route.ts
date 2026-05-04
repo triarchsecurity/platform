@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireSignedIn } from '@/lib/api-auth';
 import { getCurrentUserContext } from '@/lib/auth-context';
 import { db } from '@/lib/db';
-import { releaseLogs, projects } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { releaseLogs, projects, releaseFeedback } from '@/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { approveRelease } from '@/lib/release-actions';
+import { notifyReleaseApproved } from '@/lib/slack';
 
 export async function POST(
   req: NextRequest,
@@ -64,6 +65,38 @@ export async function POST(
   if (!result.ok) {
     // Only invalid_status is possible from approveRelease
     return NextResponse.json({ error: result.message }, { status: 409 });
+  }
+
+  // Fire-and-forget Slack notification — only on fresh approve, not on idempotent re-approval.
+  // Per CONTEXT.md Area 1: log + continue on failure; do NOT roll back the approval.
+  if (!result.alreadyApproved) {
+    try {
+      // Most-recent feedback comment for excerpt; count overflow.
+      const feedbackRows = await db
+        .select({ body: releaseFeedback.body })
+        .from(releaseFeedback)
+        .where(eq(releaseFeedback.releaseId, release.id))
+        .orderBy(desc(releaseFeedback.createdAt));
+
+      const latest = feedbackRows[0]?.body ?? '';
+      const excerpt = latest.length > 200 ? latest.slice(0, 200) + '…' : latest;
+      const overflow = Math.max(0, feedbackRows.length - 1);
+
+      const slackResult = await notifyReleaseApproved({
+        releaseId: release.id,
+        project: release.project,
+        version: release.version,
+        approverEmail: ctx.email,
+        status: result.release.status ?? 'approved',
+        feedbackExcerpt: excerpt,
+        feedbackOverflowCount: overflow,
+      });
+      if (!slackResult.ok) {
+        console.warn('[slack] notifyReleaseApproved failed', { releaseId: release.id, error: slackResult.error });
+      }
+    } catch (err) {
+      console.warn('[slack] notifyReleaseApproved threw', { releaseId: release.id, error: String(err) });
+    }
   }
 
   return NextResponse.json({
