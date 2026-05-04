@@ -115,9 +115,9 @@ Replace any PAT-based assumptions with a GitHub App installation token, used to 
 
 - [ ] **GATE-10**: Slack approve callback dispatches `workflow_dispatch` on the project's `deploy-prod.yml` with `tag` input set to the release version; non-blocking (returns 200 to Slack immediately, does the dispatch async)
 - [x] **GATE-11**: Dispatch uses GitHub App installation token (NOT a PAT) — short-lived (≤1h), scoped to `actions:write` on `MyAlterLego` org
-- [ ] **GATE-11a**: GitHub App created in `MyAlterLego` org with permissions: `actions: write`, `contents: read`, `metadata: read`; installed on org with access to all admin-managed repos
+- [x] **GATE-11a**: GitHub App created in `MyAlterLego` org with permissions: `actions: write`, `contents: read`, `metadata: read`; installed on org with access to all admin-managed repos
 - [ ] **GATE-11b**: Installation-token retrieval implemented — JWT signed with private key, exchanged for installation token, cached in-process for 50 minutes; on cache miss, regenerate
-- [ ] **ENV-G01**: GitHub App credentials in App Hosting secrets: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` (PEM), `GITHUB_APP_INSTALLATION_ID`
+- [x] **ENV-G01**: GitHub App credentials in App Hosting secrets: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` (PEM), `GITHUB_APP_INSTALLATION_ID`
 
 ---
 
@@ -166,7 +166,7 @@ Captured in `BACKLOG.md`:
 | GATE-07, GATE-08, GATE-09, GATE-09a | Phase 3 | Pending |
 | ENV-S01 | Phase 3 | Complete |
 | GATE-10, GATE-11, GATE-11a, GATE-11b | Phase 4 | Pending |
-| ENV-G01 | Phase 4 | Pending |
+| ENV-G01 | Phase 4 | Complete |
 | GATE-12, GATE-13 | Phase 5 | Pending |
 | WORKFLOW-01, WORKFLOW-02 | Phase 5 | Pending |
 | PILOT-01, PILOT-02 | Phase 5 | Pending |

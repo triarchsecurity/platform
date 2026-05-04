@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T14:59:36.273Z"
+last_updated: "2026-05-04T15:00:35.600Z"
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Triarch Dev Admin — Project State
@@ -75,6 +75,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 03-slack-interactive-approval]: Reject reason fixed as 'Rejected via Slack' for v1.14 — modal input deferred per CONTEXT.md Area 4
 - [Phase 03-slack-interactive-approval]: vitest.config.ts added to resolve @/ alias for test imports (Rule 3 fix)
 - [Phase 04-github-app-promotion]: promotionDispatchedAt + promotionDispatchedBy columns nullable — legacy rows and dev-only releases keep NULL; DB push deferred to Mike post-merge per Phase 01-01 and 02-01 precedent
+- [Phase 04]: RUNTIME-only availability (no field) for GitHub App secrets in apphosting.yaml — matches Phase 3 Slack pattern
 
 ## Stopped At
 
