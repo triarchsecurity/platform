@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T02:05:04.404Z"
+last_updated: "2026-05-04T02:10:07.547Z"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 14
 ---
 
 # Triarch Dev Admin — Project State
@@ -59,6 +59,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 02-01]: DB push deferred to human — DATABASE_URL is Firebase secret, not in local shell; same pattern as Phase 01-01
 - [Phase 02]: CustomerHeader is a client component (signOut requires next-auth/react client-only import)
 - [Phase 02]: notFound() called for both missing project and non-member — indistinguishable 404 for GATE-01 no-leak guarantee
+- [Phase 02-04]: Idempotent re-approval returns 200 with alreadyApproved:true + existing row; double-rejection is 409 per REJECT-01
+- [Phase 02-04]: Non-members receive 404 (not 403) to avoid leaking project existence — same pattern as release-logs/[id]
 
 ## Stopped At
 
