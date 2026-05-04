@@ -117,3 +117,64 @@ SLACK_SIGNING_SECRET: serviceAccount:firebase-app-hosting-compute@triarchsecurit
 ```
 
 `secretAccessor` role binding present on every consumer × secret pair (7 + 2 = 9 bindings total). No `MISSING` results.
+
+## Step 4 — Functional impersonation test
+
+### A. Token-creator grants
+
+```bash
+$ USER_EMAIL=$(gcloud config get-value account)
+# mike@triarchsecurity.com
+
+$ gcloud iam service-accounts add-iam-policy-binding "$SA_ADMIN" \
+    --project=triarch-dev-website \
+    --member="user:${USER_EMAIL}" \
+    --role="roles/iam.serviceAccountTokenCreator"
+role: roles/iam.serviceAccountTokenCreator
+etag: BwZRBlO8ii0=
+version: 1
+
+$ gcloud iam service-accounts add-iam-policy-binding "$SA_CRM" \
+    --project=triarchsecurity-admin \
+    --member="user:${USER_EMAIL}" \
+    --role="roles/iam.serviceAccountTokenCreator"
+role: roles/iam.serviceAccountTokenCreator
+etag: BwZRBlPLvlg=
+version: 1
+```
+
+### B. Admin SA reads SLACK_BOT_TOKEN
+
+```bash
+$ gcloud secrets versions access latest \
+    --secret=SLACK_BOT_TOKEN \
+    --project=triarch-vault \
+    --impersonate-service-account="$SA_ADMIN" | head -c 6
+```
+
+Output prefix (first 6 chars): `xoxb-1` (rest of Slack bot token redacted; `xoxb-` is the canonical Slack token prefix).
+
+### C. CRM SA reads SLACK_BOT_TOKEN
+
+```bash
+$ gcloud secrets versions access latest \
+    --secret=SLACK_BOT_TOKEN \
+    --project=triarch-vault \
+    --impersonate-service-account="$SA_CRM" | head -c 6
+```
+
+Output prefix (first 6 chars): `xoxb-1` (CRM SA functional read confirmed).
+
+### D. Negative test — CRM denied on GITHUB_APP_ID
+
+```bash
+$ gcloud secrets versions access latest \
+    --secret=GITHUB_APP_ID \
+    --project=triarch-vault \
+    --impersonate-service-account="$SA_CRM" 2>&1 \
+    | grep -q "PERMISSION_DENIED" && echo "OK: CRM correctly denied"
+```
+
+Output: `OK: CRM correctly denied`
+
+Minimum-privilege confirmed (CONTEXT.md D-04). CRM SA has access only to the 2 Slack secrets it needs, not the GitHub App secrets.
