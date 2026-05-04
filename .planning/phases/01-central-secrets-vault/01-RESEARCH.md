@@ -493,3 +493,158 @@ botToken = await getSecret('SLACK_BOT_TOKEN');
 
 **Research date:** 2026-05-04
 **Valid until:** 2026-06-04 (stable APIs; `@google-cloud/secret-manager` tracks `google-gax` which has minor releases)
+
+---
+
+## Validation Architecture
+
+### Test Layers
+
+**Layer 1 — Package unit tests (`@myalterlego/secrets/src/index.test.ts`)**
+- Cache hit: second `getSecret(name)` call within TTL returns cached value, no client call
+- Cache miss / TTL expiry: call after `expiresAt` triggers fresh `accessSecretVersion`
+- Vault success path: `accessSecretVersion` returns payload → `getSecret` returns `value.payload.data.toString()`
+- Vault error → env fallback: `accessSecretVersion` rejects, `process.env[name]` set → returns env value silently
+- Vault error → no fallback: `accessSecretVersion` rejects, `process.env[name]` undefined → throws `SecretNotFoundError` with vault console URL in message
+- `SecretNotFoundError.name === 'SecretNotFoundError'` (instanceof check works)
+- Lazy client init: client constructor not called until first `getSecret`
+- Single-flight (recommended): two concurrent `getSecret(name)` calls during cache miss share one `accessSecretVersion` (mirrors `github-app.ts` pattern)
+
+Framework: Vitest 4.x with `vi.mock('@google-cloud/secret-manager')`; matches admin app pattern in `github-app.test.ts`.
+
+**Layer 2 — Consumer integration tests (admin + CRM)**
+- Admin: mock `@myalterlego/secrets` `getSecret` in test setup; verify `slack.ts`, `slack-crypto.ts`, `github-app.ts`, `slack-identity.ts` all call `getSecret` with the correct key name
+- Admin `slack-identity.ts`: `resolveSlackUserEmail` returns the right email for a known Slack user_id when `SLACK_USER_MAP` JSON is mocked
+- CRM: mock `getSecret`; verify `getSlackClient` and `getSlackSigningSecret` no longer query the `settings` table
+- Health endpoint: mock `getSecret` to succeed for 5/7 keys, fail for 2 → response is 207 with per-key status array
+
+**Layer 3 — Live vault verification (HUMAN-UAT, post-deploy)**
+- Run `GET /api/platform/health/secrets` against deployed `admin.triarch.dev` with staff session → 200 with all 7 keys `ok: true`
+- Run same against deployed `admin.triarchsecurity.com` after VAULT-06 ships → 200 with all 7 keys `ok: true`
+- Functional smoke: trigger a Slack release approval flow → confirms `SLACK_BOT_TOKEN`, `SLACK_SIGNING_SECRET`, `SLACK_PAYLOAD_SECRET`, `GITHUB_APP_*` all resolved from vault during a real request
+
+### Sample Rate / Coverage
+
+- **Package callsites:** 100% — the package has only one exported async function (`getSecret`); every code path in it must have a test
+- **Consumer callsites:** Every callsite that previously read one of the 7 keys via `process.env` (admin) or `settings` table (CRM) gets updated. Sample required: at least one test per consumer file (4 admin files + 2 CRM files = 6 files minimum)
+- **Fallback paths:** All 3 fallback branches (vault success, vault-fail-with-env, vault-fail-no-env) tested at the package level — consumer tests can assume the package works
+- **Secret coverage:** All 7 secrets exercised in the health endpoint test; the 7-key list lives in one constant, so a single assertion covers all keys
+- **Representative sample:** "All 7 keys present in health endpoint constant" + "every consumer file has at least one test calling `getSecret` with the right key name" — this proves migration completeness without testing every code branch in every consumer
+
+### Validation Commands
+
+**Migration completeness (zero-match grep checks):**
+```bash
+# Admin: no direct env reads remain for any of the 7 keys
+cd /Users/mikegeehan/claude/triarch/development/admin
+for KEY in SLACK_BOT_TOKEN SLACK_SIGNING_SECRET SLACK_PAYLOAD_SECRET \
+           GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID; do
+  echo "== $KEY ==" && grep -rn "process\.env\.${KEY}" src/ --include='*.ts' || echo "  clean"
+done
+# Expected: each section reports "clean" (or matches only in test files / fallback comment)
+
+# Admin: SLACK_USER_MAP no longer hardcoded
+grep -n "U0AJM4MP2N6" src/lib/slack-identity.ts
+# Expected: zero matches (hardcoded map removed)
+
+# CRM: no `settings` table lookups for slack creds
+cd /Users/mikegeehan/claude/triarch/security/admin
+grep -rn "slack_bot_token\|slack_signing_secret" src/ --include='*.ts'
+# Expected: zero matches in src/lib/slack.ts (settings reads removed)
+```
+
+**Package published + installed:**
+```bash
+# Verify package published to GitHub Packages
+NODE_AUTH_TOKEN=$GH_PAT npm view @myalterlego/secrets version --registry=https://npm.pkg.github.com
+# Expected: "0.1.0" (or current bumped version)
+
+# Verify installed in admin
+cd /Users/mikegeehan/claude/triarch/development/admin
+npm ls @myalterlego/secrets
+# Expected: @myalterlego/secrets@0.x.y listed under dependencies
+
+# Verify installed in CRM
+cd /Users/mikegeehan/claude/triarch/security/admin
+npm ls @myalterlego/secrets
+# Expected: @myalterlego/secrets@0.x.y listed under dependencies
+```
+
+**Vault provisioning (HUMAN, gcloud auth required):**
+```bash
+# All 7 secrets exist
+gcloud secrets list --project=triarch-vault --format="value(name)" | sort
+# Expected exactly:
+#   GITHUB_APP_ID
+#   GITHUB_APP_INSTALLATION_ID
+#   GITHUB_APP_PRIVATE_KEY
+#   SLACK_BOT_TOKEN
+#   SLACK_PAYLOAD_SECRET
+#   SLACK_SIGNING_SECRET
+#   SLACK_USER_MAP
+
+# Each secret has at least one version
+for S in SLACK_BOT_TOKEN SLACK_SIGNING_SECRET SLACK_PAYLOAD_SECRET \
+         GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID SLACK_USER_MAP; do
+  gcloud secrets versions list "$S" --project=triarch-vault --limit=1 --format="value(name)" || echo "MISSING: $S"
+done
+
+# IAM bindings show secretAccessor for the App Hosting compute SA on each secret
+for S in SLACK_BOT_TOKEN SLACK_SIGNING_SECRET SLACK_PAYLOAD_SECRET \
+         GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID SLACK_USER_MAP; do
+  gcloud secrets get-iam-policy "$S" --project=triarch-vault \
+    --filter="bindings.role:roles/secretmanager.secretAccessor"
+done
+
+# Round-trip verification: actually read a secret as the runtime SA would
+gcloud secrets versions access latest --secret=SLACK_BOT_TOKEN --project=triarch-vault | head -c 20
+# Expected: first 20 chars of the token (xoxb-...)
+```
+
+**Tests pass:**
+```bash
+# Package tests (in the @myalterlego/secrets repo)
+npm test
+# Expected: all tests green
+
+# Admin app tests
+cd /Users/mikegeehan/claude/triarch/development/admin
+npx vitest run
+# Expected: existing tests still green; new tests for migrated files green
+
+# CRM app tests — CRM has no test framework currently; add minimal vitest setup if VAULT-06 introduces tests
+```
+
+**Health endpoint live check (post-deploy):**
+```bash
+# Authenticated curl as staff
+curl -s -b "next-auth.session-token=<staff-session>" https://admin.triarch.dev/api/platform/health/secrets | jq .
+# Expected: { "ok": true, "secrets": [ { "key": "SLACK_BOT_TOKEN", "ok": true, "length": 56 }, ... ] }
+```
+
+### Failure Modes to Validate
+
+| Failure mode | Detection method | Test required |
+|--------------|-----------------|---------------|
+| **Stale cache after rotation** | Set short TTL in test, advance timers past `expiresAt`, assert second call hits vault | Package unit test |
+| **Cache poisoning across secrets** | Cache key collision — two different secrets returning same cached value | Package unit test: two `getSecret` calls with different names return distinct values |
+| **Auth failure → silent env fallback masks production outage** | When NO env fallback set, error must surface; when env IS set, log a warning so audit logs show vault was unavailable | Package unit test: assert `console.warn` called when fallback engaged in production-shaped env |
+| **Missing IAM grant** | Vault call rejects with `PERMISSION_DENIED`; in production with no env fallback, must throw `SecretNotFoundError` | Package unit test mocks PERMISSION_DENIED + integration test in HUMAN-UAT |
+| **Local dev without GCP credentials** | `getSecret` falls back to `process.env`; `.env.local` continues to work | Package unit test simulates rejected client + present env var |
+| **PEM newline mangling** (`GITHUB_APP_PRIVATE_KEY`) | Vault returns PEM with literal `\n`; consumer must normalize | Existing `github-app.test.ts` "PEM newline normalization" test still passes after migration |
+| **`SLACK_USER_MAP` JSON parse failure** | Vault returns malformed JSON; `resolveSlackUserEmail` throws | New unit test in `slack-identity.test.ts` (created during VAULT-05): malformed JSON → caller-friendly error |
+| **Wrong service account granted** | `firebase-adminsdk-fbsvc` granted instead of `firebase-app-hosting-compute` → all vault reads fail in production | HUMAN-UAT health endpoint check post-deploy catches this |
+| **Cache hit returning Promise from in-flight fetch** (single-flight bug) | Two concurrent calls before first resolves cause double fetch or wrong shared value | Package unit test: two parallel calls during cache miss, mock fetch returns once, both promises resolve to same value |
+| **Closeout step removes Firebase secrets too early** | Firebase secret deleted while CRM still depends on env fallback → outage | Closeout is OUT OF SCOPE for this phase; explicitly deferred per CONTEXT.md |
+
+### Per-Requirement Validation Mapping
+
+| Req | Validation strategy |
+|-----|--------------------|
+| **VAULT-01** | `gcloud projects describe triarch-vault` returns project; `gcloud services list --project=triarch-vault --filter="name:secretmanager"` shows API enabled; billing linked confirmed via `gcloud beta billing projects describe triarch-vault` |
+| **VAULT-02** | `gcloud secrets list --project=triarch-vault` returns exactly the 7 expected names; each has `gcloud secrets versions list ... --limit=1` returning a version |
+| **VAULT-03** | `gcloud secrets get-iam-policy <secret> --project=triarch-vault` shows `roles/secretmanager.secretAccessor` for the App Hosting compute SA of each consuming Firebase project (`triarch-dev-website` AND `triarchsecurity-admin`) — for every secret each project consumes; functional confirmation via successful health endpoint call post-deploy |
+| **VAULT-04** | `npm view @myalterlego/secrets version --registry=https://npm.pkg.github.com` returns published version; package unit tests green; package importable in a fresh consumer (`npm install @myalterlego/secrets && node -e "import('@myalterlego/secrets').then(m => console.log(typeof m.getSecret))"` prints `function`) |
+| **VAULT-05** | Admin `grep -rn "process\.env\.SLACK_BOT_TOKEN" src/` returns no matches (or only in fallback comments); admin vitest suite green; deployed `admin.triarch.dev/api/platform/health/secrets` returns 200 with all 7 keys ok; functional Slack approval flow works end-to-end |
+| **VAULT-06** | CRM `grep -rn "slack_bot_token" src/` returns no matches in `src/lib/slack.ts`; CRM `.npmrc` exists with GitHub Packages registry config; `NODE_AUTH_TOKEN` wired in CI; deployed `admin.triarchsecurity.com/api/platform/health/secrets` (or equivalent) returns 200; functional bug-report Slack notification still posts |
+| **VAULT-07** | `docs/onboarding-projects.md` contains a "Step 7" or equivalent vault-access section; new `docs/secrets-vault.md` exists; both reference the verified service account name from VAULT-03 |
