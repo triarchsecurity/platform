@@ -71,7 +71,7 @@ vi.mock('@/lib/db', () => {
 const resolveMock = vi.fn();
 
 vi.mock('@/lib/slack-identity', () => ({
-  resolveSlackUserEmail: (id: string) => resolveMock(id),
+  resolveSlackUserEmail: async (id: string) => resolveMock(id),
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

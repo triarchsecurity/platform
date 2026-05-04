@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
 
   // STEP 9: Resolve Slack user_id to staff email — BEFORE any DB writes.
   // Unmapped users get an ephemeral message and no action is taken.
-  const email = resolveSlackUserEmail(slackUserId);
+  const email = await resolveSlackUserEmail(slackUserId);
   if (!email) {
     console.warn('[slack-interact] unmapped user', { slackUserId });
     return NextResponse.json({
