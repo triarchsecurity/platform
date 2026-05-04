@@ -5,6 +5,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import { verifySlackSignature, verifyPayload } from '@/lib/slack-crypto';
 import { resolveSlackUserEmail } from '@/lib/slack-identity';
 import { approveRelease, rejectRelease } from '@/lib/release-actions';
+import { promoteAndAudit } from '@/lib/release-promotion';
 
 type ActionId = 'slack_promote' | 'slack_reject';
 const ACTION_TO_EXPECTED: Record<ActionId, 'promote' | 'reject'> = {
@@ -165,6 +166,24 @@ export async function POST(req: NextRequest) {
         text: result.message,
       });
     }
+    // Phase 4: trigger background promotion dispatch (fire-and-forget).
+    // Slack 3-second rule: we MUST return 200 within 3s; the dispatch happens after the response.
+    // Guarded by !alreadyApproved to mirror Phase 3's idempotency pattern - re-clicks do not re-dispatch.
+    // The promoteAndAudit function never throws explicitly; the .catch is a defense for unexpected DB errors.
+    if (!result.alreadyApproved && payload.channel?.id && payload.message?.ts) {
+      const channelId = payload.channel.id;
+      const messageTs = payload.message.ts;
+      promoteAndAudit({
+        release,
+        actorEmail: email,
+        channelId,
+        messageTs,
+        slackUserName,
+      }).catch((err) => {
+        console.error('[slack-interact] promoteAndAudit unexpected error', err);
+      });
+    }
+
     // STEP 15: Replace original message to reflect new promoted state
     return NextResponse.json({
       replace_original: true,
