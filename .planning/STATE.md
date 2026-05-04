@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T02:10:07.547Z"
+last_updated: "2026-05-04T02:17:57.644Z"
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Triarch Dev Admin — Project State
@@ -18,14 +18,14 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 02 — customer-releases-page
+**Current focus:** Phase 02 complete — Phase 03 is next (Slack notification + GitHub App wiring)
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 6 (Phase 1.1 inserted)
 **Requirements:** 42 (32 original + 10 added in Phase 1.1)
-**Status:** Executing Phase 02
+**Status:** Phase 02 complete — 5/5 plans done, all GATE + REJECT requirements addressed
 
 ## Decisions
 
@@ -61,10 +61,13 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 02]: notFound() called for both missing project and non-member — indistinguishable 404 for GATE-01 no-leak guarantee
 - [Phase 02-04]: Idempotent re-approval returns 200 with alreadyApproved:true + existing row; double-rejection is 409 per REJECT-01
 - [Phase 02-04]: Non-members receive 404 (not 403) to avoid leaking project existence — same pattern as release-logs/[id]
+- [Phase 02-05]: Auto-dismiss timer for success toasts lives in ReleasesClient useEffect, not in Toast.tsx — Toast is purely presentational
+- [Phase 02-05]: Countdown intervals tracked per-releaseId in approveStep Record — supports multiple expanded rows simultaneously
+- [Phase 02-05]: GET pagination endpoint mirrors page.tsx sort exactly (coalesce DESC) for stable offset semantics
 
 ## Stopped At
 
-Completed 02-01-PLAN.md (Wave 1) — reason column + three relations() declarations + migration 0008 generated. DB push deferred to human (DATABASE_URL is Firebase secret). Wave 2 plans (02-02, 02-03, 02-04) are unblocked and can proceed in parallel.
+Completed 02-05-PLAN.md (Wave 3 final) — Toast component, GET pagination endpoint, and full production ReleasesClient. Phase 02 customer-releases-page is feature-complete. DB migration (0008) is still pending human push (DATABASE_URL is Firebase secret — same blocker from Wave 1). Phase 03 (Slack notification + GitHub App wiring) is unblocked from a code perspective.
 
 ## Repository state
 

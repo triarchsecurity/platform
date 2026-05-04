@@ -72,7 +72,7 @@ Build order: schema and access control first (everything depends on them), then 
 - [x] 02-02-PLAN.md — Customer layout + page server component (membership 404-no-leak) + shared types + placeholder client
 - [x] 02-03-PLAN.md — Feedback API endpoints (POST + DELETE with 24h author window)
 - [x] 02-04-PLAN.md — Approve + Reject API endpoints with atomic transactions + idempotency + REJECT-01 enforcement
-- [ ] 02-05-PLAN.md — Toast component + pagination GET endpoint + full ReleasesClient (replaces Plan 02 placeholder)
+- [x] 02-05-PLAN.md — Toast component + pagination GET endpoint + full ReleasesClient (replaces Plan 02 placeholder)
 
 ### Phase 3: Slack Interactive Approval
 **Goal**: Approval action sends a real Slack message with interactive buttons; the callback path is signature-verified and securely identifies the release.

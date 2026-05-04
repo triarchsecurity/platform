@@ -89,7 +89,7 @@ Customer-facing gating UI lives at `/projects/{slug}/releases`.
 
 - [x] **GATE-01**: Route `/projects/{slug}/releases` renders only if requesting user is a member of the project or has `staff` role; otherwise 404 (do not leak project existence to non-members)
 - [x] **GATE-02**: Page lists releases for the project ordered by `deployed_at` desc, with columns: version, env, status badge, commit_sha (short), deployed_at, approver (if present)
-- [ ] **GATE-03**: Each release row supports inline feedback submission; submitted feedback persists to `release_feedback` with author email + timestamp; previously-submitted feedback is rendered chronologically beneath the row
+- [x] **GATE-03**: Each release row supports inline feedback submission; submitted feedback persists to `release_feedback` with author email + timestamp; previously-submitted feedback is rendered chronologically beneath the row
 - [x] **GATE-04**: "Approve for Production" button visible only to project members with role `admin` and only when `status = 'dev'`; disabled in any other state
 - [x] **GATE-05**: Approval action writes a `release_approvals` row capturing approver email, timestamp, request IP, and user-agent; idempotent — second approval attempt for an already-approved release is a no-op with a clear UI message
 - [x] **GATE-06**: Approval transitions `releaseLogs.status` from `dev` → `approved` atomically with the audit-row insert
