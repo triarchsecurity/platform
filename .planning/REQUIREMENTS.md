@@ -104,8 +104,8 @@ Outgoing message + signed-callback handler.
 - [ ] **GATE-07**: Approval action POSTs a Slack message to `#release-approvals` via Slack App Web API (`chat.postMessage`) — message contains project name, version, approver, and feedback excerpt
 - [ ] **GATE-08**: Slack message includes interactive buttons `Approve & Promote` and `Reject` (action IDs include a signed reference to the release_id; signature uses `SLACK_PAYLOAD_SECRET` env var, distinct from the Slack signing secret)
 - [ ] **GATE-09**: New endpoint `POST /api/slack/interact` — verifies `X-Slack-Signature` header against `SLACK_SIGNING_SECRET` per Slack's HMAC scheme; rejects with 401 if invalid or replay-window exceeded (5 min)
-- [ ] **GATE-09a**: Handler validates the embedded payload signature, looks up the release, checks the actor's Slack user identity is mapped to a known staff email, and dispatches the next phase
-- [ ] **ENV-S01**: Slack App created in Slack workspace with `chat:write` scope; bot token, signing secret, and payload secret stored in App Hosting secrets (documented in `apphosting.yaml` secret references)
+- [x] **GATE-09a**: Handler validates the embedded payload signature, looks up the release, checks the actor's Slack user identity is mapped to a known staff email, and dispatches the next phase
+- [x] **ENV-S01**: Slack App created in Slack workspace with `chat:write` scope; bot token, signing secret, and payload secret stored in App Hosting secrets (documented in `apphosting.yaml` secret references)
 
 ---
 
@@ -164,7 +164,7 @@ Captured in `BACKLOG.md`:
 | GATE-01, GATE-02, GATE-03, GATE-04, GATE-05, GATE-06 | Phase 2 | Pending |
 | REJECT-01 | Phase 2 | Complete |
 | GATE-07, GATE-08, GATE-09, GATE-09a | Phase 3 | Pending |
-| ENV-S01 | Phase 3 | Pending |
+| ENV-S01 | Phase 3 | Complete |
 | GATE-10, GATE-11, GATE-11a, GATE-11b | Phase 4 | Pending |
 | ENV-G01 | Phase 4 | Pending |
 | GATE-12, GATE-13 | Phase 5 | Pending |

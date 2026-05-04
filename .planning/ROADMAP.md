@@ -86,10 +86,10 @@ Build order: schema and access control first (everything depends on them), then 
   5. Handler validates the embedded payload signature and resolves the release before taking any action
 **Plans:** 5 plans
 - [ ] 03-01-PLAN.md — Slack crypto helpers (signPayload / verifyPayload / verifySlackSignature) + SLACK_USER_MAP identity mapping
-- [ ] 03-02-PLAN.md — Extract release-actions.ts shared helpers (approveRelease / rejectRelease) + refactor Phase 2 routes to delegate
+- [x] 03-02-PLAN.md — Extract release-actions.ts shared helpers (approveRelease / rejectRelease) + refactor Phase 2 routes to delegate
 - [ ] 03-03-PLAN.md — notifyReleaseApproved Slack message with signed buttons + wire fire-and-forget into Phase 2 approve route
 - [ ] 03-04-PLAN.md — POST /api/slack/interact handler with signature + payload verification + identity dispatch + Vitest suite
-- [ ] 03-05-PLAN.md — apphosting.yaml secret references + 03-HUMAN-UAT.md runbook + ENV-S01 human checkpoint
+- [x] 03-05-PLAN.md — apphosting.yaml secret references + 03-HUMAN-UAT.md runbook + ENV-S01 human checkpoint
 
 ### Phase 4: GitHub App Promotion
 **Goal**: A successful Slack-button approval dispatches the project's `deploy-prod.yml` via GitHub App installation token (not a PAT).

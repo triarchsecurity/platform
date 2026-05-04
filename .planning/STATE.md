@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
-status: planning
-last_updated: "2026-05-04T02:38:18.260Z"
+status: executing
+last_updated: "2026-05-04T14:21:24.731Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 20
+  completed_plans: 17
 ---
 
 # Triarch Dev Admin — Project State
@@ -18,14 +18,14 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 02 complete — Phase 03 is next (Slack notification + GitHub App wiring)
+**Current focus:** Phase 03 — slack-interactive-approval
 
 ## Active Milestone: v1.14.0 — Customer Release Gating
 
 **Goal:** Customer admins approve dev releases via admin.triarch.dev → Slack interactive buttons → GitHub App workflow_dispatch → status round-trips back; Truth+Treason is the pilot.
 **Phases:** 6 (Phase 1.1 inserted)
 **Requirements:** 42 (32 original + 10 added in Phase 1.1)
-**Status:** Ready to plan
+**Status:** Executing Phase 03
 
 ## Decisions
 
@@ -64,6 +64,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 02-05]: Auto-dismiss timer for success toasts lives in ReleasesClient useEffect, not in Toast.tsx — Toast is purely presentational
 - [Phase 02-05]: Countdown intervals tracked per-releaseId in approveStep Record — supports multiple expanded rows simultaneously
 - [Phase 02-05]: GET pagination endpoint mirrors page.tsx sort exactly (coalesce DESC) for stable offset semantics
+- [Phase 03]: SLACK_RELEASE_APPROVAL_CHANNEL is plain env var (RUNTIME-only) with #release-approvals default; Slack secrets carry no availability field (App Hosting RUNTIME default); HUMAN-UAT runbook is formal gate for ENV-S01
+- [Phase 03-slack-interactive-approval]: RejectResult uses discriminated union — callers map code to HTTP status; reason trimming in helper for single source of truth
 
 ## Stopped At
 
