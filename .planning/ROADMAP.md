@@ -85,7 +85,7 @@ Build order: schema and access control first (everything depends on them), then 
   4. `POST /api/slack/interact` verifies `X-Slack-Signature` header against the Slack signing secret with a 5-minute replay window; rejects invalid or stale requests with 401
   5. Handler validates the embedded payload signature and resolves the release before taking any action
 **Plans:** 5 plans
-- [ ] 03-01-PLAN.md — Slack crypto helpers (signPayload / verifyPayload / verifySlackSignature) + SLACK_USER_MAP identity mapping
+- [x] 03-01-PLAN.md — Slack crypto helpers (signPayload / verifyPayload / verifySlackSignature) + SLACK_USER_MAP identity mapping
 - [x] 03-02-PLAN.md — Extract release-actions.ts shared helpers (approveRelease / rejectRelease) + refactor Phase 2 routes to delegate
 - [ ] 03-03-PLAN.md — notifyReleaseApproved Slack message with signed buttons + wire fire-and-forget into Phase 2 approve route
 - [ ] 03-04-PLAN.md — POST /api/slack/interact handler with signature + payload verification + identity dispatch + Vitest suite

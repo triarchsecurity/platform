@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T14:21:24.731Z"
+last_updated: "2026-05-04T14:22:14.769Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Triarch Dev Admin — Project State
@@ -66,6 +66,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 02-05]: GET pagination endpoint mirrors page.tsx sort exactly (coalesce DESC) for stable offset semantics
 - [Phase 03]: SLACK_RELEASE_APPROVAL_CHANNEL is plain env var (RUNTIME-only) with #release-approvals default; Slack secrets carry no availability field (App Hosting RUNTIME default); HUMAN-UAT runbook is formal gate for ENV-S01
 - [Phase 03-slack-interactive-approval]: RejectResult uses discriminated union — callers map code to HTTP status; reason trimming in helper for single source of truth
+- [Phase 03-slack-interactive-approval]: HMAC-SHA256 payload signing uses base64url sig packed as {releaseId}.{nonce}.{sig} for Slack button value compactness
+- [Phase 03-slack-interactive-approval]: SLACK_USER_MAP initially empty — Mike populates during HUMAN-UAT plan 03-05
 
 ## Stopped At
 
