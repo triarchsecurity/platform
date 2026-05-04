@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T14:22:14.769Z"
+last_updated: "2026-05-04T14:26:06.302Z"
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Triarch Dev Admin — Project State
@@ -68,6 +68,9 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 03-slack-interactive-approval]: RejectResult uses discriminated union — callers map code to HTTP status; reason trimming in helper for single source of truth
 - [Phase 03-slack-interactive-approval]: HMAC-SHA256 payload signing uses base64url sig packed as {releaseId}.{nonce}.{sig} for Slack button value compactness
 - [Phase 03-slack-interactive-approval]: SLACK_USER_MAP initially empty — Mike populates during HUMAN-UAT plan 03-05
+- [Phase 03-slack-interactive-approval]: notifyReleaseApproved takes pre-truncated feedbackExcerpt (caller's job) — keeps block construction declarative
+- [Phase 03-slack-interactive-approval]: Slack call is awaited inside try/catch (not unawaited) — serverless runtime keeps function alive; errors are swallowed not propagated
+- [Phase 03-slack-interactive-approval]: Guard on !result.alreadyApproved prevents duplicate Slack posts on idempotent re-approvals
 
 ## Stopped At
 

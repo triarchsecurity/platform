@@ -101,7 +101,7 @@ Customer-facing gating UI lives at `/projects/{slug}/releases`.
 
 Outgoing message + signed-callback handler.
 
-- [ ] **GATE-07**: Approval action POSTs a Slack message to `#release-approvals` via Slack App Web API (`chat.postMessage`) — message contains project name, version, approver, and feedback excerpt
+- [x] **GATE-07**: Approval action POSTs a Slack message to `#release-approvals` via Slack App Web API (`chat.postMessage`) — message contains project name, version, approver, and feedback excerpt
 - [x] **GATE-08**: Slack message includes interactive buttons `Approve & Promote` and `Reject` (action IDs include a signed reference to the release_id; signature uses `SLACK_PAYLOAD_SECRET` env var, distinct from the Slack signing secret)
 - [x] **GATE-09**: New endpoint `POST /api/slack/interact` — verifies `X-Slack-Signature` header against `SLACK_SIGNING_SECRET` per Slack's HMAC scheme; rejects with 401 if invalid or replay-window exceeded (5 min)
 - [x] **GATE-09a**: Handler validates the embedded payload signature, looks up the release, checks the actor's Slack user identity is mapped to a known staff email, and dispatches the next phase
