@@ -133,7 +133,7 @@
 | 1. Schema + Membership Migration | v1.14.0 | 4/4 | Complete | 2026-05-03 |
 | 1.1. Membership Enforcement Audit | v1.14.0 | 6/6 | Complete | 2026-05-03 |
 | 2. Customer Releases Page | v1.14.0 | 5/5 | Complete | 2026-05-04 |
-| 3. Slack Interactive Approval | v1.14.0 | 3/3 | Complete   | 2026-05-04 |
+| 3. Slack Interactive Approval | v1.14.0 | 3/3 | Complete    | 2026-05-04 |
 | 4. GitHub App Promotion | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 1. Central Secrets Vault | v2.0 | 0/TBD | Not started | - |
