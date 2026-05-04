@@ -147,6 +147,9 @@ export const releaseLogs = pgTable('release_logs', {
   status: varchar('status', { length: 24 }),              // 'dev' | 'pending_approval' | 'approved' | 'rejected' | 'promoted' — nullable for legacy rows; backfill sets 'dev'
   commitSha: varchar('commit_sha', { length: 64 }),       // populated for new CI rows
   deployedAt: timestamp('deployed_at', { withTimezone: true }),  // populated for new CI rows; backfill copies createdAt
+  // ── v1.14.0 Phase 4: GitHub App promotion dispatch audit ──
+  promotionDispatchedAt: timestamp('promotion_dispatched_at', { withTimezone: true }),  // populated when /api/slack/interact dispatches deploy-prod.yml
+  promotionDispatchedBy: varchar('promotion_dispatched_by', { length: 256 }),           // mapped staff email of the Slack actor who clicked Promote
   metadata: jsonb('metadata').default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
