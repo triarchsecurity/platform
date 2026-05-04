@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T15:31:50.079Z"
+last_updated: "2026-05-04T15:31:57.134Z"
 progress:
   total_phases: 6
   completed_phases: 5
@@ -83,6 +83,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 04]: chat.update strictly guarded to failure path - success path never amends the original Slack message
 - [Phase 05-round-trip-+-shared-workflows+pilot]: format.ts shared module extracted from ReleasesClient for formatRelativeTime/formatDeployedAt — avoids circular import from Timeline.tsx into 800-line client component
 - [Phase 05-round-trip-+-shared-workflows+pilot]: pairedProd only populated for env='dev' rows — prod rows surface via dev row's pairedProd field to avoid double-listing
+- [Phase 05-01]: dev-row lookup done outside transaction; idempotency short-circuit before transaction opens; returns 200 immediately on prod row existence check
 
 ## Stopped At
 
