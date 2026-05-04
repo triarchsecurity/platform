@@ -50,3 +50,70 @@ github-actions@triarchsecurity-admin.iam.gserviceaccount.com                GitH
 SA_ADMIN="firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com"
 SA_CRM="firebase-app-hosting-compute@triarchsecurity-admin.iam.gserviceaccount.com"
 ```
+
+## Step 2 — IAM bindings created
+
+### Admin SA bindings (7 secrets)
+
+```bash
+$ for SECRET in SLACK_BOT_TOKEN SLACK_SIGNING_SECRET SLACK_PAYLOAD_SECRET \
+                GITHUB_APP_ID GITHUB_APP_PRIVATE_KEY GITHUB_APP_INSTALLATION_ID SLACK_USER_MAP; do
+    gcloud secrets add-iam-policy-binding "$SECRET" \
+      --project=triarch-vault \
+      --member="serviceAccount:${SA_ADMIN}" \
+      --role="roles/secretmanager.secretAccessor"
+  done
+```
+
+All 7 invocations succeeded:
+
+```
+--- SLACK_BOT_TOKEN ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk8yOTU=  version: 1
+--- SLACK_SIGNING_SECRET ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk8-MEI=  version: 1
+--- SLACK_PAYLOAD_SECRET ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk9KZnE=  version: 1
+--- GITHUB_APP_ID ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk9VXGw=  version: 1
+--- GITHUB_APP_PRIVATE_KEY ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk9fugo=  version: 1
+--- GITHUB_APP_INSTALLATION_ID ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk9sAkg=  version: 1
+--- SLACK_USER_MAP ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk94MaU=  version: 1
+```
+
+### CRM SA bindings (2 secrets)
+
+```bash
+$ for SECRET in SLACK_BOT_TOKEN SLACK_SIGNING_SECRET; do
+    gcloud secrets add-iam-policy-binding "$SECRET" \
+      --project=triarch-vault \
+      --member="serviceAccount:${SA_CRM}" \
+      --role="roles/secretmanager.secretAccessor"
+  done
+```
+
+Both invocations succeeded:
+
+```
+--- SLACK_BOT_TOKEN ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk-EjJM=  version: 1
+--- SLACK_SIGNING_SECRET ---  role: roles/secretmanager.secretAccessor  etag: BwZRBk-QraA=  version: 1
+```
+
+## Step 3 — Verification
+
+### Admin (all 7 ok)
+
+```
+SLACK_BOT_TOKEN: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+SLACK_SIGNING_SECRET: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+SLACK_PAYLOAD_SECRET: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+GITHUB_APP_ID: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+GITHUB_APP_PRIVATE_KEY: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+GITHUB_APP_INSTALLATION_ID: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+SLACK_USER_MAP: serviceAccount:firebase-app-hosting-compute@triarch-dev-website.iam.gserviceaccount.com
+```
+
+### CRM (2 ok)
+
+```
+SLACK_BOT_TOKEN: serviceAccount:firebase-app-hosting-compute@triarchsecurity-admin.iam.gserviceaccount.com
+SLACK_SIGNING_SECRET: serviceAccount:firebase-app-hosting-compute@triarchsecurity-admin.iam.gserviceaccount.com
+```
+
+`secretAccessor` role binding present on every consumer × secret pair (7 + 2 = 9 bindings total). No `MISSING` results.
