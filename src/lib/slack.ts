@@ -1,6 +1,9 @@
+import { signPayload } from '@/lib/slack-crypto';
+
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 const SLACK_BUG_CHANNEL = process.env.SLACK_BUG_CHANNEL ?? '#triarch-bugs';
 const SLACK_FEATURE_CHANNEL = process.env.SLACK_FEATURE_CHANNEL ?? '#triarch-features';
+const SLACK_RELEASE_APPROVAL_CHANNEL = process.env.SLACK_RELEASE_APPROVAL_CHANNEL ?? '#release-approvals';
 
 interface SlackMessage {
   channel: string;
@@ -148,5 +151,64 @@ export async function notifyFeatureRequest(feature: {
         ],
       },
     ],
+  });
+}
+
+export async function notifyReleaseApproved(input: {
+  releaseId: string;
+  project: string;
+  version: string;
+  approverEmail: string;
+  status: string;
+  feedbackExcerpt: string; // already <= 200 chars per caller
+  feedbackOverflowCount: number; // 0 if no overflow
+}) {
+  const blocks: unknown[] = [
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `:rocket: *Release Approved: ${input.project} ${input.version}*\n*Approver:* ${input.approverEmail}\n*Status:* ${input.status}`,
+      },
+    },
+  ];
+
+  if (input.feedbackExcerpt) {
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text:
+          `> ${input.feedbackExcerpt}` +
+          (input.feedbackOverflowCount > 0 ? `\n_(${input.feedbackOverflowCount} more comments)_` : ''),
+      },
+    });
+  }
+
+  blocks.push({
+    type: 'actions',
+    block_id: `release_actions_${input.releaseId}`,
+    elements: [
+      {
+        type: 'button',
+        text: { type: 'plain_text', text: 'Approve & Promote' },
+        style: 'primary',
+        action_id: 'slack_promote',
+        value: signPayload(input.releaseId, 'promote'),
+      },
+      {
+        type: 'button',
+        text: { type: 'plain_text', text: 'Reject' },
+        style: 'danger',
+        action_id: 'slack_reject',
+        value: signPayload(input.releaseId, 'reject'),
+      },
+    ],
+  });
+
+  return postSlackMessage({
+    channel: SLACK_RELEASE_APPROVAL_CHANNEL,
+    text: `Release Approved: ${input.project} ${input.version}`,
+    blocks,
   });
 }
