@@ -66,7 +66,7 @@
   2. `slack_action_audit` table exists with all required columns and a `created_at desc` index
   3. GitHub App `Triarch Release Gate` has `contents:write` permission and the installation is re-authorized — a test workflow dispatch that writes to a branch succeeds
 **Plans**: 3 plans
-- [ ] 03-01-PLAN.md — Add `release_logs.branch` column + migration 0010 + ingest endpoint update (SCHEMA-01)
+- [x] 03-01-PLAN.md — Add `release_logs.branch` column + migration 0010 + ingest endpoint update (SCHEMA-01)
 - [ ] 03-02-PLAN.md — Create `slack_action_audit` table + migration 0011 (SCHEMA-02)
 - [x] 03-03-PLAN.md — HUMAN-UAT runbook for GitHub App contents:write upgrade (SCHEMA-03)
 
@@ -133,7 +133,7 @@
 | 1. Schema + Membership Migration | v1.14.0 | 4/4 | Complete | 2026-05-03 |
 | 1.1. Membership Enforcement Audit | v1.14.0 | 6/6 | Complete | 2026-05-03 |
 | 2. Customer Releases Page | v1.14.0 | 5/5 | Complete | 2026-05-04 |
-| 3. Slack Interactive Approval | v1.14.0 | 1/3 | In Progress|  |
+| 3. Slack Interactive Approval | v1.14.0 | 2/3 | In Progress|  |
 | 4. GitHub App Promotion | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 1. Central Secrets Vault | v2.0 | 0/TBD | Not started | - |
