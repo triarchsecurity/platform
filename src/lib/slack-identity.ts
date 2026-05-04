@@ -5,7 +5,7 @@
  * To find your Slack user_id: Slack profile → "..." menu → Copy member ID.
  */
 export const SLACK_USER_MAP: Record<string, string> = {
-  // 'U_REPLACE_WITH_MIKES_SLACK_USER_ID': 'mike@triarchsecurity.com',
+  U0AJM4MP2N6: 'mike@triarchsecurity.com',
 };
 
 /**

@@ -6,6 +6,8 @@ import { verifySlackSignature, verifyPayload } from '@/lib/slack-crypto';
 import { resolveSlackUserEmail } from '@/lib/slack-identity';
 import { approveRelease, rejectRelease } from '@/lib/release-actions';
 import { promoteAndAudit } from '@/lib/release-promotion';
+import { getActionHandler } from '@/lib/slack-actions';
+import type { SlackInteractivePayload } from '@/lib/slack-actions';
 
 type ActionId = 'slack_promote' | 'slack_reject';
 const ACTION_TO_EXPECTED: Record<ActionId, 'promote' | 'reject'> = {
@@ -43,14 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'no_payload' }, { status: 400 });
   }
 
-  let payload: {
-    type: string;
-    user: { id: string; name: string; username?: string };
-    actions: Array<{ action_id: string; block_id: string; value: string }>;
-    response_url?: string;
-    message?: { ts: string };
-    channel?: { id: string; name?: string };
-  };
+  let payload: SlackInteractivePayload;
 
   try {
     payload = JSON.parse(payloadStr);
@@ -69,13 +64,35 @@ export async function POST(req: NextRequest) {
   const slackUserId = payload.user?.id as string | undefined;
   const slackUserName = (payload.user?.username ?? payload.user?.name ?? 'someone') as string;
 
-  // STEP 7: Dispatch table — map action_id to expected embedded payload action
+  // STEP 6: Capture audit context shared across all action handlers
+  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+  const userAgent = req.headers.get('user-agent')?.slice(0, 512) ?? null;
+
+  // STEP 7: Dispatch by action_id.
+  //   - 'slack_*' actions are release-gating (Phase 3) — handled inline below
+  //     with embedded payload signature verification (GATE-08).
+  //   - All other action_ids (bug/feature workflows, future expansions) route
+  //     through the unified registry in @/lib/slack-actions.
   if (actionId !== 'slack_promote' && actionId !== 'slack_reject') {
-    return NextResponse.json({
-      response_type: 'ephemeral',
-      replace_original: false,
-      text: 'Unknown action',
-    });
+    const handler = getActionHandler(actionId);
+    if (!handler) {
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Unknown action',
+      });
+    }
+    try {
+      const result = await handler({ payload, action, rawBody, ipAddress, userAgent });
+      return NextResponse.json(result);
+    } catch (err) {
+      console.error(`[slack-interact] handler for action_id=${actionId} threw`, err);
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        replace_original: false,
+        text: 'Action failed — see server logs.',
+      });
+    }
   }
 
   // STEP 8: Verify the embedded button value signature — BEFORE release DB lookup.
@@ -152,11 +169,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // STEP 12: Capture audit context from Slack's egress headers
-  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
-  const userAgent = req.headers.get('user-agent')?.slice(0, 512) ?? null;
-
-  // STEP 13 + 14: Dispatch to shared release-actions helpers
+  // STEP 13 + 14: Dispatch to shared release-actions helpers (ipAddress/userAgent captured at STEP 6)
   if (wantsApprove) {
     const result = await approveRelease({ release, approverEmail: email, ipAddress, userAgent });
     if (!result.ok) {
