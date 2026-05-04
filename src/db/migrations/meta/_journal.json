@@ -71,6 +71,13 @@
       "when": 1777906687512,
       "tag": "0009_promotion_dispatch_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777932602492,
+      "tag": "0010_naive_havok",
+      "breakpoints": true
     }
   ]
 }
