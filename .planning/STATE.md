@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-05-04T01:59:32.489Z"
+last_updated: "2026-05-04T02:05:04.404Z"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 15
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Triarch Dev Admin — Project State
@@ -57,6 +57,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-03 — scope reset post-audit)
 - [Phase 01.1-06]: Empty memberships for non-staff → zeros + empty Project Health grid (not 403/redirect), consistent with API empty-list behavior
 - [Phase 02-01]: reason column uses text() not varchar(500) — server-side 500-char limit; matches releaseFeedback.body pattern
 - [Phase 02-01]: DB push deferred to human — DATABASE_URL is Firebase secret, not in local shell; same pattern as Phase 01-01
+- [Phase 02]: CustomerHeader is a client component (signOut requires next-auth/react client-only import)
+- [Phase 02]: notFound() called for both missing project and non-member — indistinguishable 404 for GATE-01 no-leak guarantee
 
 ## Stopped At
 
