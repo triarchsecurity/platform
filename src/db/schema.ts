@@ -8,6 +8,7 @@ import {
   jsonb,
   timestamp,
   uniqueIndex,
+  index,  // SCHEMA-02: non-unique DESC index for slack_action_audit
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -363,6 +364,21 @@ export const accessAuditLogs = pgTable('access_audit_logs', {
   metadata: jsonb('metadata').default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ── v2.0 Phase 3: Slack Action Audit (OttoBot dispatcher) ─────────
+
+export const slackActionAudit = pgTable('slack_action_audit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actionId: varchar('action_id', { length: 128 }).notNull(),                    // SCHEMA-02: free-form Slack action_id (e.g. 'promote_release')
+  actorEmail: varchar('actor_email', { length: 256 }),                          // nullable: unmapped Slack users have null email but slack_id is always present
+  actorSlackId: varchar('actor_slack_id', { length: 64 }).notNull(),            // raw Slack user_id (Uxxxxx)
+  payloadHash: text('payload_hash').notNull(),                                  // sha256 hex of request payload — bounded row size (CONTEXT specifics)
+  responseStatus: integer('response_status').notNull(),                         // HTTP status returned to Slack (200, 4xx, 5xx)
+  latencyMs: integer('latency_ms').notNull(),                                   // dispatcher latency — always < 3000 (Slack 3-sec rule, CONTEXT specifics)
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index('slack_action_audit_created_at_idx').on(table.createdAt.desc()),         // Phase 7 OTTOBOT-06 viewer paginates DESC
+]);
 
 // ── Relations ─────────────────────────────────────────────────────
 
