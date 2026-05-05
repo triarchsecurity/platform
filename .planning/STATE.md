@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-05-05T14:25:33.277Z"
+stopped_at: Phase 04-03 Task 1 complete; paused at checkpoint Task 2 (PR + v3 tag by Mike)
+last_updated: "2026-05-05T14:26:34.321Z"
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 17
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Triarch Dev Admin — Project State
@@ -71,6 +71,7 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 04-01]: No CHECK constraint on result in promote_attempts — runtime validation in route handler, consistent with Phase 3 slack_action_audit pattern
 - [Phase 04-01]: No relations() block for promoteAttempts — audit logs are immutable standalone; no FK to any other table (mirrors slackActionAudit decision)
 - [Phase 04-01]: db:push for migration 0012 deferred to Mike pre-Plan 04-04 UAT — DATABASE_URL is Firebase App Hosting secret; same precedent as Phase 03-01
+- [Phase 04]: promote-branch.yml inlines CI (npm ci + build + vitest) — nested workflow_call impossible per GitHub Actions architectural limitation; captures conflict files BEFORE git rebase --abort
 
 ### Pending Todos
 
@@ -84,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T14:25:33.276Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-05-05T14:26:34.319Z
+Stopped at: Phase 04-03 Task 1 complete; paused at checkpoint Task 2 (PR + v3 tag by Mike)
 Resume file: None
