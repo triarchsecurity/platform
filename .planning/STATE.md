@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: executing
-stopped_at: Completed 07-05-PLAN.md
-last_updated: "2026-05-05T18:35:11.641Z"
+status: verifying
+stopped_at: Completed 07-06-PLAN.md
+last_updated: "2026-05-05T18:39:32.939Z"
 progress:
   total_phases: 9
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 32
-  completed_plans: 30
+  completed_plans: 31
 ---
 
 # Triarch Dev Admin — Project State
@@ -31,7 +31,7 @@ Plan: 6 of 6
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -98,6 +98,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 07]: Dedup short-circuits BEFORE recordSlackAudit — duplicate events must not write duplicate audit rows
 - [Phase 07-05]: Pitfall 7 mitigation: ilike only when emailFilter.trim() non-empty to avoid excluding null-email rows
 - [Phase 07-05]: router.push (not replace) for URL mirroring — matches pushMock test expectation
+- [Phase 07-06]: AdminSidebar is DB-driven: nav entry added via SQL INSERT not component edit (RESEARCH §10 + Pitfall 10)
+- [Phase 07-06]: SLACK_BOT_TOKEN does NOT need rotation on workspace reinstall unless Slack issues a new token (CONTEXT D-22)
 
 ### Pending Todos
 
@@ -111,6 +113,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T18:35:11.639Z
-Stopped at: Completed 07-05-PLAN.md
+Last session: 2026-05-05T18:39:32.937Z
+Stopped at: Completed 07-06-PLAN.md
 Resume file: None

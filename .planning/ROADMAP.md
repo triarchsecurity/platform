@@ -141,7 +141,7 @@
 - [x] 07-03-PLAN.md — POST /api/slack/commands (deploy + status + help) + shared src/lib/slack-status.ts Block Kit builder (OTTOBOT-03, OTTOBOT-04)
 - [x] 07-04-PLAN.md — POST /api/slack/events (url_verification + app_mention + dedup) (OTTOBOT-05)
 - [x] 07-05-PLAN.md — /admin/platform/slack-audit RSC + SlackAuditClient + load-more API (OTTOBOT-06)
-- [ ] 07-06-PLAN.md — menu_pages seed SQL + onboarding-projects.md scope upgrade procedure + 07-HUMAN-UAT.md (OTTOBOT-02 + OTTOBOT-06 nav)
+- [x] 07-06-PLAN.md — menu_pages seed SQL + onboarding-projects.md scope upgrade procedure + 07-HUMAN-UAT.md (OTTOBOT-02 + OTTOBOT-06 nav)
 
 ### Phase 7.5: Dev Cluster + Admin Dev Backend
 **Goal**: Every Triarch app has a non-prod environment safe for schema migrations and live UAT — backed by a dedicated dev CRDB cluster, an `<app>-dev` App Hosting backend per project, and an env-aware shared-workflows tag (`v4`)

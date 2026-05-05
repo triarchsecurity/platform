@@ -47,7 +47,7 @@
 ### OttoBot — Dispatcher hardening + scope expansion
 
 - [x] **OTTOBOT-01**: Every `/api/slack/interact` action_id click writes a `slack_action_audit` row capturing action_id, actor email, Slack user_id, payload hash, response status, dispatcher latency
-- [ ] **OTTOBOT-02**: OttoBot Slack App scope upgraded to include `chat:write.public`, `app_mentions:read`, `commands` (slash commands); workspace re-authorized
+- [x] **OTTOBOT-02**: OttoBot Slack App scope upgraded to include `chat:write.public`, `app_mentions:read`, `commands` (slash commands); workspace re-authorized
 - [x] **OTTOBOT-03**: Slash command `/triarch deploy <project> <version>` — staff-only (verified against `SLACK_USER_MAP`); triggers `workflow_dispatch` on the project's `deploy-prod.yml` (or `promote-branch.yml` when branch-aware); responds ephemerally with run URL
 - [x] **OTTOBOT-04**: Slash command `/triarch status <project>` — returns current dev/prod release status, last 3 deploy timestamps, and any active RCs as a Slack message
 - [x] **OTTOBOT-05**: App mention handler — `@OttoBot status <project>` mirrors `/triarch status` behavior; subscribed via `app_mentions:read` event
@@ -113,7 +113,7 @@
 | RC-06 | Phase 6 | Complete |
 | RC-08 | Phase 6 | Complete |
 | OTTOBOT-01 | Phase 7 | Complete |
-| OTTOBOT-02 | Phase 7 | Pending |
+| OTTOBOT-02 | Phase 7 | Complete |
 | OTTOBOT-03 | Phase 7 | Complete |
 | OTTOBOT-04 | Phase 7 | Complete |
 | OTTOBOT-05 | Phase 7 | Complete |
