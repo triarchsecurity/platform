@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
 status: planning
-stopped_at: Completed Phase 05 Plan 05 (05-05-PLAN.md)
-last_updated: "2026-05-05T16:54:44.428Z"
+stopped_at: Phase 6 context gathered (auto)
+last_updated: "2026-05-05T17:01:47.106Z"
 progress:
   total_phases: 9
   completed_phases: 4
@@ -96,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T16:45:14.278Z
-Stopped at: Completed Phase 05 Plan 05 (05-05-PLAN.md)
-Resume file: None
+Last session: 2026-05-05T17:01:47.102Z
+Stopped at: Phase 6 context gathered (auto)
+Resume file: .planning/phases/06-promoteandaudit-rewrite/06-CONTEXT.md
