@@ -61,6 +61,12 @@ Items deferred from active milestones. Promote to a milestone when prioritized.
 - [ ] **ANALYTICS-02**: Mean time to resolution by project.
 - [ ] **ANALYTICS-03**: Release frequency dashboard.
 
+## Captured 2026-05-04 (v2.0 Phase 01 — Central Secrets Vault)
+
+### UI / Cross-Project Conventions
+
+- [ ] **TRIARCH-UI-01**: Floating bottom-right bug/feature button on all Triarch sites (admin, CRM, portal, thisnthat, truthtreason). Same affordance as darksouls — fixed-position button that opens a bug or feature submission modal. Should ship as a `@myalterlego/shared-ui` component so all consumers get it for free. Posts to the existing CRM `/api/bugs` and `/api/features` endpoints. Make it the standard onboarding step for any new Triarch property.
+
 ## Stale doc to reconcile
 
 - `Plans/BUILD_PLAN.md` was the pre-`.planning/` historical plan. It says "ALL PHASES COMPLETE (v0.9.0)" but the repo is now at v1.13.1 with substantially more shipped. Either delete or move under `.planning/archive/` after v1.14.0 ships, so it stops misleading future readers.
