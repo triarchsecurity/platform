@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: planning
-stopped_at: Phase 7 context gathered (auto)
-last_updated: "2026-05-05T17:45:46.689Z"
+status: executing
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-05-05T18:24:55.821Z"
 progress:
   total_phases: 9
   completed_phases: 5
-  total_plans: 26
-  completed_plans: 25
+  total_plans: 32
+  completed_plans: 26
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,19 +19,19 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 06 — promoteAndAudit Rewrite
+**Current focus:** Phase 07 — OttoBot Dispatcher Hardening
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
+Phase: 07 (OttoBot Dispatcher Hardening) — EXECUTING
+Plan: 2 of 6
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -89,6 +89,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 06-02]: null branch falls back to literal 'main' via branchDisplay = input.branch ?? 'main'
 - [Phase 06]: buildPromoteReplyText exported at module scope; release lookup runs AFTER insert (promote_attempts is source of truth per D-15)
 - [Phase 06]: Per-transaction closure mock in release-concurrent.test.ts: each db.transaction() invocation gets isolated localInsertValues array, proving no cross-contamination across parallel Promise.all calls
+- [Phase 07]: Wave 0 uses dynamic import (await import()) for production modules in RED tests — defers resolution so tests fail with 'Failed to resolve import' at runtime rather than crashing at parse time
+- [Phase 07]: redirectMock typed with explicit _url param in page.test.tsx to satisfy TypeScript (vi.fn infers () => never without parameter)
 
 ### Pending Todos
 
@@ -102,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T17:45:46.686Z
-Stopped at: Phase 7 context gathered (auto)
-Resume file: .planning/phases/07-ottobot-dispatcher-hardening/07-CONTEXT.md
+Last session: 2026-05-05T18:24:55.819Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None

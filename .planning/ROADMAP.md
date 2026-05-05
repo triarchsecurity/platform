@@ -136,7 +136,7 @@
   4. `@OttoBot status <project>` in any channel returns the same response as `/triarch status <project>`
   5. `/admin/platform/slack-audit` shows a paginated, filterable table of audit rows accessible to staff — non-staff receive a 403
 **Plans**: 6 plans
-- [ ] 07-01-PLAN.md — Wave 0 test infrastructure: shared Slack fixture factory + 5 RED test stubs (slack-audit, commands, events, slack-audit page, SlackAuditClient)
+- [x] 07-01-PLAN.md — Wave 0 test infrastructure: shared Slack fixture factory + 5 RED test stubs (slack-audit, commands, events, slack-audit page, SlackAuditClient)
 - [ ] 07-02-PLAN.md — recordSlackAudit helper + /api/slack/interact audit wire-up (OTTOBOT-01)
 - [ ] 07-03-PLAN.md — POST /api/slack/commands (deploy + status + help) + shared src/lib/slack-status.ts Block Kit builder (OTTOBOT-03, OTTOBOT-04)
 - [ ] 07-04-PLAN.md — POST /api/slack/events (url_verification + app_mention + dedup) (OTTOBOT-05)
@@ -184,6 +184,6 @@
 | 4. promote-branch Workflow | v2.0 | 4/4 | Complete (UAT deferred to 7.5) | 2026-05-05 |
 | 5. Customer Page RC UI | v2.0 | 0/5 | Planned | - |
 | 6. promoteAndAudit Rewrite | v2.0 | 4/4 | Complete   | 2026-05-05 |
-| 7. OttoBot Dispatcher Hardening | v2.0 | 0/6 | Planned | - |
+| 7. OttoBot Dispatcher Hardening | v2.0 | 1/6 | In Progress|  |
 | 7.5. Dev Cluster + Admin Dev Backend | v2.0 | 0/TBD | Not started | - |
 | 8. Truth+Treason E2E Pilot | v2.0 | 0/TBD | Not started | - |

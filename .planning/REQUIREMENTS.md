@@ -46,12 +46,12 @@
 
 ### OttoBot — Dispatcher hardening + scope expansion
 
-- [ ] **OTTOBOT-01**: Every `/api/slack/interact` action_id click writes a `slack_action_audit` row capturing action_id, actor email, Slack user_id, payload hash, response status, dispatcher latency
+- [x] **OTTOBOT-01**: Every `/api/slack/interact` action_id click writes a `slack_action_audit` row capturing action_id, actor email, Slack user_id, payload hash, response status, dispatcher latency
 - [ ] **OTTOBOT-02**: OttoBot Slack App scope upgraded to include `chat:write.public`, `app_mentions:read`, `commands` (slash commands); workspace re-authorized
-- [ ] **OTTOBOT-03**: Slash command `/triarch deploy <project> <version>` — staff-only (verified against `SLACK_USER_MAP`); triggers `workflow_dispatch` on the project's `deploy-prod.yml` (or `promote-branch.yml` when branch-aware); responds ephemerally with run URL
-- [ ] **OTTOBOT-04**: Slash command `/triarch status <project>` — returns current dev/prod release status, last 3 deploy timestamps, and any active RCs as a Slack message
-- [ ] **OTTOBOT-05**: App mention handler — `@OttoBot status <project>` mirrors `/triarch status` behavior; subscribed via `app_mentions:read` event
-- [ ] **OTTOBOT-06**: Audit log viewer at `/admin/platform/slack-audit` (staff-only) — paginated table of slack_action_audit rows with filters (action_id, actor email, date range)
+- [x] **OTTOBOT-03**: Slash command `/triarch deploy <project> <version>` — staff-only (verified against `SLACK_USER_MAP`); triggers `workflow_dispatch` on the project's `deploy-prod.yml` (or `promote-branch.yml` when branch-aware); responds ephemerally with run URL
+- [x] **OTTOBOT-04**: Slash command `/triarch status <project>` — returns current dev/prod release status, last 3 deploy timestamps, and any active RCs as a Slack message
+- [x] **OTTOBOT-05**: App mention handler — `@OttoBot status <project>` mirrors `/triarch status` behavior; subscribed via `app_mentions:read` event
+- [x] **OTTOBOT-06**: Audit log viewer at `/admin/platform/slack-audit` (staff-only) — paginated table of slack_action_audit rows with filters (action_id, actor email, date range)
 
 ### Pilot — Truth+Treason multi-branch E2E
 
@@ -112,12 +112,12 @@
 | RC-05 | Phase 6 | Complete |
 | RC-06 | Phase 6 | Complete |
 | RC-08 | Phase 6 | Complete |
-| OTTOBOT-01 | Phase 7 | Pending |
+| OTTOBOT-01 | Phase 7 | Complete |
 | OTTOBOT-02 | Phase 7 | Pending |
-| OTTOBOT-03 | Phase 7 | Pending |
-| OTTOBOT-04 | Phase 7 | Pending |
-| OTTOBOT-05 | Phase 7 | Pending |
-| OTTOBOT-06 | Phase 7 | Pending |
+| OTTOBOT-03 | Phase 7 | Complete |
+| OTTOBOT-04 | Phase 7 | Complete |
+| OTTOBOT-05 | Phase 7 | Complete |
+| OTTOBOT-06 | Phase 7 | Complete |
 | PILOT-01 | Phase 8 | Pending |
 | PILOT-02 | Phase 8 | Pending |
 
