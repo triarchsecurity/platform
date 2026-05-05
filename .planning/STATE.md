@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: planning
-stopped_at: Phase 5 context gathered
-last_updated: "2026-05-05T15:41:35.019Z"
+status: executing
+stopped_at: Completed Phase 05 Plan 01 (05-01-PLAN.md)
+last_updated: "2026-05-05T16:20:16.629Z"
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 17
-  completed_plans: 16
+  total_plans: 22
+  completed_plans: 17
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,19 +19,19 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 04 — promote-branch-workflow
+**Current focus:** Phase 05 — Customer Page RC UI
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (Customer Page RC UI) — EXECUTING
+Plan: 2 of 5
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -74,6 +74,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 04]: promote-branch.yml inlines CI (npm ci + build + vitest) — nested workflow_call impossible per GitHub Actions architectural limitation; captures conflict files BEFORE git rebase --abort
 - [Phase 04]: result validation uses VALID_RESULTS array (no CHECK constraint) — consistent with Phase 3 pattern
 - [Phase 04]: conflict_files defaults to [] (not null) when wire payload omits it — matches jsonb DEFAULT column default
+- [Phase 05-01]: environmentMatchGlobs over workspace config — simpler single-file approach for jsdom/node env split
+- [Phase 05-01]: vitest.setup.ts at repo root imports jest-dom matchers — required for toBeDisabled/toHaveAttribute in Wave 0 stubs
 
 ### Pending Todos
 
@@ -87,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T15:41:35.013Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-customer-page-rc-ui/05-CONTEXT.md
+Last session: 2026-05-05T16:20:16.627Z
+Stopped at: Completed Phase 05 Plan 01 (05-01-PLAN.md)
+Resume file: None
