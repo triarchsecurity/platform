@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
 status: executing
-stopped_at: Completed 02-02-PLAN.md — deploy-prod.yml with admin promoted callback
-last_updated: "2026-05-05T02:17:00.662Z"
+stopped_at: Completed 02-01-PLAN.md — deploy-firebase.yml git_branch input + admin dev callback
+last_updated: "2026-05-05T02:17:34.770Z"
 progress:
   total_phases: 8
   completed_phases: 2
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 ## Current Position
 
 Phase: 02 (shared-workflows-hardening) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
@@ -60,6 +60,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 03]: No relations() block for slackActionAudit — audit logs are immutable standalone; no FK to any other table
 - [Phase 02-02]: All ${{ }} expressions moved to env: blocks in run: steps — required for actionlint/shellcheck compliance; standard pattern for shared-workflows steps
 - [Phase 02-02]: snake_case payload enforced (commit_sha, deployed_at, deployed_by) in deploy-prod.yml — /api/releases/promoted requires snake_case (different from dev endpoint camelCase)
+- [Phase 02-01]: previewUrl stored in metadata JSONB (not new column) — keeps Phase 2 schema-free per D-13
+- [Phase 02-01]: Two mutually-exclusive FAH deploy steps in deploy-firebase.yml: main vs branch-preview, driven by git_branch input
 
 ### Pending Todos
 
@@ -73,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T02:17:00.660Z
-Stopped at: Completed 02-02-PLAN.md — deploy-prod.yml with admin promoted callback
+Last session: 2026-05-05T02:17:34.769Z
+Stopped at: Completed 02-01-PLAN.md — deploy-firebase.yml git_branch input + admin dev callback
 Resume file: None
