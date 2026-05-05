@@ -89,7 +89,7 @@
   2. Dispatching `promote-branch.yml` on a branch with a merge conflict exits non-zero and returns the conflicting file list as workflow output
   3. Admin receives the success or conflict result via signed callback within the workflow run window — the callback payload includes branch, result, and (on conflict) file list
 **Plans**: 4 plans
-- [ ] 04-01-PLAN.md — promote_attempts schema + migration 0012 (WORKFLOW-05)
+- [x] 04-01-PLAN.md — promote_attempts schema + migration 0012 (WORKFLOW-05)
 - [ ] 04-02-PLAN.md — POST /api/platform/promote-callback endpoint + vitest (WORKFLOW-05)
 - [ ] 04-03-PLAN.md — promote-branch.yml workflow (4 jobs) + v3 tag on shared-workflows (WORKFLOW-04)
 - [ ] 04-04-PLAN.md — Manual UAT: clean / conflict / ci_failed / concurrent paths (WORKFLOW-04, WORKFLOW-05)
@@ -148,7 +148,7 @@
 | 1.1. Membership Enforcement Audit | v1.14.0 | 6/6 | Complete | 2026-05-03 |
 | 2. Customer Releases Page | v1.14.0 | 4/4 | Complete   | 2026-05-05 |
 | 3. Slack Interactive Approval | v1.14.0 | 3/3 | Complete    | 2026-05-04 |
-| 4. GitHub App Promotion | v1.14.0 | 4/4 | Complete | 2026-05-04 |
+| 4. GitHub App Promotion | v1.14.0 | 1/4 | In Progress|  |
 | 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 1. Central Secrets Vault | v2.0 | 0/6 | Planned | - |
 | 2. shared-workflows Hardening | v2.0 | 0/4 | Planned | - |

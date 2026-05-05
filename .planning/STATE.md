@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: planning
-stopped_at: "Phase 4 context captured (auto). Awaiting /clear + /gsd:plan-phase 4 --auto"
-last_updated: "2026-05-05T13:54:58.122Z"
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-05-05T14:25:33.277Z"
 progress:
   total_phases: 8
   completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
+  total_plans: 17
+  completed_plans: 14
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,19 +19,19 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 02 — shared-workflows-hardening
+**Current focus:** Phase 04 — promote-branch-workflow
 
 ## Current Position
 
-Phase: 03
-Plan: Not started
+Phase: 04 (promote-branch-workflow) — EXECUTING
+Plan: 2 of 4
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -68,6 +68,9 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 02-shared-workflows-hardening]: CRDB projects table uses api_key (snake_case) not apiKey — raw SQL must use api_key; Drizzle maps to apiKey in TypeScript
 - [Phase 02-shared-workflows-hardening]: CRM flush-changelog (legacy RELEASE_LOGS_API_URL) coexists with WORKFLOW-01 deploy-firebase@v2 callback — two separate release_logs rows per deploy
 - [Phase 02-shared-workflows-hardening]: CRM version.ts (v-prefixed literal) is out of sync with package.json — separate CRM ops concern; WORKFLOW-01 callback works correctly with whichever version is extracted
+- [Phase 04-01]: No CHECK constraint on result in promote_attempts — runtime validation in route handler, consistent with Phase 3 slack_action_audit pattern
+- [Phase 04-01]: No relations() block for promoteAttempts — audit logs are immutable standalone; no FK to any other table (mirrors slackActionAudit decision)
+- [Phase 04-01]: db:push for migration 0012 deferred to Mike pre-Plan 04-04 UAT — DATABASE_URL is Firebase App Hosting secret; same precedent as Phase 03-01
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T13:54:58.116Z
-Stopped at: Phase 4 context captured (auto). Awaiting /clear + /gsd:plan-phase 4 --auto
-Resume file: .planning/phases/04-promote-branch-workflow/04-CONTEXT.md
+Last session: 2026-05-05T14:25:33.276Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None

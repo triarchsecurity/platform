@@ -31,7 +31,7 @@
 - [x] **WORKFLOW-02**: `shared-workflows/deploy-prod.yml` POSTs prod deploy completion to admin's `/api/releases/promoted` with version, commit_sha, deployed_at, deployed_by (carried from v1.14 deferral)
 - [x] **WORKFLOW-03**: `shared-workflows/deploy-firebase.yml` accepts `git_branch` input; calls `firebase apphosting:rollouts:create --git-branch <branch>` for non-main branches; deploys to FAH branch preview URL pattern
 - [ ] **WORKFLOW-04**: New `shared-workflows/promote-branch.yml` workflow accepts `branch` input; performs `git fetch origin main && git rebase origin/main` on the branch; runs CI; on green, pushes to main (or `merge --no-ff`); on conflict, returns conflict file list as workflow output and exits non-zero
-- [ ] **WORKFLOW-05**: `promote-branch.yml` POSTs success or conflict result to admin via signed callback; conflict result includes file list and rebase error message
+- [x] **WORKFLOW-05**: `promote-branch.yml` POSTs success or conflict result to admin via signed callback; conflict result includes file list and rebase error message
 
 ### RC — Multi-branch parallel release candidates
 
@@ -103,7 +103,7 @@
 | SCHEMA-02 | Phase 3 | Complete |
 | SCHEMA-03 | Phase 3 | Complete |
 | WORKFLOW-04 | Phase 4 | Pending |
-| WORKFLOW-05 | Phase 4 | Pending |
+| WORKFLOW-05 | Phase 4 | Complete |
 | RC-01 | Phase 5 | Pending |
 | RC-02 | Phase 5 | Pending |
 | RC-03 | Phase 5 | Pending |
