@@ -157,7 +157,7 @@
 - [x] 07.5-01-PLAN.md — scripts/provision-dev-dbs.sql (ENV-01)
 - [x] 07.5-02-PLAN.md — shared-workflows v4: deploy-firebase.yml environment input + new db-migrate.yml (ENV-03)
 - [ ] 07.5-03-PLAN.md — admin apphosting.yaml + apphosting.prod.yaml overlay split (ENV-02, ENV-04)
-- [ ] 07.5-04-PLAN.md — docs/onboarding-projects.md Step 11 — Dev Environment overlay + db-migrate.yml usage (ENV-04)
+- [x] 07.5-04-PLAN.md — docs/onboarding-projects.md Step 11 — Dev Environment overlay + db-migrate.yml usage (ENV-04)
 - [ ] 07.5-05-PLAN.md — 07.5-PHASE-4-UAT-CLOSURE.md + 07.5-HUMAN-UAT.md fillable runbooks (ENV-05)
 
 ### Phase 8: Truth+Treason E2E Pilot
