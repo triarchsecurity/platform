@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-05-05T17:31:07.683Z"
+status: verifying
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-05-05T17:32:12.778Z"
 progress:
   total_phases: 9
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 26
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Triarch Dev Admin — Project State
@@ -31,7 +31,7 @@ Plan: 4 of 4
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 06-02]: Option A (RESEARCH §2): signPayload unchanged — branch travels through DB row, not Slack button value
 - [Phase 06-02]: null branch falls back to literal 'main' via branchDisplay = input.branch ?? 'main'
 - [Phase 06]: buildPromoteReplyText exported at module scope; release lookup runs AFTER insert (promote_attempts is source of truth per D-15)
+- [Phase 06]: Per-transaction closure mock in release-concurrent.test.ts: each db.transaction() invocation gets isolated localInsertValues array, proving no cross-contamination across parallel Promise.all calls
 
 ### Pending Todos
 
@@ -101,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T17:31:07.682Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-05-05T17:32:12.777Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None

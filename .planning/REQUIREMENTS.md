@@ -42,7 +42,7 @@
 - [x] **RC-05**: OttoBot Slack message includes the branch name in the body (e.g. "feat/change-font v0.15.0-rc.1 approved by mike@triarchsecurity.com")
 - [x] **RC-06**: When `promote-branch.yml` emits a conflict result, admin posts to OttoBot threaded reply: `:warning: Cannot promote {branch} — conflicts with main: {file list}. Rebase manually and redeploy as a fresh RC.`
 - [x] **RC-07**: Customer page shows a `Conflict — needs manual rebase` status badge for branches with unresolved conflicts; releases stay queryable but cannot be re-approved until a new RC deploy lands
-- [ ] **RC-08**: Concurrent RCs work without interference — approving feat/change-font then approving feat/add-audio results in main containing both feature commits, with no work reverted from the first promotion
+- [x] **RC-08**: Concurrent RCs work without interference — approving feat/change-font then approving feat/add-audio results in main containing both feature commits, with no work reverted from the first promotion
 
 ### OttoBot — Dispatcher hardening + scope expansion
 
@@ -111,7 +111,7 @@
 | RC-04 | Phase 6 | Complete |
 | RC-05 | Phase 6 | Complete |
 | RC-06 | Phase 6 | Complete |
-| RC-08 | Phase 6 | Pending |
+| RC-08 | Phase 6 | Complete |
 | OTTOBOT-01 | Phase 7 | Pending |
 | OTTOBOT-02 | Phase 7 | Pending |
 | OTTOBOT-03 | Phase 7 | Pending |

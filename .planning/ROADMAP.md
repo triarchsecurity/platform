@@ -29,7 +29,7 @@
 - [x] **Phase 3: Schema + GitHub App Permissions** - `release_logs.branch` column, `slack_action_audit` table, App permission upgrade (completed 2026-05-04)
 - [ ] **Phase 4: promote-branch Workflow** - New `promote-branch.yml` rebase/CI/merge workflow with conflict detection + callback
 - [x] **Phase 5: Customer Page RC UI** - Branch-grouped releases, preview URLs, per-RC approve buttons, conflict status badge (completed 2026-05-05)
-- [ ] **Phase 6: promoteAndAudit Rewrite** - Branch-dispatch orchestrator, OttoBot conflict reply, concurrent RC safety
+- [x] **Phase 6: promoteAndAudit Rewrite** - Branch-dispatch orchestrator, OttoBot conflict reply, concurrent RC safety (completed 2026-05-05)
 - [ ] **Phase 7: OttoBot Dispatcher Hardening** - Audit logging, scope upgrade, slash commands, app mentions, audit log viewer
 - [ ] **Phase 8: Truth+Treason E2E Pilot** - Single-branch E2E smoke test + parallel multi-branch RC validation
 
@@ -123,7 +123,7 @@
 - [x] 06-01-PLAN.md — promoteAndAudit dispatches promote-branch.yml + writes Slack thread metadata via jsonb_set (RC-04)
 - [x] 06-02-PLAN.md — notifyReleaseApproved branch + approve route call site + slack-notify.test.ts (RC-05)
 - [x] 06-03-PLAN.md — promote-callback Slack threaded reply (conflict / merged / ci_failed / missing-meta) (RC-06)
-- [ ] 06-04-PLAN.md — RC-08 concurrent integration test + onboarding-projects.md promote-branch.yml stub doc (RC-08)
+- [x] 06-04-PLAN.md — RC-08 concurrent integration test + onboarding-projects.md promote-branch.yml stub doc (RC-08)
 
 ### Phase 7: OttoBot Dispatcher Hardening
 **Goal**: Every Slack action is audited, OttoBot responds to slash commands and app mentions, and a staff-only viewer in admin shows the full audit trail
@@ -177,7 +177,7 @@
 | 3. Schema + GitHub App Permissions | v2.0 | 0/TBD | Not started | - |
 | 4. promote-branch Workflow | v2.0 | 4/4 | Complete (UAT deferred to 7.5) | 2026-05-05 |
 | 5. Customer Page RC UI | v2.0 | 0/5 | Planned | - |
-| 6. promoteAndAudit Rewrite | v2.0 | 3/4 | In Progress|  |
+| 6. promoteAndAudit Rewrite | v2.0 | 4/4 | Complete   | 2026-05-05 |
 | 7. OttoBot Dispatcher Hardening | v2.0 | 0/TBD | Not started | - |
 | 7.5. Dev Cluster + Admin Dev Backend | v2.0 | 0/TBD | Not started | - |
 | 8. Truth+Treason E2E Pilot | v2.0 | 0/TBD | Not started | - |
