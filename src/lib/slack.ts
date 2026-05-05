@@ -242,13 +242,15 @@ export async function notifyReleaseApproved(input: {
   status: string;
   feedbackExcerpt: string; // already <= 200 chars per caller
   feedbackOverflowCount: number; // 0 if no overflow
+  branch: string | null;
 }) {
+  const branchDisplay = input.branch ?? 'main';
   const blocks: unknown[] = [
     {
       type: 'section',
       text: {
         type: 'mrkdwn',
-        text: `:rocket: *Release Approved: ${input.project} ${input.version}*\n*Approver:* ${input.approverEmail}\n*Status:* ${input.status}`,
+        text: `:rocket: *${branchDisplay} ${input.version} approved by ${input.approverEmail}*\n*Project:* ${input.project}\n*Status:* ${input.status}`,
       },
     },
   ];

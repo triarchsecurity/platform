@@ -90,6 +90,7 @@ export async function POST(
         status: result.release.status ?? 'approved',
         feedbackExcerpt: excerpt,
         feedbackOverflowCount: overflow,
+        branch: release.branch ?? null,
       });
       if (!slackResult.ok) {
         console.warn('[slack] notifyReleaseApproved failed', { releaseId: release.id, error: slackResult.error });
