@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { releaseLogs, projects } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { dispatchWorkflow } from '@/lib/github-app';
 import { postSlackThreadedReply, updateSlackMessage } from '@/lib/slack';
 import type { ReleaseRow } from '@/lib/release-actions';
@@ -27,7 +27,7 @@ const PROMOTION_FAILED_MSG_TEMPLATE = (slackUserName: string, email: string) =>
  *
  * Performs:
  * 1. Look up the project's githubRepo via release.project
- * 2. Call dispatchWorkflow(deploy-prod.yml, ref=main, inputs={tag: release.version})
+ * 2. Call dispatchWorkflow(promote-branch.yml, ref=main, inputs={branch: release.branch ?? 'main'})
  * 3. Update release_logs.promotion_dispatched_at + promotion_dispatched_by atomically
  *    with the dispatch attempt result
  * 4. Post a threaded Slack reply with the result
@@ -99,9 +99,9 @@ export async function promoteAndAudit(input: PromoteAndAuditInput): Promise<Prom
     await dispatchWorkflow({
       owner,
       repo,
-      workflowFile: 'deploy-prod.yml',
+      workflowFile: 'promote-branch.yml',
       ref: 'main',
-      inputs: { tag: release.version },
+      inputs: { branch: release.branch ?? 'main' },
     });
     dispatchOk = true;
   } catch (err) {
@@ -112,20 +112,31 @@ export async function promoteAndAudit(input: PromoteAndAuditInput): Promise<Prom
   }
 
   // Audit columns updated atomically with the result (success or failure - both are dispatch ATTEMPTS)
+  const dispatchMetaJson = JSON.stringify({
+    slackChannelId: channelId,
+    slackMessageTs: messageTs,
+    dispatchedAt: new Date().toISOString(),
+  });
   await db
     .update(releaseLogs)
     .set({
       promotionDispatchedAt: new Date(),
       promotionDispatchedBy: actorEmail,
+      metadata: sql`jsonb_set(
+        COALESCE(${releaseLogs.metadata}, '{}'::jsonb),
+        '{dispatch}',
+        ${dispatchMetaJson}::jsonb,
+        true
+      )`,
     })
     .where(eq(releaseLogs.id, release.id));
 
   if (dispatchOk) {
-    console.log(`[promotion] dispatched deploy-prod.yml for ${owner}/${repo} tag=${release.version} release=${release.id}`);
+    console.log(`[promotion] dispatched promote-branch.yml for ${owner}/${repo} branch=${release.branch ?? 'main'} release=${release.id}`);
     await postSlackThreadedReply({
       channel: channelId,
       thread_ts: messageTs,
-      text: `:rocket: Workflow dispatched: deploy-prod.yml (${owner}/${repo}, tag=${release.version})`,
+      text: `:rocket: Workflow dispatched: promote-branch.yml (${owner}/${repo}, branch=${release.branch ?? 'main'})`,
     });
     return { ok: true };
   }
