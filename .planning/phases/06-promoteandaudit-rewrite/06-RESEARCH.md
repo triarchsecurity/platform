@@ -458,6 +458,82 @@ The only shared concern is `promoteAndAudit`'s project lookup (SELECT on `projec
 
 ---
 
+## Validation Architecture
+
+### Test Framework
+
+| Property | Value |
+|----------|-------|
+| Framework | Vitest 4.x |
+| Config | `vitest.config.ts` (root) — `environment: 'jsdom'` global; NextRequest mocking still works in jsdom |
+| Quick run | `npx vitest run src/lib/release-promotion src/app/api/platform/promote-callback src/app/api/projects/\[slug\]/releases/\[releaseId\]/approve src/lib/__tests__/release-concurrent` |
+| Full suite | `npx vitest run` |
+
+### Per-Requirement Test Strategy
+
+**SC-1 (RC-04): promote-branch.yml dispatch — unit test**
+
+File: `src/lib/release-promotion.test.ts` (extend existing)
+
+Mock `dispatchWorkflow` (from `@/lib/github-app`). Seed a release row with `branch: 'feat/change-font'`. Call `promoteAndAudit`. Assert:
+- `dispatchWorkflow` called once with `workflowFile: 'promote-branch.yml'`
+- `inputs.branch === 'feat/change-font'`
+- `inputs.tag` is undefined (legacy field removed)
+- Threaded reply text mentions `promote-branch.yml` (or branch + version)
+
+Plus null-branch test: seed `branch: null`, assert `inputs.branch === 'main'`.
+
+Plus metadata-merge test: seed release with `metadata: { previewUrl: 'https://...' }`, assert post-call metadata contains BOTH `previewUrl` AND `dispatch.{slackChannelId, slackMessageTs, dispatchedAt}` (Pitfall 1 — `jsonb_set` not replace).
+
+**SC-2 (RC-05): branch in approval Slack message — unit test**
+
+File: `src/app/api/projects/[slug]/releases/[releaseId]/approve/route.test.ts` (new)
+
+Mock `@/lib/slack` (`notifyReleaseApproved`). Seed a release with `branch: 'feat/audio'`. Call POST `/api/projects/{slug}/releases/{releaseId}/approve`. Assert `notifyReleaseApproved` called with `branch: 'feat/audio'`.
+
+Plus separate slack.ts unit test (`src/lib/__tests__/slack-notify.test.ts` — new): assert message header text matches `feat/audio v0.X approved by ...`. Null branch → `main v0.X approved by ...`.
+
+**SC-3 (RC-06): conflict threaded reply — unit test**
+
+File: `src/app/api/platform/promote-callback/route.test.ts` (extend existing 7 tests)
+
+Mock `db.select` to return a release row with `metadata.dispatch.slackChannelId` + `metadata.dispatch.slackMessageTs`. Mock `postSlackThreadedReply`. POST callback with `result: 'conflict'`, `conflict_files: [50 paths]`, `rebase_error: '...'`.
+
+Assert:
+- 201 returned
+- `db.insert(promote_attempts)` called once
+- `postSlackThreadedReply` called once with `channel`, `thread_ts`, `text` containing `:warning: Cannot promote feat/X — conflicts with main:` AND first 50 files AND `Rebase manually on main, push as a new RC to retry.`
+- For >50 files: assert text ends with `+ N more files` line
+
+Plus symmetric tests:
+- `result: 'merged'` → `:white_check_mark: Promoted feat/X to main (sha: abc1234)`
+- `result: 'ci_failed'` → `:no_entry: CI failed for feat/X — see https://...`
+
+Plus missing-metadata test: release row with `metadata.dispatch === undefined`. Assert 201, db.insert still called, `postSlackThreadedReply` NOT called, console.warn fires.
+
+**SC-4 (RC-08): concurrent approval safety — integration test**
+
+File: `src/lib/__tests__/release-concurrent.test.ts` (new)
+
+Seed two `release_logs` rows in a real test DB (or mocked) on `feat/change-font` and `feat/add-audio`. Run `approveRelease` for both concurrently with `await Promise.all([...])`. Assert:
+- Both `releaseApprovals` rows inserted (decision=approved)
+- Both `releaseLogs.status === 'approved'`
+- No cross-contamination: each release's approver, ipAddress, userAgent matches its own input
+- After mocked `promoteAndAudit` calls, two independent `promote_attempts` mocks recorded with their respective branches
+
+This proves D-16: per-row keying by `release.id` UUID prevents serialization.
+
+### Wave 0 Gaps
+
+- [ ] `src/lib/release-promotion.test.ts` — extend to cover RC-04 (workflow file, branch input, null-branch fallback, metadata merge preserving previewUrl)
+- [ ] `src/app/api/projects/[slug]/releases/[releaseId]/approve/route.test.ts` (NEW) — covers RC-05 server-side (branch passed to notifyReleaseApproved)
+- [ ] `src/lib/__tests__/slack-notify.test.ts` (NEW) — covers RC-05 message format
+- [ ] `src/app/api/platform/promote-callback/route.test.ts` — extend with 4 new tests (conflict, merged, ci_failed, missing-metadata) — covers RC-06
+- [ ] `src/lib/__tests__/release-concurrent.test.ts` (NEW) — covers RC-08
+- [ ] No new devDeps required (Vitest, NextRequest mocking, all already in place from Phase 5 Wave 0)
+
+---
+
 ## Implementation Approach
 
 ### Recommended Plan Sequencing (4 Plans)
