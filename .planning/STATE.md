@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: executing
-stopped_at: Completed 02-03-PLAN.md — shared-workflows v2 tagged, admin canary live, release_logs E2E verified
-last_updated: "2026-05-05T02:51:59.198Z"
+status: verifying
+stopped_at: Completed 02-04-PLAN.md — CRM v2 bump live, ADMIN_API_TOKEN set, idempotency verified, Phase 2 all 7 exit criteria passed
+last_updated: "2026-05-05T03:08:40.468Z"
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Triarch Dev Admin — Project State
@@ -31,7 +31,7 @@ Plan: 4 of 4
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -65,6 +65,9 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 02-03]: v2 tag moved from merge commit to fix commit after canary exposed version extraction bug — acceptable since v2 had no consumers at initial tag time
 - [Phase 02-03]: branch column added via ALTER TABLE (not drizzle-kit push) because drizzle-kit hung on CockroachDB — direct SQL is reliable fallback for schema changes
 - [Phase 02-03]: notify.yml@v1 coexists with deploy-firebase.yml@v2 with no conflicts — confirmed by admin canary; CRM can safely bump deploy ref without touching notify ref
+- [Phase 02-shared-workflows-hardening]: CRDB projects table uses api_key (snake_case) not apiKey — raw SQL must use api_key; Drizzle maps to apiKey in TypeScript
+- [Phase 02-shared-workflows-hardening]: CRM flush-changelog (legacy RELEASE_LOGS_API_URL) coexists with WORKFLOW-01 deploy-firebase@v2 callback — two separate release_logs rows per deploy
+- [Phase 02-shared-workflows-hardening]: CRM version.ts (v-prefixed literal) is out of sync with package.json — separate CRM ops concern; WORKFLOW-01 callback works correctly with whichever version is extracted
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T02:51:59.197Z
-Stopped at: Completed 02-03-PLAN.md — shared-workflows v2 tagged, admin canary live, release_logs E2E verified
+Last session: 2026-05-05T03:08:40.466Z
+Stopped at: Completed 02-04-PLAN.md — CRM v2 bump live, ADMIN_API_TOKEN set, idempotency verified, Phase 2 all 7 exit criteria passed
 Resume file: None

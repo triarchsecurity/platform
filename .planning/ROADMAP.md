@@ -25,7 +25,7 @@
 **Milestone Goal:** Customer-gated parallel release candidates with auto-rebase-and-merge promotion, unified credential storage on GCP Secret Manager, and OttoBot as the canonical Slack control plane with audit trail and expanded scopes.
 
 - [x] **Phase 1: Central Secrets Vault** - GCP `triarch-vault` project + `@myalterlego/secrets` package + all consumers migrated (completed 2026-05-04)
-- [ ] **Phase 2: shared-workflows Hardening** - v1.14 deferred cross-repo notify steps + branch preview deploy wiring
+- [x] **Phase 2: shared-workflows Hardening** - v1.14 deferred cross-repo notify steps + branch preview deploy wiring (completed 2026-05-05)
 - [x] **Phase 3: Schema + GitHub App Permissions** - `release_logs.branch` column, `slack_action_audit` table, App permission upgrade (completed 2026-05-04)
 - [ ] **Phase 4: promote-branch Workflow** - New `promote-branch.yml` rebase/CI/merge workflow with conflict detection + callback
 - [ ] **Phase 5: Customer Page RC UI** - Branch-grouped releases, preview URLs, per-RC approve buttons, conflict status badge
@@ -65,7 +65,7 @@
 - [x] 02-01-PLAN.md — Wave 0 clone + deploy-firebase.yml git_branch input + dev callback (WORKFLOW-01, WORKFLOW-03)
 - [x] 02-02-PLAN.md — Create deploy-prod.yml with snake_case prod callback (WORKFLOW-02)
 - [x] 02-03-PLAN.md — Tag v2 + admin canary ref bump + ADMIN_API_TOKEN secret + onboarding doc step
-- [ ] 02-04-PLAN.md — CRM ref bump + ADMIN_API_TOKEN secret + prod-endpoint idempotency E2E
+- [x] 02-04-PLAN.md — CRM ref bump + ADMIN_API_TOKEN secret + prod-endpoint idempotency E2E
 
 ### Phase 3: Schema + GitHub App Permissions
 **Goal**: The database has the branch column and audit table needed by subsequent phases, and the GitHub App has write permissions required for the merge step
@@ -142,7 +142,7 @@
 |-------|-----------|----------------|--------|-----------|
 | 1. Schema + Membership Migration | v1.14.0 | 6/6 | Complete   | 2026-05-04 |
 | 1.1. Membership Enforcement Audit | v1.14.0 | 6/6 | Complete | 2026-05-03 |
-| 2. Customer Releases Page | v1.14.0 | 3/4 | In Progress|  |
+| 2. Customer Releases Page | v1.14.0 | 4/4 | Complete   | 2026-05-05 |
 | 3. Slack Interactive Approval | v1.14.0 | 3/3 | Complete    | 2026-05-04 |
 | 4. GitHub App Promotion | v1.14.0 | 4/4 | Complete | 2026-05-04 |
 | 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 4/4 | Complete | 2026-05-04 |
