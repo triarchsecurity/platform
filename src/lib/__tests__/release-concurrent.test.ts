@@ -31,7 +31,7 @@ vi.mock('@/lib/slack', () => ({
 
 // Captures for approveRelease's transaction calls
 const txInsertValueCalls: Array<Record<string, unknown>> = [];
-const txUpdateCalls: Array<{ status: string }> = [];
+const txUpdateCalls: Array<{ id: unknown; status: string }> = [];
 // Captures for promoteAndAudit's top-level update calls
 const promotionUpdateCalls: Array<Record<string, unknown>> = [];
 // Controls what promoteAndAudit's project select returns
