@@ -1,0 +1,298 @@
+/**
+ * Phase 7 OTTOBOT-03 / OTTOBOT-04 — Slack slash command dispatcher.
+ *
+ * Handles /triarch <subcommand> [args]. Single endpoint per CONTEXT D-01;
+ * internal switch on `command` + first positional arg of `text`.
+ *
+ * Subcommands:
+ *   deploy <project> <version> [<branch>] — staff-only; dispatches
+ *     promote-branch.yml on the project's GitHub repo. Returns immediate
+ *     ephemeral ack; dispatch + run-URL follow-up via response_url is
+ *     fire-and-forget per Slack 3-second rule (RESEARCH §8 Pitfall 4).
+ *   status <project> — open to any caller; returns ephemeral Block Kit
+ *     (RESEARCH §6).
+ *   (empty) — returns help text mentioning both subcommands + the
+ *     @OttoBot status mention path (CONTEXT D-04).
+ *
+ * Every response path calls void recordSlackAudit(...) so the audit row
+ * write never blocks Slack's 3-second response window.
+ */
+import { NextRequest, NextResponse } from 'next/server';
+import { and, desc, eq } from 'drizzle-orm';
+import { db } from '@/lib/db';
+import { releaseLogs } from '@/db/schema';
+import { verifySlackSignature } from '@/lib/slack-crypto';
+import { resolveSlackUserEmail } from '@/lib/slack-identity';
+import { dispatchWorkflow } from '@/lib/github-app';
+import { recordSlackAudit } from '@/lib/slack-audit';
+import {
+  fetchProjectStatus,
+  buildStatusBlocks,
+  listProjectKeys,
+} from '@/lib/slack-status';
+
+const HELP_TEXT = [
+  '*OttoBot — Triarch deploy automation*',
+  '',
+  '• `/triarch deploy <project> <version>` — Promote `<version>` of `<project>` to production. Staff only.',
+  '• `/triarch status <project>` — Show current dev/prod release status for `<project>`.',
+  '',
+  'Tip: also try `@OttoBot status <project>` in any channel.',
+].join('\n');
+
+export async function POST(req: NextRequest) {
+  const requestReceivedAt = Date.now();
+
+  // STEP 1: Raw body FIRST (RESEARCH Pitfall 1)
+  const rawBody = await req.text();
+
+  // STEP 2: HMAC verify
+  const timestamp = req.headers.get('x-slack-request-timestamp');
+  const signature = req.headers.get('x-slack-signature');
+  const sigResult = await verifySlackSignature({ rawBody, timestamp, signature });
+  if (!sigResult.ok) {
+    void recordSlackAudit({
+      actionId: '_sig_failed',
+      actorEmail: null,
+      actorSlackId: 'unknown',
+      rawBody,
+      responseStatus: 401,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
+    return NextResponse.json({ error: sigResult.reason }, { status: 401 });
+  }
+
+  // STEP 3: Parse URL-encoded body (RESEARCH Pitfall 3 — NOT json)
+  const params = new URLSearchParams(rawBody);
+  const text = params.get('text') ?? '';
+  const userId = params.get('user_id') ?? '';
+  const responseUrl = params.get('response_url') ?? '';
+
+  // STEP 4: Subcommand routing
+  const trimmed = text.trim();
+  const tokens = trimmed.length === 0 ? [] : trimmed.split(/\s+/);
+  const [subcommand, ...rest] = tokens;
+
+  // STEP 5: Empty → help (CONTEXT D-04)
+  if (!subcommand) {
+    void recordSlackAudit({
+      actionId: 'slash_help',
+      actorEmail: null,
+      actorSlackId: userId || 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
+    return NextResponse.json({
+      response_type: 'ephemeral',
+      text: HELP_TEXT,
+    });
+  }
+
+  // STEP 6: Resolve actor email (used by both deploy and status)
+  const actorEmail = await resolveSlackUserEmail(userId);
+
+  // STEP 7: status — open to any caller (D-06 simplified: ephemeral, bounded leak risk)
+  if (subcommand === 'status') {
+    const [projectArg] = rest;
+    if (!projectArg) {
+      void recordSlackAudit({
+        actionId: 'slash_status',
+        actorEmail,
+        actorSlackId: userId || 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: ':warning: Usage: `/triarch status <project>`',
+      });
+    }
+
+    const status = await fetchProjectStatus(projectArg);
+    if (!status) {
+      // Unknown project — list up to 5 known keys (CONTEXT D-16)
+      const knownKeys = await listProjectKeys(5);
+      const hint = knownKeys.length ? ` Try: ${knownKeys.join(', ')}` : '';
+      void recordSlackAudit({
+        actionId: 'slash_status',
+        actorEmail,
+        actorSlackId: userId || 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: `:warning: Project '${projectArg}' not found.${hint}`,
+      });
+    }
+
+    const blocks = buildStatusBlocks(
+      status.project.key,
+      status.devRelease,
+      status.prodRelease,
+      status.activeRCs,
+      status.lastDeploys
+    );
+    void recordSlackAudit({
+      actionId: 'slash_status',
+      actorEmail,
+      actorSlackId: userId || 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
+    return NextResponse.json({
+      response_type: 'ephemeral',
+      blocks,
+      text: `${status.project.key} — Release Status`, // fallback for clients without Block Kit
+    });
+  }
+
+  // STEP 8: deploy — staff-only (CONTEXT D-05)
+  if (subcommand === 'deploy') {
+    const isStaff = actorEmail?.endsWith('@triarchsecurity.com') ?? false;
+    if (!isStaff) {
+      void recordSlackAudit({
+        actionId: 'slash_deploy',
+        actorEmail,
+        actorSlackId: userId || 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: ':no_entry: This command requires Triarch staff access.',
+      });
+    }
+
+    const [projectArg, versionArg, branchOverride] = rest;
+    if (!projectArg || !versionArg) {
+      void recordSlackAudit({
+        actionId: 'slash_deploy',
+        actorEmail,
+        actorSlackId: userId || 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: ':warning: Usage: `/triarch deploy <project> <version> [<branch>]`',
+      });
+    }
+
+    // Look up project to determine GitHub repo
+    const projectStatus = await fetchProjectStatus(projectArg);
+    if (!projectStatus) {
+      void recordSlackAudit({
+        actionId: 'slash_deploy',
+        actorEmail,
+        actorSlackId: userId || 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: `:warning: Project '${projectArg}' not found.`,
+      });
+    }
+
+    if (!projectStatus.project.githubRepo) {
+      void recordSlackAudit({
+        actionId: 'slash_deploy',
+        actorEmail,
+        actorSlackId: userId || 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: `:warning: Project '${projectArg}' has no GitHub repo configured.`,
+      });
+    }
+
+    // Find the release_logs row matching (project, version) to extract branch
+    const [release] = await db
+      .select()
+      .from(releaseLogs)
+      .where(and(
+        eq(releaseLogs.project, projectArg),
+        eq(releaseLogs.version, versionArg)
+      ))
+      .orderBy(desc(releaseLogs.releasedAt))
+      .limit(1);
+
+    const branch = branchOverride ?? release?.branch ?? 'main';
+    const [owner, repo] = projectStatus.project.githubRepo.split('/');
+
+    // Fire-and-forget: dispatch + response_url follow-up (RESEARCH §8)
+    void (async () => {
+      try {
+        await dispatchWorkflow({
+          owner,
+          repo,
+          workflowFile: 'promote-branch.yml',
+          ref: 'main',
+          inputs: { branch },
+        });
+        if (responseUrl) {
+          await fetch(responseUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              response_type: 'ephemeral',
+              replace_original: false,
+              text: `:white_check_mark: Promotion dispatched for \`${projectArg} ${versionArg}\` (branch: \`${branch}\`) — <https://github.com/${owner}/${repo}/actions/workflows/promote-branch.yml|view runs>`,
+            }),
+          });
+        }
+      } catch (err) {
+        console.error('[slack-commands] dispatchWorkflow failed', err);
+        if (responseUrl) {
+          await fetch(responseUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              response_type: 'ephemeral',
+              replace_original: false,
+              text: ':x: Dispatch failed — check server logs.',
+            }),
+          }).catch(() => {});
+        }
+      }
+    })();
+
+    void recordSlackAudit({
+      actionId: 'slash_deploy',
+      actorEmail,
+      actorSlackId: userId || 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
+    return NextResponse.json({
+      response_type: 'ephemeral',
+      text: `:gear: Dispatching \`promote-branch.yml\` for \`${projectArg} ${versionArg}\` on branch \`${branch}\`...`,
+    });
+  }
+
+  // STEP 9: Unknown subcommand → help text fallback
+  void recordSlackAudit({
+    actionId: 'slash_unknown',
+    actorEmail,
+    actorSlackId: userId || 'unknown',
+    rawBody,
+    responseStatus: 200,
+    latencyMs: Date.now() - requestReceivedAt,
+  });
+  return NextResponse.json({
+    response_type: 'ephemeral',
+    text: `:warning: Unknown subcommand \`${subcommand}\`.\n\n${HELP_TEXT}`,
+  });
+}
