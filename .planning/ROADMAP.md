@@ -135,7 +135,13 @@
   3. `/triarch status <project>` returns current dev/prod release status, last 3 deploy timestamps, and any active RCs
   4. `@OttoBot status <project>` in any channel returns the same response as `/triarch status <project>`
   5. `/admin/platform/slack-audit` shows a paginated, filterable table of audit rows accessible to staff — non-staff receive a 403
-**Plans**: TBD
+**Plans**: 6 plans
+- [ ] 07-01-PLAN.md — Wave 0 test infrastructure: shared Slack fixture factory + 5 RED test stubs (slack-audit, commands, events, slack-audit page, SlackAuditClient)
+- [ ] 07-02-PLAN.md — recordSlackAudit helper + /api/slack/interact audit wire-up (OTTOBOT-01)
+- [ ] 07-03-PLAN.md — POST /api/slack/commands (deploy + status + help) + shared src/lib/slack-status.ts Block Kit builder (OTTOBOT-03, OTTOBOT-04)
+- [ ] 07-04-PLAN.md — POST /api/slack/events (url_verification + app_mention + dedup) (OTTOBOT-05)
+- [ ] 07-05-PLAN.md — /admin/platform/slack-audit RSC + SlackAuditClient + load-more API (OTTOBOT-06)
+- [ ] 07-06-PLAN.md — menu_pages seed SQL + onboarding-projects.md scope upgrade procedure + 07-HUMAN-UAT.md (OTTOBOT-02 + OTTOBOT-06 nav)
 
 ### Phase 7.5: Dev Cluster + Admin Dev Backend
 **Goal**: Every Triarch app has a non-prod environment safe for schema migrations and live UAT — backed by a dedicated dev CRDB cluster, an `<app>-dev` App Hosting backend per project, and an env-aware shared-workflows tag (`v4`)
@@ -178,6 +184,6 @@
 | 4. promote-branch Workflow | v2.0 | 4/4 | Complete (UAT deferred to 7.5) | 2026-05-05 |
 | 5. Customer Page RC UI | v2.0 | 0/5 | Planned | - |
 | 6. promoteAndAudit Rewrite | v2.0 | 4/4 | Complete   | 2026-05-05 |
-| 7. OttoBot Dispatcher Hardening | v2.0 | 0/TBD | Not started | - |
+| 7. OttoBot Dispatcher Hardening | v2.0 | 0/6 | Planned | - |
 | 7.5. Dev Cluster + Admin Dev Backend | v2.0 | 0/TBD | Not started | - |
 | 8. Truth+Treason E2E Pilot | v2.0 | 0/TBD | Not started | - |
