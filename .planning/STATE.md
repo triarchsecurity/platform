@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
-status: executing
-stopped_at: Completed Phase 05 Plan 04 (05-04-PLAN.md)
-last_updated: "2026-05-05T16:36:49.896Z"
+status: verifying
+stopped_at: Completed Phase 05 Plan 05 (05-05-PLAN.md)
+last_updated: "2026-05-05T16:45:14.280Z"
 progress:
   total_phases: 9
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Triarch Dev Admin — Project State
@@ -31,7 +31,7 @@ Plan: 5 of 5
 **Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
 **Phases:** 8 (reset to Phase 1 for v2.0)
 **Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -81,6 +81,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 05-customer-page-rc-ui]: vitest 4.x silently ignores environmentMatchGlobs — replaced with environment: jsdom as default; all tsx test files in [slug] directory now get jsdom correctly
 - [Phase Phase 05-04]: renderExpandedPanel callback pattern keeps all per-row mutable state in ReleasesClient while BranchSection handles structural render
 - [Phase Phase 05-04]: RTL v16 auto-cleanup requires afterEach global; vitest uses explicit imports — vitest.setup.ts registers afterEach(cleanup) explicitly
+- [Phase 05-05]: Idle Approve aria-label simplified to 'Approve for Production' — prior value had version in middle of string, breaking /approve for production/i regex used by RC-03 test
+- [Phase 05-05]: BranchSection <tr> rows get aria-label='Release {id}' — enables unique row identification when both sections expanded with same version string (RC-03 test requirement)
 
 ### Pending Todos
 
@@ -94,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T16:36:49.894Z
-Stopped at: Completed Phase 05 Plan 04 (05-04-PLAN.md)
+Last session: 2026-05-05T16:45:14.278Z
+Stopped at: Completed Phase 05 Plan 05 (05-05-PLAN.md)
 Resume file: None

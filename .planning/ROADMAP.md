@@ -28,7 +28,7 @@
 - [x] **Phase 2: shared-workflows Hardening** - v1.14 deferred cross-repo notify steps + branch preview deploy wiring (completed 2026-05-05)
 - [x] **Phase 3: Schema + GitHub App Permissions** - `release_logs.branch` column, `slack_action_audit` table, App permission upgrade (completed 2026-05-04)
 - [ ] **Phase 4: promote-branch Workflow** - New `promote-branch.yml` rebase/CI/merge workflow with conflict detection + callback
-- [ ] **Phase 5: Customer Page RC UI** - Branch-grouped releases, preview URLs, per-RC approve buttons, conflict status badge
+- [x] **Phase 5: Customer Page RC UI** - Branch-grouped releases, preview URLs, per-RC approve buttons, conflict status badge (completed 2026-05-05)
 - [ ] **Phase 6: promoteAndAudit Rewrite** - Branch-dispatch orchestrator, OttoBot conflict reply, concurrent RC safety
 - [ ] **Phase 7: OttoBot Dispatcher Hardening** - Audit logging, scope upgrade, slash commands, app mentions, audit log viewer
 - [ ] **Phase 8: Truth+Treason E2E Pilot** - Single-branch E2E smoke test + parallel multi-branch RC validation
@@ -108,7 +108,7 @@
 - [x] 05-02-PLAN.md — Server-side branch grouping: extend types.ts + groupIntoSections() helper + page.tsx fetches deployedUrl + promote_attempts + load-more API surfaces branch/metadata (RC-01, RC-07)
 - [x] 05-03-PLAN.md — PreviewLink component (anchor + disabled-button states) (RC-02)
 - [x] 05-04-PLAN.md — BranchSection component + ReleasesClient accordion restructure + conflict badge + hide approve on conflict (RC-01, RC-07)
-- [ ] 05-05-PLAN.md — Per-RC confirm label includes branch + version (D-10) + cross-branch isolation green test (RC-03)
+- [x] 05-05-PLAN.md — Per-RC confirm label includes branch + version (D-10) + cross-branch isolation green test (RC-03)
 
 ### Phase 6: promoteAndAudit Rewrite
 **Goal**: Approving an RC dispatches the branch-aware `promote-branch.yml` workflow, OttoBot Slack messages include the branch name, conflict results are threaded back into Slack, and two concurrent RC approvals leave main containing both feature sets
@@ -167,7 +167,7 @@
 | 2. Customer Releases Page | v1.14.0 | 4/4 | Complete   | 2026-05-05 |
 | 3. Slack Interactive Approval | v1.14.0 | 3/3 | Complete    | 2026-05-04 |
 | 4. GitHub App Promotion | v1.14.0 | 3/4 | In Progress|  |
-| 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 2/5 | In Progress|  |
+| 5. Round-trip + shared-workflows + Pilot | v1.14.0 | 5/5 | Complete   | 2026-05-05 |
 | 1. Central Secrets Vault | v2.0 | 0/6 | Planned | - |
 | 2. shared-workflows Hardening | v2.0 | 0/4 | Planned | - |
 | 3. Schema + GitHub App Permissions | v2.0 | 0/TBD | Not started | - |
