@@ -14,8 +14,14 @@ const ADMIN_HOSTS = new Set([
   "admin-dev--triarch-dev-website.us-central1.hosted.app",
 ]);
 
+async function publicHost() {
+  const h = await headers();
+  const raw = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  return raw.toLowerCase().split(",")[0].trim().split(":")[0];
+}
+
 export default async function Home() {
-  const host = ((await headers()).get("host") ?? "").toLowerCase().split(":")[0];
+  const host = await publicHost();
   if (ADMIN_HOSTS.has(host)) {
     redirect("/login");
   }
