@@ -380,6 +380,23 @@ export const slackActionAudit = pgTable('slack_action_audit', {
   index('slack_action_audit_created_at_idx').on(table.createdAt.desc()),         // Phase 7 OTTOBOT-06 viewer paginates DESC
 ]);
 
+// ── v2.0 Phase 4: Promote Attempts (WORKFLOW-04 / WORKFLOW-05) ────
+
+export const promoteAttempts = pgTable('promote_attempts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  project: varchar('project', { length: 64 }).notNull(),
+  branch: varchar('branch', { length: 256 }).notNull(),
+  result: varchar('result', { length: 16 }).notNull(),       // 'merged' | 'conflict' | 'ci_failed' — validated in route handler, no CHECK constraint per RESEARCH.md
+  mergeSha: varchar('merge_sha', { length: 64 }),            // populated when result='merged'
+  conflictFiles: jsonb('conflict_files').default([]),         // populated when result='conflict'
+  rebaseError: text('rebase_error'),                          // populated when result='conflict'
+  ciRunUrl: text('ci_run_url'),                               // populated when result='ci_failed'
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index('promote_attempts_project_branch_idx').on(table.project, table.branch),
+  index('promote_attempts_created_at_idx').on(table.createdAt.desc()),
+]);
+
 // ── Relations ─────────────────────────────────────────────────────
 
 export const menuSectionsRelations = relations(menuSections, ({ many }) => ({
