@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
 status: executing
-stopped_at: Phase 04-03 Task 1 complete; paused at checkpoint Task 2 (PR + v3 tag by Mike)
-last_updated: "2026-05-05T14:26:34.321Z"
+stopped_at: Completed 04-02-PLAN.md (POST /api/platform/promote-callback — all 7 tests GREEN)
+last_updated: "2026-05-05T14:31:33.208Z"
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 17
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 ## Current Position
 
 Phase: 04 (promote-branch-workflow) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
@@ -72,6 +72,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 04-01]: No relations() block for promoteAttempts — audit logs are immutable standalone; no FK to any other table (mirrors slackActionAudit decision)
 - [Phase 04-01]: db:push for migration 0012 deferred to Mike pre-Plan 04-04 UAT — DATABASE_URL is Firebase App Hosting secret; same precedent as Phase 03-01
 - [Phase 04]: promote-branch.yml inlines CI (npm ci + build + vitest) — nested workflow_call impossible per GitHub Actions architectural limitation; captures conflict files BEFORE git rebase --abort
+- [Phase 04]: result validation uses VALID_RESULTS array (no CHECK constraint) — consistent with Phase 3 pattern
+- [Phase 04]: conflict_files defaults to [] (not null) when wire payload omits it — matches jsonb DEFAULT column default
 
 ### Pending Todos
 
@@ -85,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T14:26:34.319Z
-Stopped at: Phase 04-03 Task 1 complete; paused at checkpoint Task 2 (PR + v3 tag by Mike)
+Last session: 2026-05-05T14:31:33.207Z
+Stopped at: Completed 04-02-PLAN.md (POST /api/platform/promote-callback — all 7 tests GREEN)
 Resume file: None
