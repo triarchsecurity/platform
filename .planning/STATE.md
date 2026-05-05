@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
 status: executing
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-05-05T18:30:57.624Z"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-05-05T18:34:39.997Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 32
-  completed_plans: 28
+  completed_plans: 29
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
 ## Current Position
 
 Phase: 07 (OttoBot Dispatcher Hardening) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 
 ## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
 
@@ -94,6 +94,8 @@ Active decisions from v1.14.0 that carry forward into v2.0:
 - [Phase 07-02]: void recordSlackAudit() placed directly before each return (not try/finally) — mechanical insertion avoids reshaping handler and eliminates regression risk
 - [Phase 07]: status subcommand open to all callers (ephemeral, bounded risk) — avoids project_members DB roundtrip per command
 - [Phase 07]: slack-status.ts extracted as shared module — fetchProjectStatus + buildStatusBlocks consumed by both /commands and /events (plan 07-04)
+- [Phase 07]: url_verification bypasses HMAC entirely — Slack sends it before signing relationship exists (D-19)
+- [Phase 07]: Dedup short-circuits BEFORE recordSlackAudit — duplicate events must not write duplicate audit rows
 
 ### Pending Todos
 
@@ -107,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T18:30:57.622Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-05-05T18:34:39.995Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
