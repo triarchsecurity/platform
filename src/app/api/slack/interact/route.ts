@@ -8,6 +8,7 @@ import { rejectRelease } from '@/lib/release-actions';
 import { promoteAndAudit } from '@/lib/release-promotion';
 import { getActionHandler } from '@/lib/slack-actions';
 import type { SlackInteractivePayload } from '@/lib/slack-actions';
+import { recordSlackAudit } from '@/lib/slack-audit';
 
 type ActionId = 'slack_promote' | 'slack_reject';
 const ACTION_TO_EXPECTED: Record<ActionId, 'promote' | 'reject'> = {
@@ -21,6 +22,10 @@ const ACTION_TO_EXPECTED: Record<ActionId, 'promote' | 'reject'> = {
  * after verifying the Slack request signature and embedded button payload.
  */
 export async function POST(req: NextRequest) {
+  // STEP 0: Capture request start time for audit latency (D-13).
+  // Must be BEFORE req.text() to include body-read latency.
+  const requestReceivedAt = Date.now();
+
   // STEP 1: Read raw body ONCE — this is the exact bytes Slack signed.
   // Must happen before any parsing. Using formData() would consume the stream
   // and leave nothing for signature verification — raw text preserves exact bytes for HMAC.
@@ -35,6 +40,14 @@ export async function POST(req: NextRequest) {
   // On failure (bad_signature, stale, malformed, no_secret) → 401.
   const sigResult = await verifySlackSignature({ rawBody, timestamp, signature });
   if (!sigResult.ok) {
+    void recordSlackAudit({
+      actionId: '_sig_failed',
+      actorEmail: null,
+      actorSlackId: 'unknown',
+      rawBody,
+      responseStatus: 401,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({ error: sigResult.reason }, { status: 401 });
   }
 
@@ -42,6 +55,14 @@ export async function POST(req: NextRequest) {
   const params = new URLSearchParams(rawBody);
   const payloadStr = params.get('payload');
   if (!payloadStr) {
+    void recordSlackAudit({
+      actionId: '_parse_failed',
+      actorEmail: null,
+      actorSlackId: 'unknown',
+      rawBody,
+      responseStatus: 400,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({ error: 'no_payload' }, { status: 400 });
   }
 
@@ -50,11 +71,27 @@ export async function POST(req: NextRequest) {
   try {
     payload = JSON.parse(payloadStr);
   } catch {
+    void recordSlackAudit({
+      actionId: '_parse_failed',
+      actorEmail: null,
+      actorSlackId: 'unknown',
+      rawBody,
+      responseStatus: 400,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({ error: 'malformed_payload' }, { status: 400 });
   }
 
   // STEP 5: Validate payload structure
   if (payload?.type !== 'block_actions' || !Array.isArray(payload.actions) || !payload.actions[0]) {
+    void recordSlackAudit({
+      actionId: '_parse_failed',
+      actorEmail: null,
+      actorSlackId: (payload as SlackInteractivePayload | undefined)?.user?.id ?? 'unknown',
+      rawBody,
+      responseStatus: 400,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({ error: 'unsupported_payload' }, { status: 400 });
   }
 
@@ -76,6 +113,14 @@ export async function POST(req: NextRequest) {
   if (actionId !== 'slack_promote' && actionId !== 'slack_reject') {
     const handler = getActionHandler(actionId);
     if (!handler) {
+      void recordSlackAudit({
+        actionId,
+        actorEmail: null,
+        actorSlackId: slackUserId ?? 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
       return NextResponse.json({
         response_type: 'ephemeral',
         replace_original: false,
@@ -84,9 +129,25 @@ export async function POST(req: NextRequest) {
     }
     try {
       const result = await handler({ payload, action, rawBody, ipAddress, userAgent });
+      void recordSlackAudit({
+        actionId,
+        actorEmail: null,
+        actorSlackId: slackUserId ?? 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
       return NextResponse.json(result);
     } catch (err) {
       console.error(`[slack-interact] handler for action_id=${actionId} threw`, err);
+      void recordSlackAudit({
+        actionId,
+        actorEmail: null,
+        actorSlackId: slackUserId ?? 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
       return NextResponse.json({
         response_type: 'ephemeral',
         replace_original: false,
@@ -100,6 +161,14 @@ export async function POST(req: NextRequest) {
   const expected = ACTION_TO_EXPECTED[actionId as ActionId];
   const verifiedPayload = await verifyPayload(packedValue, expected);
   if (!verifiedPayload.ok) {
+    void recordSlackAudit({
+      actionId,
+      actorEmail: null,
+      actorSlackId: slackUserId ?? 'unknown',
+      rawBody,
+      responseStatus: 401,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({ error: 'invalid_payload_signature' }, { status: 401 });
   }
 
@@ -108,6 +177,14 @@ export async function POST(req: NextRequest) {
   const email = await resolveSlackUserEmail(slackUserId);
   if (!email) {
     console.warn('[slack-interact] unmapped user', { slackUserId });
+    void recordSlackAudit({
+      actionId,
+      actorEmail: null,
+      actorSlackId: slackUserId ?? 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({
       response_type: 'ephemeral',
       replace_original: false,
@@ -122,6 +199,14 @@ export async function POST(req: NextRequest) {
     .where(eq(releaseLogs.id, verifiedPayload.releaseId));
 
   if (!release) {
+    void recordSlackAudit({
+      actionId,
+      actorEmail: email,
+      actorSlackId: slackUserId ?? 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({
       response_type: 'ephemeral',
       replace_original: false,
@@ -156,6 +241,14 @@ export async function POST(req: NextRequest) {
     const actor = existing?.approverEmail ?? 'someone';
     const verb = release.status === 'promoted' ? 'promoted' : 'rejected';
 
+    void recordSlackAudit({
+      actionId,
+      actorEmail: email,
+      actorSlackId: slackUserId ?? 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({
       response_type: 'ephemeral',
       replace_original: true,
@@ -179,6 +272,14 @@ export async function POST(req: NextRequest) {
   // (Customer's approve already happened on the customer page; we do NOT re-call approveRelease.)
   if (wantsApprove) {
     if (release.status !== 'approved') {
+      void recordSlackAudit({
+        actionId,
+        actorEmail: email,
+        actorSlackId: slackUserId ?? 'unknown',
+        rawBody,
+        responseStatus: 200,
+        latencyMs: Date.now() - requestReceivedAt,
+      });
       return NextResponse.json({
         response_type: 'ephemeral',
         replace_original: false,
@@ -201,6 +302,14 @@ export async function POST(req: NextRequest) {
     }
 
     // STEP 15: Replace original message to reflect new promoted state
+    void recordSlackAudit({
+      actionId,
+      actorEmail: email,
+      actorSlackId: slackUserId ?? 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({
       replace_original: true,
       text: `Promoted to production by @${slackUserName}`,
@@ -226,6 +335,14 @@ export async function POST(req: NextRequest) {
   });
 
   if (!rejectResult.ok) {
+    void recordSlackAudit({
+      actionId,
+      actorEmail: email,
+      actorSlackId: slackUserId ?? 'unknown',
+      rawBody,
+      responseStatus: 200,
+      latencyMs: Date.now() - requestReceivedAt,
+    });
     return NextResponse.json({
       response_type: 'ephemeral',
       replace_original: false,
@@ -234,6 +351,14 @@ export async function POST(req: NextRequest) {
   }
 
   // STEP 15: Replace original message to reflect rejected state
+  void recordSlackAudit({
+    actionId,
+    actorEmail: email,
+    actorSlackId: slackUserId ?? 'unknown',
+    rawBody,
+    responseStatus: 200,
+    latencyMs: Date.now() - requestReceivedAt,
+  });
   return NextResponse.json({
     replace_original: true,
     text: `Rejected by @${slackUserName}`,

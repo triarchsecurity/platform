@@ -13,6 +13,14 @@ import { createHmac } from 'node:crypto';
 const SIGNING = 'test_signing_secret';
 const PAYLOAD_SEC = 'test_payload_secret';
 
+// ─── Mock: slack-audit ────────────────────────────────────────────────────────
+
+const recordSlackAuditMock = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('@/lib/slack-audit', () => ({
+  recordSlackAudit: (...args: unknown[]) => recordSlackAuditMock(...args),
+}));
+
 // ─── Mock: release-actions ────────────────────────────────────────────────────
 
 const approveMock = vi.fn();
@@ -146,6 +154,7 @@ beforeEach(() => {
   rejectMock.mockReset();
   promoteAndAuditMock.mockReset();
   resolveMock.mockReset();
+  recordSlackAuditMock.mockClear();
 
   resolveMock.mockReturnValue('mike@triarchsecurity.com');
   promoteAndAuditMock.mockResolvedValue({ ok: true });
@@ -312,6 +321,13 @@ describe('POST /api/slack/interact', () => {
     const callArgs = promoteAndAuditMock.mock.calls[0][0] as Record<string, unknown>;
     expect(callArgs.actorEmail).toBe('mike@triarchsecurity.com');
     expect(callArgs.release).toMatchObject({ id: 'rel-uuid' });
+    // Audit write assertion (plan 07-02 OTTOBOT-01)
+    expect(recordSlackAuditMock).toHaveBeenCalledTimes(1);
+    const auditArgs = recordSlackAuditMock.mock.calls[0][0] as Record<string, unknown>;
+    expect(auditArgs.actionId).toBe('slack_promote');
+    expect(auditArgs.responseStatus).toBe(200);
+    expect(typeof auditArgs.rawBody).toBe('string');
+    expect(typeof auditArgs.latencyMs).toBe('number');
   });
 
   it('slack_promote on already-promoted release → 200 ephemeral "Already promoted"; nothing fires', async () => {
@@ -348,5 +364,16 @@ describe('POST /api/slack/interact', () => {
     const callArgs = rejectMock.mock.calls[0][0] as Record<string, unknown>;
     expect(callArgs.reason).toBe('Rejected via Slack');
     expect(callArgs.approverEmail).toBe('mike@triarchsecurity.com');
+  });
+
+  it('writes audit row even on signature-verification failure', async () => {
+    const body = 'payload=' + encodeURIComponent(JSON.stringify({ type: 'block_actions' }));
+    const req = buildSignedRequest(body, { tamperSig: true });
+    const { POST } = await import('@/app/api/slack/interact/route');
+    const res = await POST(req as never);
+    expect(res.status).toBe(401);
+    expect(recordSlackAuditMock).toHaveBeenCalledTimes(1);
+    expect(recordSlackAuditMock.mock.calls[0][0].actionId).toBe('_sig_failed');
+    expect(recordSlackAuditMock.mock.calls[0][0].responseStatus).toBe(401);
   });
 });
