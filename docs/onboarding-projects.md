@@ -504,6 +504,81 @@ Expected: one row with `branch='main'`, `result='merged'`.
 
 ---
 
+## Step 10 — OttoBot Slack App scope upgrade + endpoint URL configuration
+
+**One-time per workspace.** This step expands OttoBot's Slack scopes to support slash commands (`/triarch`) and channel mentions (`@OttoBot`). The bot already has `chat:write` from the v1.14 release-gating workflow; this adds the new capabilities and configures the two new admin endpoints introduced in v2.0 Phase 7.
+
+### What's being added
+
+| Scope | Purpose |
+|-------|---------|
+| `chat:write.public` | Post help/status replies in channels OttoBot is not a member of |
+| `app_mentions:read` | Receive `app_mention` events when someone types `@OttoBot ...` |
+| `commands` | Receive slash commands at `/api/slack/commands` |
+
+### Procedure
+
+1. **Open the OttoBot Slack App configuration:**
+   - Navigate to `https://api.slack.com/apps`
+   - Select the OttoBot app
+
+2. **Add the three scopes:**
+   - Go to **OAuth & Permissions** then **Scopes** then **Bot Token Scopes**
+   - Click **Add an OAuth Scope** and add each of: `chat:write.public`, `app_mentions:read`, `commands`
+   - Slack will show a banner prompting workspace reinstall — do NOT reinstall yet, finish steps 3 and 4 first
+
+3. **Register the `/triarch` slash command:**
+   - Go to **Slash Commands** then **Create New Command**
+   - Command: `/triarch`
+   - Request URL: `https://admin.triarch.dev/api/slack/commands`
+   - Short Description: `Triarch deploy automation — deploy / status / help`
+   - Usage Hint: `[deploy|status] <project> [<version>]`
+   - Save
+
+4. **Configure the Events API endpoint:**
+   - Go to **Event Subscriptions** then toggle **Enable Events** on
+   - Request URL: `https://admin.triarch.dev/api/slack/events`
+   - Slack will challenge the URL — admin's `url_verification` handler responds with the challenge automatically (no admin code change needed; the `/api/slack/events` route handles this BEFORE HMAC verification per Phase 7 RESEARCH Pitfall 2)
+   - Under **Subscribe to bot events**, add `app_mention`
+   - Save
+
+5. **Reinstall the workspace:**
+   - Go back to **OAuth & Permissions** then click **Reinstall to Workspace** at the top of the page
+   - Approve the new permissions when prompted
+   - Slack issues a new bot token IF scopes changed materially. Copy the new `Bot User OAuth Token` from the **OAuth Tokens for Your Workspace** section.
+
+6. **Update SLACK_BOT_TOKEN in triarch-vault (only if the token changed):**
+   - In most cases reinstalling a Slack app preserves the existing bot token. Verify by comparing the displayed token's last 8 chars against what's currently in the vault.
+   - If the token CHANGED:
+
+     ```bash
+     gcloud secrets versions add SLACK_BOT_TOKEN \
+       --data-file=- \
+       --project=triarch-vault \
+       <<< 'xoxb-NEW-TOKEN-VALUE'
+     ```
+
+   - Wait roughly 5 minutes for `@myalterlego/secrets`'s 300s in-process cache to expire across admin's running instances, OR redeploy admin to flush the cache.
+
+7. **Verify end-to-end (smoke test):**
+   - In any Slack channel where you're a member: type `/triarch` (no args) — expect ephemeral help text listing `deploy` and `status` subcommands.
+   - Type `/triarch status admin` — expect ephemeral Block Kit response with Dev / Prod / Active RCs / Last 3 Deploys sections.
+   - Mention OttoBot in a channel: `@OttoBot status admin` — expect a threaded reply with the same Block Kit. (OttoBot must be invited to the channel OR `chat:write.public` is in scope, which we just added.)
+   - As a non-staff Slack user, type `/triarch deploy admin v0.0.0` — expect ephemeral `:no_entry: This command requires Triarch staff access.`
+
+8. **Confirm audit rows:**
+   - Visit `/admin/platform/slack-audit` (after applying `scripts/seed-slack-audit-nav.sql` so the sidebar link appears).
+   - Confirm rows for the smoke-test calls above are present with `action_id` values like `slash_help`, `slash_status`, `event_app_mention_status`.
+
+### Notes
+
+- The `chat:write.public` scope is required because the bot may not be a member of every channel where users mention it. Without this scope, threaded replies fail silently with `not_in_channel`.
+- The Events API request URL must be reachable from the public internet — admin.triarch.dev satisfies this. Local development against this URL is not directly supported; use Slack's Socket Mode or a tunnel (e.g. `cloudflared`, `ngrok`) for local testing of the events handler.
+- If the Slack URL verification fails ("Your URL didn't respond with the value of the challenge parameter"), check that `/api/slack/events` returns the challenge BEFORE HMAC verification and that admin is deployed with the new code (these changes are in Phase 7 plan 07-04).
+- Per CONTEXT D-22: `SLACK_BOT_TOKEN` does NOT need rotation IF reinstall preserves the existing token. Slack typically preserves tokens unless scopes change significantly. Always verify before rotating.
+
+---
+
 ## Verification Checklist
 
 - [ ] Project record created; `apiKey` saved to a secure location (password manager)
