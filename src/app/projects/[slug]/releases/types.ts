@@ -44,4 +44,30 @@ export interface ReleaseRow {
     releasedBy: string | null;
     commitSha: string | null;
   } | null;
+  // ── v2.0 Phase 5: multi-branch RC support ──
+  branch: string | null;                          // from release_logs.branch (nullable for legacy rows; treat null as 'main')
+  metadata: Record<string, unknown> | null;       // from release_logs.metadata; reads .previewUrl
+}
+
+// ── v2.0 Phase 5: BranchSection grouping ───────────────────────────
+
+export interface ConflictState {
+  files: string[];          // from promote_attempts.conflict_files JSONB (always an array — schema default([]))
+  rebaseError: string | null;
+  createdAt: string;        // ISO of promote_attempts.created_at
+}
+
+export interface BranchAggregate {
+  pending: number;          // count of releases with status='pending_approval' in the section
+  promoted: number;         // count of releases with status='promoted' in the section
+  conflict: boolean;        // mirrors `section.conflict !== null`
+}
+
+export interface BranchSection {
+  branch: string;           // 'main' or the feature branch name; never null (callers normalise)
+  releases: ReleaseRow[];   // releases for this branch in display order
+  conflict: ConflictState | null;
+  maxDeployedAt: string | null;  // ISO; max(deployedAt ?? releasedAt) over releases; used for sort + header timestamp
+  isActive: boolean;        // drives default-expanded state — true if maxDeployedAt within 30 days OR latest status non-terminal
+  aggregate: BranchAggregate;
 }
