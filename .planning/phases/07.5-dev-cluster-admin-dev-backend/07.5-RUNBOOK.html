@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Triarch v2.0 — Phase 7 + 7.5 Manual Runbook</title>
+  <style>
+    :root {
+      --bg: #0f0f10;
+      --surface: #18181b;
+      --surface-2: #1f1f23;
+      --border: #27272a;
+      --text: #e4e4e7;
+      --text-dim: #a1a1aa;
+      --text-muted: #71717a;
+      --teal: #14b8a6;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --green: #10b981;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+    .container { max-width: 920px; margin: 0 auto; padding: 32px 24px 80px; }
+    header { padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    header h1 { margin: 0 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+    header .subtitle { color: var(--text-dim); font-size: 14px; }
+    header .meta { margin-top: 12px; display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+    .progress-bar { margin-top: 16px; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--green)); transition: width 0.3s ease; }
+    .progress-text { margin-top: 6px; font-size: 11px; color: var(--text-muted); font-family: "SF Mono", Menlo, monospace; }
+
+    section.phase { margin-bottom: 40px; }
+    section.phase > h2 {
+      font-size: 18px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em;
+      display: flex; align-items: center; gap: 10px;
+    }
+    section.phase > h2 .badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      background: var(--amber); color: #18181b;
+    }
+    section.phase > h2 .badge.long { background: var(--blue); color: white; }
+    section.phase > .summary { color: var(--text-dim); font-size: 13px; margin: 0 0 16px; }
+
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .step.complete {
+      opacity: 0.55;
+      border-color: var(--green);
+    }
+    .step-header {
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .step-header:hover { background: var(--surface-2); }
+    .step input[type="checkbox"] {
+      margin: 2px 0 0 0;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      cursor: pointer;
+      accent-color: var(--green);
+    }
+    .step-title {
+      flex: 1;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .step.complete .step-title { text-decoration: line-through; color: var(--text-muted); }
+    .step-num {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+    .step-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: "SF Mono", Menlo, monospace;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .step-body {
+      padding: 0 16px 16px 46px;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+    .step-body p { margin: 0 0 10px; }
+    .step-body ul, .step-body ol { margin: 0 0 10px; padding-left: 20px; }
+    .step-body li { margin-bottom: 4px; }
+    .step-body code {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 12px;
+      background: var(--surface-2);
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: var(--teal);
+    }
+    .step-body pre {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 8px 0;
+      overflow-x: auto;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .step-body pre code { background: none; padding: 0; color: inherit; }
+    .step-body .verify {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(20, 184, 166, 0.07);
+      border-left: 3px solid var(--teal);
+      border-radius: 0 4px 4px 0;
+      font-size: 12px;
+    }
+    .step-body .verify strong { color: var(--teal); }
+    .step-body .warn {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(245, 158, 11, 0.07);
+      border-left: 3px solid var(--amber);
+      border-radius: 0 4px 4px 0;
+      font-size: 12px;
+    }
+    .step-body .warn strong { color: var(--amber); }
+    .step-body details { margin-top: 8px; }
+    .step-body summary {
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--blue);
+      user-select: none;
+    }
+    .step-body summary:hover { color: var(--teal); }
+    .step-body details[open] summary { margin-bottom: 8px; }
+
+    .block {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+    .block .label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; margin-bottom: 4px; }
+
+    table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+    table th, table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+    table th { color: var(--text-muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    table td code { font-size: 11px; }
+
+    footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; }
+    footer button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    footer button:hover { background: var(--surface-2); color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Triarch v2.0 — Manual Runbook</h1>
+  <div class="subtitle">Pending HUMAN actions for Phase 7 (3 items) and Phase 7.5 (full provisioning).</div>
+  <div class="meta">
+    <span>Generated: 2026-05-05</span>
+    <span>Estimated time: ~3–4 hours active work, plus async wait time for cluster provisioning</span>
+    <span>Source: <code>.planning/phases/07.5-dev-cluster-admin-dev-backend/07.5-CONTEXT.md</code></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+  <div class="progress-text" id="progress-text">0 of 0 complete</div>
+</header>
+
+<!-- ============================================================ -->
+<section class="phase">
+  <h2><span class="badge">PHASE 7 — DO FIRST</span> Outstanding Slack &amp; Audit Items</h2>
+  <p class="summary">Three items left over from Phase 7 (OttoBot Dispatcher Hardening). Doing these first means Phase 7 is fully closed before you start the bigger 7.5 work, and the audit page works for verifying 7.5 deploys.</p>
+
+  <div class="step" data-id="p7-1">
+    <label class="step-header">
+      <input type="checkbox" data-id="p7-1">
+      <span class="step-title"><span class="step-num">P7-1</span>Apply Slack-audit nav seed to prod CRDB</span>
+      <span class="step-time">~3 min</span>
+    </label>
+    <div class="step-body">
+      <p>Adds the <code>/admin/platform/slack-audit</code> nav link to the staff sidebar. Idempotent (re-runnable).</p>
+      <pre><code># Pull DATABASE_URL from Firebase secrets, then apply the seed
+firebase apphosting:secrets:access DATABASE_URL --project=triarch-dev-website &gt; /tmp/dburl
+psql "$(cat /tmp/dburl)" -f scripts/seed-slack-audit-nav.sql
+rm /tmp/dburl</code></pre>
+      <div class="verify"><strong>Verify:</strong> after the next admin deploy lands, log in as staff at <code>https://admin.triarch.dev</code> and confirm a "Slack Audit" link appears under Platform in the sidebar. Non-staff should not see it.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="p7-2">
+    <label class="step-header">
+      <input type="checkbox" data-id="p7-2">
+      <span class="step-title"><span class="step-num">P7-2</span>Upgrade OttoBot Slack App scopes (OTTOBOT-02)</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Adds three scopes required for slash commands and app mentions, plus configures the request URLs for the new endpoints.</p>
+      <ol>
+        <li>Go to <a href="https://api.slack.com/apps" style="color: var(--blue)">api.slack.com/apps</a> → select <strong>OttoBot</strong></li>
+        <li><strong>OAuth &amp; Permissions</strong> → Bot Token Scopes → add:
+          <ul>
+            <li><code>chat:write.public</code></li>
+            <li><code>app_mentions:read</code></li>
+            <li><code>commands</code></li>
+          </ul>
+        </li>
+        <li><strong>Slash Commands</strong> → Create New Command:
+          <ul>
+            <li>Command: <code>/triarch</code></li>
+            <li>Request URL: <code>https://admin.triarch.dev/api/slack/commands</code></li>
+            <li>Short Description: <code>Triarch deploy automation</code></li>
+            <li>Usage Hint: <code>deploy &lt;project&gt; &lt;version&gt; | status &lt;project&gt;</code></li>
+          </ul>
+        </li>
+        <li><strong>Event Subscriptions</strong> → Enable Events → Request URL: <code>https://admin.triarch.dev/api/slack/events</code> (Slack will hit this URL with a <code>url_verification</code> challenge — admin returns the challenge automatically). Subscribe to bot event <code>app_mention</code>.</li>
+        <li><strong>Install App</strong> → Reinstall to Workspace (preserves existing token unless Slack rotates it).</li>
+      </ol>
+      <div class="warn"><strong>If Slack rotates the bot token:</strong> update <code>SLACK_BOT_TOKEN</code> in <code>triarch-vault</code>:
+        <pre><code>echo "&lt;new-token&gt;" | gcloud secrets versions add SLACK_BOT_TOKEN --data-file=- --project=triarch-vault</code></pre>
+        Then redeploy admin so it picks up the new version.
+      </div>
+      <div class="verify"><strong>Verify:</strong> in any Slack channel where OttoBot is, type <code>/triarch</code> (no args). You should see the help text reply. If you see "command not found", the slash command registration didn't save.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="p7-3">
+    <label class="step-header">
+      <input type="checkbox" data-id="p7-3">
+      <span class="step-title"><span class="step-num">P7-3</span>Smoke-test Slack endpoints end-to-end</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>After P7-1 and P7-2 are done and the next admin deploy ships:</p>
+      <ol>
+        <li>In Slack, type <code>/triarch status admin</code> — verify Block Kit response shows Dev / Prod / RCs / Last 3 Deploys</li>
+        <li>In any public channel where OttoBot is invited, post <code>@OttoBot status admin</code> — same response, posted as threaded reply</li>
+        <li>Open <code>https://admin.triarch.dev/admin/platform/slack-audit</code> as staff — verify both interactions show up as audit rows with action_id, latency, response_status 200</li>
+        <li>Try <code>/triarch deploy admin v1.14.6</code> — verify ephemeral ack with run URL link to <code>github.com/MyAlterLego/triarch-dev/actions/workflows/promote-branch.yml</code></li>
+      </ol>
+      <div class="warn"><strong>Don't actually approve the deploy</strong> in step 4 unless you want admin to redeploy. Just confirm the ack appears.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="phase">
+  <h2><span class="badge long">PHASE 7.5 — MAIN WORK</span> Dev Cluster + Per-App Dev Backends</h2>
+  <p class="summary">Stand up a non-prod environment for every Triarch-owned app: new CockroachDB cluster, per-project dev DBs, per-project <code>&lt;app&gt;-dev</code> Firebase App Hosting backends, env-aware shared-workflows v4, plus close out Phase 4's deferred UAT.</p>
+
+  <!-- Block A: Cluster provisioning -->
+  <div class="step" data-id="a-1">
+    <label class="step-header">
+      <input type="checkbox" data-id="a-1">
+      <span class="step-title"><span class="step-num">A-1</span>Provision new CockroachDB Cloud cluster</span>
+      <span class="step-time">~15 min + ~10 min wait</span>
+    </label>
+    <div class="step-body">
+      <p>Dedicated dev cluster, separate from <code>triarchdev-24092</code> (prod).</p>
+      <ol>
+        <li>Sign in to <a href="https://cockroachlabs.cloud/" style="color: var(--blue)">cockroachlabs.cloud</a></li>
+        <li><strong>Create Cluster</strong> → <strong>Basic</strong> tier (smallest, ~$0/mo for low usage)</li>
+        <li>Cloud: <strong>Google Cloud</strong>, Region: <strong>us-east1</strong> (parity with prod)</li>
+        <li>Cluster name: <strong>triarchdev-dev</strong> (or accept Cockroach-generated suffix)</li>
+        <li>Create SQL user; save the auto-generated password to your password manager (you'll need it for connection strings)</li>
+        <li>Wait for cluster to provision (~5 min)</li>
+        <li>Click the cluster → <strong>Connect</strong> → copy the connection string template (looks like <code>postgresql://&lt;user&gt;:&lt;pass&gt;@triarchdev-dev-NNNN.j77.aws-us-east-1.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full</code>)</li>
+      </ol>
+      <div class="block">
+        <div class="label">Save these securely</div>
+        <ul>
+          <li>Cluster name (e.g., <code>triarchdev-dev-1234</code>)</li>
+          <li>SQL username + password</li>
+          <li>Connection string template (replace <code>defaultdb</code> with each project's <code>&lt;app&gt;_dev</code>)</li>
+        </ul>
+      </div>
+      <div class="verify"><strong>Verify:</strong> <code>cockroach sql --url "&lt;connection_string&gt;" -e "SHOW DATABASES;"</code> shows <code>defaultdb</code> + <code>system</code>. No errors.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="a-2">
+    <label class="step-header">
+      <input type="checkbox" data-id="a-2">
+      <span class="step-title"><span class="step-num">A-2</span>Create six per-app dev databases</span>
+      <span class="step-time">~5 min</span>
+    </label>
+    <div class="step-body">
+      <p>Single SQL script creates all six dev DBs idempotently. The plan-phase agent will create <code>scripts/provision-dev-dbs.sql</code> in the admin repo with this content:</p>
+      <pre><code>CREATE DATABASE IF NOT EXISTS admin_dev;
+CREATE DATABASE IF NOT EXISTS portal_dev;
+CREATE DATABASE IF NOT EXISTS darksouls_dev;
+CREATE DATABASE IF NOT EXISTS tmi_dev;
+CREATE DATABASE IF NOT EXISTS truthtreason_dev;
+CREATE DATABASE IF NOT EXISTS www_dev;</code></pre>
+      <p>Apply it:</p>
+      <pre><code>cockroach sql --url "&lt;new-cluster-connection-string&gt;" -f scripts/provision-dev-dbs.sql</code></pre>
+      <div class="verify"><strong>Verify:</strong> <code>cockroach sql --url "..." -e "SHOW DATABASES;"</code> lists all 6 plus <code>defaultdb</code>, <code>system</code>.</div>
+    </div>
+  </div>
+
+  <!-- Block B: Branch + backend per Triarch-owned project -->
+  <div class="step" data-id="b-admin">
+    <label class="step-header">
+      <input type="checkbox" data-id="b-admin">
+      <span class="step-title"><span class="step-num">B-1</span>Set up <code>admin-dev</code> backend (this repo)</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Repo: <code>MyAlterLego/triarch-dev</code> · Firebase project: <code>triarch-dev-website</code></p>
+      <ol>
+        <li>Create <code>dev</code> branch:
+          <pre><code>cd ~/claude/triarch/development/admin
+git checkout -b dev
+git push -u origin dev</code></pre>
+        </li>
+        <li>Create <code>admin-dev</code> backend:
+          <pre><code>firebase apphosting:backends:create admin-dev \
+  --git-branch=dev \
+  --project=triarch-dev-website \
+  --region=us-central1
+# (Accept defaults; service account, repo connection match prod)</code></pre>
+        </li>
+        <li>Set <code>DATABASE_URL_DEV</code> secret. Use the connection string from A-1 with <code>defaultdb</code> replaced by <code>admin_dev</code>:
+          <pre><code>firebase apphosting:secrets:set DATABASE_URL_DEV \
+  --project=triarch-dev-website \
+  --backend=admin-dev
+# Paste: postgresql://&lt;user&gt;:&lt;pass&gt;@triarchdev-dev-NNNN.../admin_dev?sslmode=verify-full</code></pre>
+        </li>
+      </ol>
+      <div class="verify"><strong>Verify:</strong> <code>firebase apphosting:backends:list --project=triarch-dev-website</code> shows both <code>admin</code> (prod) and <code>admin-dev</code>.</div>
+      <div class="warn"><strong>Hold on the first deploy</strong> — wait until shared-workflows@v4 is tagged and admin's <code>apphosting.yaml</code>/<code>apphosting.prod.yaml</code> overlay is in place (Block C below). Otherwise admin-dev will deploy with the wrong config.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="b-portal">
+    <label class="step-header">
+      <input type="checkbox" data-id="b-portal">
+      <span class="step-title"><span class="step-num">B-2</span>Set up <code>portal-dev</code> backend</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Repo: <code>MyAlterLego/triarchsecurity-portal</code> · Firebase project: <em>portal's existing FB project</em></p>
+      <ol>
+        <li>Create <code>dev</code> branch + push (same pattern as B-1)</li>
+        <li><code>firebase apphosting:backends:create portal-dev --git-branch=dev --project=&lt;portal-fb&gt;</code></li>
+        <li>Set <code>DATABASE_URL_DEV</code> with connection URL ending in <code>/portal_dev</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="step" data-id="b-www">
+    <label class="step-header">
+      <input type="checkbox" data-id="b-www">
+      <span class="step-title"><span class="step-num">B-3</span>Set up <code>www-dev</code> backend</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Repo: <code>MyAlterLego/triarch-website</code> (or whichever the www repo is) · Firebase project: <em>www's existing FB project</em></p>
+      <ol>
+        <li>Create <code>dev</code> branch + push</li>
+        <li><code>firebase apphosting:backends:create www-dev --git-branch=dev --project=&lt;www-fb&gt;</code></li>
+        <li>Set <code>DATABASE_URL_DEV</code> with connection URL ending in <code>/www_dev</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Customer-owned -->
+  <div class="step" data-id="b-darksouls">
+    <label class="step-header">
+      <input type="checkbox" data-id="b-darksouls">
+      <span class="step-title"><span class="step-num">B-4</span>Set up <code>darksouls-dev</code> backend</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Repo: <code>MyAlterLego/darksouls</code> · Firebase project: <em>customer's existing GCP</em></p>
+      <p>Same three sub-steps as B-1, in customer's GCP. <code>DATABASE_URL_DEV</code> ends in <code>/darksouls_dev</code>.</p>
+    </div>
+  </div>
+
+  <div class="step" data-id="b-tmi">
+    <label class="step-header">
+      <input type="checkbox" data-id="b-tmi">
+      <span class="step-title"><span class="step-num">B-5</span>Set up <code>tmi-dev</code> backend</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Repo: <code>MyAlterLego/tmi</code> · Firebase project: <em>customer's existing GCP</em></p>
+      <p>Same as above. <code>DATABASE_URL_DEV</code> ends in <code>/tmi_dev</code>.</p>
+    </div>
+  </div>
+
+  <div class="step" data-id="b-truthtreason">
+    <label class="step-header">
+      <input type="checkbox" data-id="b-truthtreason">
+      <span class="step-title"><span class="step-num">B-6</span>Set up <code>truthtreason-dev</code> backend</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Repo: <code>MyAlterLego/truthtreason</code> · Firebase project: <em>customer's existing GCP</em></p>
+      <p>Same as above. <code>DATABASE_URL_DEV</code> ends in <code>/truthtreason_dev</code>.</p>
+      <div class="warn"><strong>Truth+Treason has the canonical apphosting overlay</strong> already (per CONTEXT). The plan-phase agent will generalize that pattern for other repos in Block C — for truth+treason, the overlay already exists.</div>
+    </div>
+  </div>
+
+  <!-- Block C: shared-workflows v4 -->
+  <div class="step" data-id="c-1">
+    <label class="step-header">
+      <input type="checkbox" data-id="c-1">
+      <span class="step-title"><span class="step-num">C-1</span>Wait for plan-phase to ship shared-workflows v4 changes</span>
+      <span class="step-time">async — no action needed</span>
+    </label>
+    <div class="step-body">
+      <p>Claude is concurrently planning Phase 7.5. The plan will produce these <strong>code deliverables</strong> in <code>~/claude/MyAlterLego/shared-workflows</code>:</p>
+      <ul>
+        <li>New <code>environment: dev|prod</code> input on <code>deploy-firebase.yml</code></li>
+        <li>New reusable <code>db-migrate.yml</code> workflow (replaces manual <code>firebase apphosting:secrets:access | psql -f</code>)</li>
+        <li>Per-app <code>apphosting.prod.yaml</code> overlay convention applied to admin (and possibly portal/www)</li>
+        <li>Updated <code>docs/onboarding-projects.md</code> Step 11 documenting the convention</li>
+      </ul>
+      <p>Tick this box once you see those commits land. Don't tag <code>v4</code> yet — that's C-2.</p>
+    </div>
+  </div>
+
+  <div class="step" data-id="c-2">
+    <label class="step-header">
+      <input type="checkbox" data-id="c-2">
+      <span class="step-title"><span class="step-num">C-2</span>Tag <code>shared-workflows@v4</code> after admin canary</span>
+      <span class="step-time">~15 min including canary verify</span>
+    </label>
+    <div class="step-body">
+      <p>Match the Phase 2 v1→v2 rollout pattern: tag, canary, verify, bump consumers.</p>
+      <ol>
+        <li>Push your <code>dev</code> branch on the admin repo (already created in B-1) so the canary deploy runs</li>
+        <li>Verify the dev-canary deploy reaches <code>admin-dev</code> backend, runs db-migrate.yml without errors, and the <code>admin-dev.&lt;region&gt;.hosted.app</code> URL resolves</li>
+        <li>If green, tag <code>v4</code> on <code>MyAlterLego/shared-workflows</code>:
+          <pre><code>cd ~/claude/MyAlterLego/shared-workflows
+git checkout main
+git pull
+git tag v4
+git push origin v4</code></pre>
+        </li>
+      </ol>
+      <div class="warn"><strong>If the canary fails</strong> (e.g. version-extraction bug like Phase 2 hit): fix the bug, push the fix, re-canary, then tag from the fix commit. v3 stays for unmigrated consumers regardless.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="c-3">
+    <label class="step-header">
+      <input type="checkbox" data-id="c-3">
+      <span class="step-title"><span class="step-num">C-3</span>Bump consumer <code>ci-cd.yml</code> refs from <code>@v3</code> to <code>@v4</code></span>
+      <span class="step-time">~10 min per repo · do incrementally</span>
+    </label>
+    <div class="step-body">
+      <p>For each Triarch-owned consumer (admin, portal, www) AND each customer-owned (truthtreason, darksouls, tmi):</p>
+      <ol>
+        <li>In the consumer repo's <code>.github/workflows/ci-cd.yml</code>, bump <code>uses: MyAlterLego/shared-workflows/.github/workflows/deploy-firebase.yml@v3</code> → <code>@v4</code></li>
+        <li>Add the <code>environment</code> input: <code>environment: ${{ github.ref_name == 'main' &amp;&amp; 'prod' || 'dev' }}</code></li>
+        <li>Push the change; verify both <code>main</code> (prod) and <code>dev</code> deploys still work</li>
+      </ol>
+      <p>Bump admin first (canary). Verify one full prod + dev deploy round-trip. Then bump CRM. Then customer repos last.</p>
+    </div>
+  </div>
+
+  <!-- Block D: Phase 4 UAT closure -->
+  <div class="step" data-id="d-1">
+    <label class="step-header">
+      <input type="checkbox" data-id="d-1">
+      <span class="step-title"><span class="step-num">D-1</span>Phase 4 UAT — Scenario 1: Clean rebase</span>
+      <span class="step-time">~10 min</span>
+    </label>
+    <div class="step-body">
+      <p>Closes scenario 1 of <code>04-HUMAN-UAT.md</code>.</p>
+      <ol>
+        <li>On admin repo: <code>git checkout dev &amp;&amp; git checkout -b feat/uat-clean</code></li>
+        <li>Make a trivial change (e.g. add a comment to README.md), commit, push</li>
+        <li>From admin UI (<code>/projects/admin/releases</code>), approve the resulting RC for <code>feat/uat-clean</code></li>
+        <li>Watch GitHub Actions — <code>promote-branch.yml@v3</code> should run, rebase cleanly, merge to main</li>
+      </ol>
+      <div class="verify"><strong>Pass criteria:</strong> <code>promote_attempts</code> shows <code>result=merged</code>; OttoBot Slack thread shows <code>:white_check_mark: Promoted feat/uat-clean to main (sha: ...)</code>; main contains the commit.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="d-2">
+    <label class="step-header">
+      <input type="checkbox" data-id="d-2">
+      <span class="step-title"><span class="step-num">D-2</span>Phase 4 UAT — Scenario 2: Conflict</span>
+      <span class="step-time">~15 min</span>
+    </label>
+    <div class="step-body">
+      <p>Closes scenario 2 of <code>04-HUMAN-UAT.md</code>.</p>
+      <ol>
+        <li>From admin <code>main</code>: edit a line in any source file, commit, push to a new branch <code>feat/uat-base-A</code> and approve to merge it (creates baseline change)</li>
+        <li>Branch <code>feat/uat-conflict</code> from <code>main</code> BEFORE D-2 step 1's merge → edit the SAME line differently, commit, push</li>
+        <li>Approve <code>feat/uat-conflict</code> via admin UI</li>
+      </ol>
+      <div class="verify"><strong>Pass criteria:</strong> <code>promote_attempts</code> shows <code>result=conflict</code>; <code>conflict_files</code> JSONB lists the file you edited; OttoBot Slack thread shows <code>:warning: Cannot promote feat/uat-conflict — conflicts with main: ...</code> + rebase hint; the customer page <code>/projects/admin/releases</code> shows the red Conflict badge on <code>feat/uat-conflict</code>'s section + Approve button is hidden + helper text shows.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="d-3">
+    <label class="step-header">
+      <input type="checkbox" data-id="d-3">
+      <span class="step-title"><span class="step-num">D-3</span>Phase 4 UAT — Scenario 3: CI failed</span>
+      <span class="step-time">~15 min</span>
+    </label>
+    <div class="step-body">
+      <p>Closes scenario 3 of <code>04-HUMAN-UAT.md</code>.</p>
+      <ol>
+        <li>Branch <code>feat/uat-ci-fail</code> from main</li>
+        <li>Modify a test to fail intentionally (e.g. <code>expect(true).toBe(false)</code>)</li>
+        <li>Commit, push, approve via admin UI</li>
+      </ol>
+      <div class="verify"><strong>Pass criteria:</strong> rebase succeeds but quality-gate.yml fails; <code>promote_attempts</code> shows <code>result=ci_failed</code> + <code>ci_run_url</code> populated; OttoBot Slack thread shows <code>:no_entry: CI failed for feat/uat-ci-fail — see &lt;url&gt;</code>; main is NOT updated.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="d-4">
+    <label class="step-header">
+      <input type="checkbox" data-id="d-4">
+      <span class="step-title"><span class="step-num">D-4</span>Phase 4 UAT — Scenario 4: Concurrent (PILOT-02 dry run)</span>
+      <span class="step-time">~25 min</span>
+    </label>
+    <div class="step-body">
+      <p>Closes scenario 4 of <code>04-HUMAN-UAT.md</code> + serves as a PILOT-02 dry run.</p>
+      <ol>
+        <li>From main, branch <code>feat/uat-concurrent-A</code> with a non-conflicting change</li>
+        <li>From main, branch <code>feat/uat-concurrent-B</code> with a different non-conflicting change</li>
+        <li>Approve A first via admin UI; while A's promote-branch.yml is still running, approve B</li>
+      </ol>
+      <div class="verify"><strong>Pass criteria:</strong> A merges first → <code>main</code> contains A's commit. B's promote-branch.yml runs after, rebases B on the updated main (which now has A), CI green, merges. Final main contains BOTH A and B commits with no work reverted. <code>promote_attempts</code> shows two <code>result=merged</code> rows.</div>
+    </div>
+  </div>
+
+  <div class="step" data-id="d-5">
+    <label class="step-header">
+      <input type="checkbox" data-id="d-5">
+      <span class="step-title"><span class="step-num">D-5</span>Update <code>04-HUMAN-UAT.md</code> to status=resolved</span>
+      <span class="step-time">~3 min</span>
+    </label>
+    <div class="step-body">
+      <p>If all four scenarios passed, mark Phase 4's UAT closed:</p>
+      <ol>
+        <li>Edit <code>.planning/phases/04-promote-branch-workflow/04-HUMAN-UAT.md</code></li>
+        <li>Frontmatter: <code>status: deferred</code> → <code>status: resolved</code></li>
+        <li>For each test: <code>result: [pending]</code> → <code>result: passed (UAT 7.5 D-N)</code></li>
+        <li>Commit:
+          <pre><code>git add .planning/phases/04-promote-branch-workflow/04-HUMAN-UAT.md
+git commit -m "docs(04): close Phase 4 UAT after Phase 7.5 dev-cluster verification"</code></pre>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="phase">
+  <h2><span class="badge" style="background: var(--green); color: white">REFERENCE</span> Useful Files &amp; Commands</h2>
+  <div class="step" data-id="ref-1">
+    <label class="step-header">
+      <input type="checkbox" data-id="ref-1">
+      <span class="step-title">Read-only references</span>
+    </label>
+    <div class="step-body">
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><code>.planning/phases/07.5-dev-cluster-admin-dev-backend/07.5-CONTEXT.md</code></td><td>Full Phase 7.5 decisions D-01..D-24</td></tr>
+        <tr><td><code>.planning/phases/04-promote-branch-workflow/04-HUMAN-UAT.md</code></td><td>The UAT this phase closes</td></tr>
+        <tr><td><code>.planning/phases/07-ottobot-dispatcher-hardening/07-HUMAN-UAT.md</code></td><td>The Phase 7 items P7-1, P7-2, P7-3 also live here</td></tr>
+        <tr><td><code>scripts/seed-slack-audit-nav.sql</code></td><td>P7-1 input</td></tr>
+        <tr><td><code>scripts/provision-dev-dbs.sql</code></td><td>A-2 input (created by plan-phase agent)</td></tr>
+        <tr><td><code>docs/onboarding-projects.md</code></td><td>Existing onboarding runbook; Step 10 (Phase 7) and Step 11 (Phase 7.5) get added</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Click any checkbox to mark complete. State persists in your browser via localStorage. To reset: <button onclick="localStorage.clear(); location.reload()">Clear all checkmarks</button></p>
+  <p>This file lives at <code>.planning/phases/07.5-dev-cluster-admin-dev-backend/07.5-RUNBOOK.html</code> — open it in your browser. Source decisions in <code>07.5-CONTEXT.md</code>.</p>
+</footer>
+
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'triarch-v2-phase-7.5-runbook';
+  const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+  const progressFill = document.getElementById('progress-fill');
+  const progressText = document.getElementById('progress-text');
+
+  // Load state
+  let state = {};
+  try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) {}
+
+  function applyState() {
+    checkboxes.forEach(cb => {
+      const id = cb.dataset.id;
+      if (id && state[id]) {
+        cb.checked = true;
+        const stepEl = cb.closest('.step');
+        if (stepEl) stepEl.classList.add('complete');
+      }
+    });
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const total = checkboxes.length;
+    const done = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = done + ' of ' + total + ' complete (' + pct + '%)';
+  }
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const id = cb.dataset.id;
+      if (id) {
+        state[id] = cb.checked;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+      const stepEl = cb.closest('.step');
+      if (stepEl) stepEl.classList.toggle('complete', cb.checked);
+      updateProgress();
+    });
+  });
+
+  // Toggle step body on header click (but not on checkbox click)
+  // Actually, let's not — keep it always-visible. Less surprising.
+
+  applyState();
+})();
+</script>
+</body>
+</html>
