@@ -33,7 +33,7 @@
 
 ### Tracker ↔ Release Linkage (LINK)
 
-- [ ] **LINK-01**: System has `release_log_links` join table with FK indexes (links release entries to bug_reports / feature_requests / external)
+- [x] **LINK-01**: System has `release_log_links` join table with FK indexes (links release entries to bug_reports / feature_requests / external)
 - [ ] **LINK-02**: Release ingest auto-detects bug/feature IDs in commit messages via regex (patterns: `#BUG-123`, `closes FEAT-45`, `fixes #99`) and writes to `release_log_links`
 - [ ] **LINK-03**: Auto-detected IDs are validated against existing bug/feature IDs in DB before stamping (no false positives surfaced)
 - [ ] **LINK-04**: Authoring UI in `/admin/modules/release-logs` lets staff manually add or remove links per release entry (override auto-detection)
@@ -43,7 +43,7 @@
 
 ### Branch Preview (PREV)
 
-- [ ] **PREV-01**: System has `projects.preview_branch_locked` (text, nullable) and `preview_branch_locked_at` (timestamp with timezone, nullable) columns to coordinate branch swap concurrency
+- [x] **PREV-01**: System has `projects.preview_branch_locked` (text, nullable) and `preview_branch_locked_at` (timestamp with timezone, nullable) columns to coordinate branch swap concurrency
 - [ ] **PREV-02**: Customer admin can click "Preview this branch" next to any RC on `/projects/<slug>/releases`
 - [ ] **PREV-03**: Branch swap calls Firebase App Hosting programmatic rollout API to deploy the selected branch onto the project's existing dev backend (e.g. `truthtreason-dev`, `tmi-dev`, `darksouls-dev`, etc.)
 - [ ] **PREV-04**: While swap is in flight, all RC rows on the page show "branch X currently previewing — set N minutes ago by user@email" banner; competing Preview buttons disabled with tooltip
@@ -111,8 +111,8 @@ Populated by `gsd-roadmapper` 2026-05-07.
 | PROM-04 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | PROM-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | DIFF-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
-| LINK-01 | Phase 10 — Schema Gate | Pending |
-| PREV-01 | Phase 10 — Schema Gate | Pending |
+| LINK-01 | Phase 10 — Schema Gate | Complete |
+| PREV-01 | Phase 10 — Schema Gate | Complete |
 | LINK-02 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
 | LINK-03 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
 | LINK-04 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |

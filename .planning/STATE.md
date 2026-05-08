@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: planning
-stopped_at: Completed 09-05-PLAN.md — PromoteButton interactive island, admin home tile retarget, v2.5.0
-last_updated: "2026-05-08T04:07:31.790Z"
+status: verifying
+stopped_at: Completed 10-01-PLAN.md — migration 0016 applied to admin_dev, release_log_links + preview lock columns, v2.5.1
+last_updated: "2026-05-08T04:24:08.477Z"
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 09 — Per-Project Pipeline Page and Web-UI Promote
+**Current focus:** Phase 10 — Schema Gate
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10 (Schema Gate) — EXECUTING
+Plan: 1 of 1
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -43,7 +43,7 @@ Plan: Not started
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Ready to plan
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -95,6 +95,9 @@ v2.1 decisions captured at roadmap creation:
 - [Phase 09]: actorSource optional with 'web' default in approveRelease/rejectRelease — existing callers unchanged
 - [Phase 09]: useState phase machine (idle/confirming/dispatching/dispatched/failed) preferred over useTransition for PromoteButton — cleaner multi-phase state isolation
 - [Phase 09]: Admin home Project Health tile Link href retargeted from /projects/<key>/releases to /admin/modules/pipeline/<key> (CONTEXT.md: 'Pipeline page is now linked from the /admin Project Health tile')
+- [Phase 10]: CHECK constraint enforces link_type discriminant at DB level — robust against Phase 11 commit-parser bugs
+- [Phase 10]: Non-partial FK indexes on release_log_links for Drizzle idiomaticity; performance negligible at expected row counts
+- [Phase 10]: 0015_snapshot.json backfilled manually to isolate Phase 9 slack_channel_id from Phase 10 migration
 
 ### Pending Todos
 
@@ -109,7 +112,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-08T04:02:15.812Z
-Stopped at: Completed 09-05-PLAN.md — PromoteButton interactive island, admin home tile retarget, v2.5.0
+Last session: 2026-05-08T04:24:08.475Z
+Stopped at: Completed 10-01-PLAN.md — migration 0016 applied to admin_dev, release_log_links + preview lock columns, v2.5.1
 Resume file: None
 Next action: `/gsd:plan-phase 8`
