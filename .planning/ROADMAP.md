@@ -346,7 +346,7 @@
 | 14. Customer Page Integration | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 15. Operational Prework | v2.2 | 5/5 | Complete    | 2026-05-08 |
 | 16. Shared Package Extraction | v2.2 | 4/4 | Complete    | 2026-05-08 |
-| 17. Hostname Guard Inventory | v2.2 | 2/2 | Complete   | 2026-05-08 |
+| 17. Hostname Guard Inventory | v2.2 | 2/2 | Complete    | 2026-05-08 |
 | 18. Portal Auth Scaffolding | v2.2 | 0/0 | Not started | - |
 | 19. Database Connectivity | v2.2 | 0/0 | Not started | - |
 | 20. URL Centralization | v2.2 | 0/0 | Not started | - |
