@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: executing
-stopped_at: "Completed 18-03-PLAN.md — real signIn membership rule + StaffCallout banner (PR #3 merged 5fbceb9)"
-last_updated: "2026-05-08T18:19:02.455Z"
+stopped_at: "Completed 18-04-PLAN.md: AUTH-07 post-login routing decision tree"
+last_updated: "2026-05-08T18:23:53.126Z"
 progress:
   total_phases: 19
   completed_phases: 10
   total_plans: 39
-  completed_plans: 37
+  completed_plans: 38
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 ## Current Position
 
 Phase: 18 (portal-auth-scaffolding) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -116,6 +116,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 18-portal-auth-scaffolding]: __Host- cookie prefix in production with NO domain attribute (host-only, Pitfall 1 guard) — AUTH-01 satisfied in code, live OAuth verification gated on OPS-04
 - [Phase 18-portal-auth-scaffolding]: Portal signIn fails closed on null getCurrentUserContext (no @triarchsecurity.com bypass unlike admin)
 - [Phase 18-portal-auth-scaffolding]: jwt callback re-queries DB for isStaff on first sign-in; getPortalSession() helper centralizes session reads
+- [Phase 18-portal-auth-scaffolding]: Staff with 0 memberships route to /no-memberships (StaffCallout handles guidance); null ctx from getCurrentUserContext also routes to /no-memberships as safe fallback
+- [Phase 18-portal-auth-scaffolding]: /projects/[slug]/releases intentionally absent — Phase 21 ships it; 1-membership users see 404 confirming routing fired
 
 ### Pending Todos
 
@@ -133,7 +135,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T18:19:02.453Z
-Stopped at: Completed 18-03-PLAN.md — real signIn membership rule + StaffCallout banner (PR #3 merged 5fbceb9)
+Last session: 2026-05-08T18:23:53.124Z
+Stopped at: Completed 18-04-PLAN.md: AUTH-07 post-login routing decision tree
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)

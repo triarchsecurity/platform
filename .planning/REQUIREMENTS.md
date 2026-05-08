@@ -44,7 +44,7 @@ NextAuth v4 setup with brand isolation, customer-only authorization, and staff "
 - [x] **AUTH-04**: Authenticated staff users see a persistent "Switch to admin.triarch.dev" callout banner; viewer/admin customer users do not see it
 - [ ] **AUTH-05**: Vitest assertion that the portal `Set-Cookie` header for the session token contains `__Host-` prefix and lacks any `Domain=` attribute
 - [ ] **AUTH-06**: Vitest grep-test that no portal source file references the OAuth `sub` claim (everywhere keys on `email`)
-- [ ] **AUTH-07**: Login wall on portal `/` (unauthenticated → /login); post-login routing (0 memberships → empty state with "Contact your project admin" copy; 1 → auto-redirect to that project; 2+ → /projects list)
+- [x] **AUTH-07**: Login wall on portal `/` (unauthenticated → /login); post-login routing (0 memberships → empty state with "Contact your project admin" copy; 1 → auto-redirect to that project; 2+ → /projects list)
 
 ### Database Connectivity
 
@@ -184,7 +184,7 @@ Updated by roadmapper during phase mapping.
 | AUTH-04 | Phase 18 | Complete |
 | AUTH-05 | Phase 18 | Pending |
 | AUTH-06 | Phase 18 | Pending |
-| AUTH-07 | Phase 18 | Pending |
+| AUTH-07 | Phase 18 | Complete |
 | DB-01 | Phase 19 | Pending |
 | DB-02 | Phase 19 | Pending |
 | DB-03 | Phase 19 | Pending |
