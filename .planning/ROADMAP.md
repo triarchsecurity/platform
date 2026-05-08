@@ -51,7 +51,7 @@
 
 ### v2.2 Customer Portal Split (Phases 15–26) — ACTIVE
 
-- [ ] **Phase 15: Operational Prework** — Repo, FAH backends, DNS, OAuth, secrets exist before app code ships
+- [x] **Phase 15: Operational Prework** — Repo, FAH backends, DNS, OAuth, secrets exist before app code ships (completed 2026-05-08)
 - [ ] **Phase 16: Shared Package Extraction** — `@myalterlego/triarch-shared@0.1.0` published; admin re-exports; CI gate prevents schema drift
 - [ ] **Phase 17: Hostname Guard Inventory** — Catalog admin's hostname checks; fail-closed middleware before second valid host appears
 - [ ] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout
@@ -185,7 +185,7 @@
 - [x] 15-02-PLAN.md — GoDaddy DNS for portal.triarch.dev (OPS-03)
 - [x] 15-03-PLAN.md — PORTAL_NEXTAUTH_SECRET in triarch-vault + secretAccessor IAM (OPS-05)
 - [x] 15-04-PLAN.md — Firebase App Hosting backends portal-prod + portal-dev (OPS-02)
-- [ ] 15-05-PLAN.md — Google OAuth client redirect URI updates (portal prod + localhost:3002) (OPS-04)
+- [x] 15-05-PLAN.md — Google OAuth client redirect URI updates (portal prod + localhost:3002) (OPS-04)
 
 ### Phase 16: Shared Package Extraction
 **Goal**: Drizzle schema and shared helpers extracted into a private GitHub Packages npm module that both apps consume; admin remains migration authority.
@@ -338,7 +338,7 @@
 | 12. Bug and Feature Detail Pages | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 13. Branch Preview Swap | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 14. Customer Page Integration | v2.1 | 3/3 | Complete    | 2026-05-08 |
-| 15. Operational Prework | v2.2 | 4/5 | In Progress|  |
+| 15. Operational Prework | v2.2 | 5/5 | Complete    | 2026-05-08 |
 | 16. Shared Package Extraction | v2.2 | 0/0 | Not started | - |
 | 17. Hostname Guard Inventory | v2.2 | 0/0 | Not started | - |
 | 18. Portal Auth Scaffolding | v2.2 | 0/0 | Not started | - |
