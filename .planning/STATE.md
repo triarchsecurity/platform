@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: "Completed 18-04-PLAN.md: AUTH-07 post-login routing decision tree"
-last_updated: "2026-05-08T18:23:53.126Z"
+status: verifying
+stopped_at: "Completed 18-05-PLAN.md — Vitest guards: cookies shape, no-.sub grep, signIn unit tests; portal v0.2.0 merged to main (c6f7b96)"
+last_updated: "2026-05-08T18:25:32.205Z"
 progress:
   total_phases: 19
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 39
-  completed_plans: 38
+  completed_plans: 39
 ---
 
 # Triarch Dev Admin — Project State
@@ -48,7 +48,7 @@ Plan: 5 of 5
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -118,6 +118,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 18-portal-auth-scaffolding]: jwt callback re-queries DB for isStaff on first sign-in; getPortalSession() helper centralizes session reads
 - [Phase 18-portal-auth-scaffolding]: Staff with 0 memberships route to /no-memberships (StaffCallout handles guidance); null ctx from getCurrentUserContext also routes to /no-memberships as safe fallback
 - [Phase 18-portal-auth-scaffolding]: /projects/[slug]/releases intentionally absent — Phase 21 ships it; 1-membership users see 404 confirming routing fired
+- [Phase 18-portal-auth-scaffolding]: Source-text assertions (readFileSync) used for __Host- prefix test — more stable than dynamic import + ENV patch in Vitest jsdom
+- [Phase 18-portal-auth-scaffolding]: no-sub-claim.test.ts filters JSDoc comment lines to prevent false positives from auth.ts documentation
 
 ### Pending Todos
 
@@ -135,7 +137,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T18:23:53.124Z
-Stopped at: Completed 18-04-PLAN.md: AUTH-07 post-login routing decision tree
+Last session: 2026-05-08T18:25:32.202Z
+Stopped at: Completed 18-05-PLAN.md — Vitest guards: cookies shape, no-.sub grep, signIn unit tests; portal v0.2.0 merged to main (c6f7b96)
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)

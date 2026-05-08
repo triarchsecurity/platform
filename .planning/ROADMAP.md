@@ -54,7 +54,7 @@
 - [x] **Phase 15: Operational Prework** — Repo, FAH backends, DNS, OAuth, secrets exist before app code ships (completed 2026-05-08)
 - [x] **Phase 16: Shared Package Extraction** — `@myalterlego/triarch-shared@0.1.0` published; admin re-exports; CI gate prevents schema drift (completed 2026-05-08)
 - [x] **Phase 17: Hostname Guard Inventory** — Catalog admin's hostname checks; fail-closed middleware before second valid host appears (completed 2026-05-08)
-- [ ] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout
+- [x] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout (completed 2026-05-08)
 - [ ] **Phase 19: Database Connectivity** — Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test
 - [ ] **Phase 20: URL Centralization (admin)** — `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters BEFORE cutover
 - [ ] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths
@@ -228,7 +228,7 @@
 - [x] 18-02-PLAN.md — NextAuth core (src/lib/auth.ts with host-only cookies + STUB signIn, route handler, login page) — AUTH-01, AUTH-02
 - [x] 18-03-PLAN.md — signIn callback (real customer-membership rule via getCurrentUserContext) + StaffCallout banner in layout — AUTH-03, AUTH-04
 - [x] 18-04-PLAN.md — Post-login routing decision tree at src/app/page.tsx + /no-memberships + /projects stubs — AUTH-07
-- [ ] 18-05-PLAN.md — Vitest tests (cookies shape, no-.sub grep guard, signIn callback unit tests) + portal v0.2.0 deploy — AUTH-05, AUTH-06
+- [x] 18-05-PLAN.md — Vitest tests (cookies shape, no-.sub grep guard, signIn callback unit tests) + portal v0.2.0 deploy — AUTH-05, AUTH-06
 
 ### Phase 19: Database Connectivity
 **Goal**: Portal connects to the same CockroachDB cluster via `pg.Pool` using a DML-only role; admin remains sole migration authority and rogue schema writes from portal are blocked at the database.
@@ -352,7 +352,7 @@
 | 15. Operational Prework | v2.2 | 5/5 | Complete    | 2026-05-08 |
 | 16. Shared Package Extraction | v2.2 | 4/4 | Complete    | 2026-05-08 |
 | 17. Hostname Guard Inventory | v2.2 | 2/2 | Complete    | 2026-05-08 |
-| 18. Portal Auth Scaffolding | v2.2 | 4/5 | In Progress|  |
+| 18. Portal Auth Scaffolding | v2.2 | 5/5 | Complete   | 2026-05-08 |
 | 19. Database Connectivity | v2.2 | 0/0 | Not started | - |
 | 20. URL Centralization | v2.2 | 0/0 | Not started | - |
 | 21. Release Page Port (Read) | v2.2 | 0/0 | Not started | - |
