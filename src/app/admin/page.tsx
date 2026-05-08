@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { getProjectPipelineSummaries, type PipelineSummary } from '@/lib/pipeline-summary';
+import { formatRelativeTime } from '@/app/projects/[slug]/releases/format';
 
 interface ProjectHealth {
   key: string;
@@ -206,11 +207,44 @@ export default async function AdminDashboard() {
         <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">Project Health</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {stats.projectHealth.map((p) => (
-            <div key={p.key} className="p-4 rounded-lg bg-zinc-900 border border-zinc-800">
-              <div className="flex items-center justify-between mb-2">
+            <Link
+              key={p.key}
+              href={`/projects/${p.key}/releases`}
+              className="relative block p-4 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900/80 transition-colors"
+            >
+              {/* PIPE-02: pending approval pill — top-right corner; absent when count is 0 */}
+              {p.pendingApprovalCount > 0 && (
+                <span className="absolute top-2 right-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  {p.pendingApprovalCount} pending
+                </span>
+              )}
+
+              {/* Project name */}
+              <div className="mb-3 pr-16">
                 <span className="text-sm font-medium text-zinc-200">{p.name}</span>
-                <span className="text-[10px] text-zinc-500 font-mono">{p.version || '—'}</span>
               </div>
+
+              {/* PIPE-01 + PIPE-03: prod row (top) and dev row (below); mono version + relative timestamp */}
+              <div className="space-y-1 mb-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-500 w-10 shrink-0">prod</span>
+                  <span className="font-mono text-zinc-200">{p.prodVersion ?? '—'}</span>
+                  {p.prodDeployedAt && (
+                    <span className="text-zinc-500">· {formatRelativeTime(p.prodDeployedAt)}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-500 w-10 shrink-0">dev</span>
+                  <span className={`font-mono ${p.devVersion ? 'text-zinc-200' : 'text-zinc-600'}`}>
+                    {p.devVersion ?? '—'}
+                  </span>
+                  {p.devDeployedAt && (
+                    <span className="text-zinc-500">· {formatRelativeTime(p.devDeployedAt)}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Existing data preserved: bug count, feature count, status pill */}
               <div className="flex gap-4 text-xs">
                 <span className={p.openBugs > 0 ? 'text-red-400' : 'text-zinc-600'}>
                   {p.openBugs} bug{p.openBugs !== 1 ? 's' : ''}
@@ -222,7 +256,16 @@ export default async function AdminDashboard() {
                   {p.status}
                 </span>
               </div>
-            </div>
+
+              {/* PIPE-06: what-changed one-liner — hidden on parity, sentinel on inversion, full breakdown on dev-ahead */}
+              {p.pipelineState === 'dev-ahead' && p.whatChangedOneliner && (
+                <div className="mt-2 text-xs text-zinc-500">{p.whatChangedOneliner}</div>
+              )}
+              {p.pipelineState === 'inverted' && (
+                <div className="mt-2 text-xs text-zinc-500">dev behind prod</div>
+              )}
+              {/* parity case: render nothing — per CONTEXT.md "When dev = prod (no delta), hide the row entirely" */}
+            </Link>
           ))}
         </div>
       </div>
