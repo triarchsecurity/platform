@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: Completed 20-01-PLAN.md — urls.ts helpers + Vitest suite + admin v2.9.2
-last_updated: "2026-05-08T19:12:29.176Z"
+status: verifying
+stopped_at: Completed 20-url-centralization-admin 20-02-PLAN.md
+last_updated: "2026-05-08T19:13:24.723Z"
 progress:
   total_phases: 19
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 43
-  completed_plans: 42
+  completed_plans: 43
 ---
 
 # Triarch Dev Admin — Project State
@@ -48,7 +48,7 @@ Plan: 2 of 2
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -127,6 +127,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 19]: Drizzle wraps pg errors via .cause — test pattern: check error.cause.message for CRDB rejection propagation
 - [Phase 20-url-centralization-admin]: PORTAL_BASE_URL read at call time in getPortalBaseUrl() inside each helper — not at module load — so env mutation in tests and per-request overrides work
 - [Phase 20-url-centralization-admin]: No speculative helpers beyond four locked signatures — scout confirmed zero current customer-facing URL emission sites in admin
+- [Phase 20-url-centralization-admin]: Exempt eslint.config.mjs from no-restricted-syntax — selector strings contain the pattern as regex fragment causing false positives
+- [Phase 20-url-centralization-admin]: PORTAL_BASE_URL bound as plain value (not secret) in apphosting.yaml, RUNTIME-only availability
 
 ### Pending Todos
 
@@ -144,7 +146,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T19:12:29.173Z
-Stopped at: Completed 20-01-PLAN.md — urls.ts helpers + Vitest suite + admin v2.9.2
+Last session: 2026-05-08T19:13:24.721Z
+Stopped at: Completed 20-url-centralization-admin 20-02-PLAN.md
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)

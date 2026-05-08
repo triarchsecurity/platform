@@ -56,7 +56,7 @@
 - [x] **Phase 17: Hostname Guard Inventory** — Catalog admin's hostname checks; fail-closed middleware before second valid host appears (completed 2026-05-08)
 - [x] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout (completed 2026-05-08)
 - [x] **Phase 19: Database Connectivity** — Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test (completed 2026-05-08)
-- [ ] **Phase 20: URL Centralization (admin)** — `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters BEFORE cutover
+- [x] **Phase 20: URL Centralization (admin)** — `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters BEFORE cutover (completed 2026-05-08)
 - [ ] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths
 - [ ] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch
 - [ ] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives)
@@ -253,7 +253,7 @@
   3. ESLint `no-restricted-syntax` rule blocks raw `https://admin.triarch.dev/projects/` literals outside `src/lib/urls.ts`; CI fails on any new violation
 **Plans**: 2 plans
 - [x] 20-01-PLAN.md — src/lib/urls.ts (4 helpers + PORTAL_BASE_URL reader) + Vitest suite (6 cases) + admin v2.9.2 bump — URL-01/URL-02
-- [ ] 20-02-PLAN.md — eslint.config.mjs no-restricted-syntax rule + apphosting.yaml PORTAL_BASE_URL binding — URL-03
+- [x] 20-02-PLAN.md — eslint.config.mjs no-restricted-syntax rule + apphosting.yaml PORTAL_BASE_URL binding — URL-03
 
 ### Phase 21: Release Page Port (Read)
 **Goal**: Customer release page and project list render on portal as a faithful lift-and-shift of v2.1, with non-member access returning 404 and read paths mobile-responsive.
@@ -358,7 +358,7 @@
 | 17. Hostname Guard Inventory | v2.2 | 2/2 | Complete    | 2026-05-08 |
 | 18. Portal Auth Scaffolding | v2.2 | 5/5 | Complete    | 2026-05-08 |
 | 19. Database Connectivity | v2.2 | 2/2 | Complete    | 2026-05-08 |
-| 20. URL Centralization | v2.2 | 1/2 | In Progress|  |
+| 20. URL Centralization | v2.2 | 2/2 | Complete   | 2026-05-08 |
 | 21. Release Page Port (Read) | v2.2 | 0/0 | Not started | - |
 | 22. Release Page Port (Write) | v2.2 | 0/0 | Not started | - |
 | 23. Bug + Feature Customer Surface | v2.2 | 0/0 | Not started | - |

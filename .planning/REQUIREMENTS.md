@@ -61,7 +61,7 @@ Refactor admin to construct customer-facing URLs through a single helper before 
 
 - [x] **URL-01**: New `src/lib/urls.ts` in admin with helpers: `customerProjectUrl(slug)`, `customerReleaseUrl(slug)`, `customerBugUrl(slug, id)`, `customerFeatureUrl(slug, id)`, all reading `PORTAL_BASE_URL` env (default `https://portal.triarch.dev`)
 - [x] **URL-02**: All admin Slack message builders, OttoBot Block Kit constructors, GitHub release-note templates, and email templates refactored to call `urls.ts` helpers
-- [ ] **URL-03**: ESLint rule (`no-restricted-syntax`) blocks raw `https://admin.triarch.dev/projects/` literals outside `src/lib/urls.ts` — CI fails on violation
+- [x] **URL-03**: ESLint rule (`no-restricted-syntax`) blocks raw `https://admin.triarch.dev/projects/` literals outside `src/lib/urls.ts` — CI fails on violation
 
 ### Release Page Port (Read Surface)
 
@@ -191,7 +191,7 @@ Updated by roadmapper during phase mapping.
 | DB-04 | Phase 19 | Complete |
 | URL-01 | Phase 20 | Complete |
 | URL-02 | Phase 20 | Complete |
-| URL-03 | Phase 20 | Pending |
+| URL-03 | Phase 20 | Complete |
 | PORTAL-01 | Phase 21 | Pending |
 | PORTAL-02 | Phase 21 | Pending |
 | PORTAL-03 | Phase 21 | Pending |
