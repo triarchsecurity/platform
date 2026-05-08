@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: executing
-stopped_at: Completed 15-02-PLAN.md — portal.triarch.dev DNS A record created
-last_updated: "2026-05-08T15:28:11.104Z"
+stopped_at: Completed 15-02-PLAN.md — portal.triarch.dev DNS A record created and human-verify approved
+last_updated: "2026-05-08T15:29:53.416Z"
 progress:
   total_phases: 19
   completed_phases: 7
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 ## Current Position
 
 Phase: 15 (operational-prework) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -94,6 +94,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 15-operational-prework]: Repo created in MyAlterLego org (private); ci-cd.yml deferred to Phase 16 scaffold; HTTPS clone used
 - [Phase 15-operational-prework]: PORTAL_NEXTAUTH_SECRET: distinct from admin NEXTAUTH_SECRET; secretAccessor to FAH compute SA only (mirrors admin pattern)
 - [Phase 15-02]: portal.triarch.dev A record mirrors admin pattern (35.219.200.0, TTL=600) as placeholder until FAH portal-prod publishes its target in Plan 15-04
+- [Phase 15-02]: portal.triarch.dev A record mirrors admin.triarch.dev (35.219.200.0, TTL=600) as placeholder until FAH portal-prod publishes its target in Plan 15-04
 
 ### Pending Todos
 
@@ -111,7 +112,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T15:28:11.102Z
-Stopped at: Completed 15-02-PLAN.md — portal.triarch.dev DNS A record created
+Last session: 2026-05-08T15:29:53.414Z
+Stopped at: Completed 15-02-PLAN.md — portal.triarch.dev DNS A record created and human-verify approved
 Resume file: None
 Next action: `/gsd:plan-phase 15`
