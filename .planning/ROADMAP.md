@@ -89,7 +89,8 @@
   1. `release_log_links` table exists in the dev cluster with `release_id`, `link_type`, `bug_id`, `feature_id`, `source`, and `created_at` columns; FK indexes on `release_id`, `bug_id`, `feature_id` are present
   2. `projects.preview_branch_locked` (text, nullable) and `projects.preview_branch_locked_at` (timestamptz, nullable) columns exist in the dev cluster
   3. Drizzle schema in `src/db/schema.ts` reflects both changes with correct relations; `db:push` completes without errors on the dev cluster
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 10-01-PLAN.md — Drizzle schema + migration 0016: release_log_links table (with CHECK constraint + 3 FK indexes) + projects branch-preview lock columns; applied + verified on dev cluster
 
 ### Phase 11: Commit Parser and Tracker Linkage Authoring
 **Goal**: Every release ingest automatically stamps bug/feature links from commit messages, and staff can correct or supplement those links from the admin release-logs page
@@ -160,7 +161,7 @@
 | 7.5. Dev Cluster + Admin Dev Backend | v2.0 | 5/5 | Complete | 2026-05-05 |
 | 8. Admin Home Pipeline Visibility | v2.1 | 3/3 | Complete   | 2026-05-08 |
 | 9. Per-Project Pipeline Page and Web-UI Promote | v2.1 | 4/5 | In Progress|  |
-| 10. Schema Gate | v2.1 | 0/TBD | Not started | - |
+| 10. Schema Gate | v2.1 | 0/1 | Not started | - |
 | 11. Commit Parser and Tracker Linkage Authoring | v2.1 | 0/TBD | Not started | - |
 | 12. Bug and Feature Detail Pages | v2.1 | 0/TBD | Not started | - |
 | 13. Branch Preview Swap | v2.1 | 0/TBD | Not started | - |
