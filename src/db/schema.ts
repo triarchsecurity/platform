@@ -192,8 +192,13 @@ export const releaseApprovals = pgTable('release_approvals', {
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: varchar('user_agent', { length: 512 }),
   reason: text('reason'),  // rejection reason for REJECT-01; nullable (approve rows have NULL); 500-char limit enforced server-side
+  actorSource: varchar('actor_source', { length: 16 }),  // 'web' | 'slack' — nullable for legacy rows; PROM-04 / Pitfall 4 audit trail unification
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  uniqueIndex('release_approvals_one_approved_per_release')
+    .on(table.releaseId)
+    .where(sql`${table.decision} = 'approved'`),
+]);
 
 // ── Plan 5: Report Generator ──────────────────────────────────────
 
