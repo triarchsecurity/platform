@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: Completed 17-01-PLAN.md — host-guard-inventory.md written; Phase 17 Plan 1 complete
-last_updated: "2026-05-08T17:34:50.563Z"
+status: verifying
+stopped_at: Completed 17-02-PLAN.md — proxy.ts hardened fail-closed, 332/332 tests GREEN, v2.9.1 bumped; Phase 17 complete
+last_updated: "2026-05-08T17:36:05.444Z"
 progress:
   total_phases: 19
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 34
-  completed_plans: 33
+  completed_plans: 34
 ---
 
 # Triarch Dev Admin — Project State
@@ -48,7 +48,7 @@ Plan: 2 of 2
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -106,6 +106,9 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 16-shared-package-extraction]: Package ESM dist targets bundler consumers (Next.js transpilePackages); bare Node.js require of cross-subpath imports is not a supported consumption pattern
 - [Phase 17-hostname-guard-inventory]: Inventory document at .planning/host-guard-inventory.md (NOT in phases/) — milestone-spanning reference used through Phase 26
 - [Phase 17-hostname-guard-inventory]: Re-grep at execution time confirmed planning-time site list is exhaustive — exactly 5 sites, no new sites found
+- [Phase 17-hostname-guard-inventory]: KNOWN_EXACT_HOSTS Set with exact match in proxy.ts prevents prefix-bypass attacks like admin-dev.triarch.dev.evil.com
+- [Phase 17-hostname-guard-inventory]: Cloud Run *.run.app hostname accepted only when x-forwarded-host independently validates to known admin host
+- [Phase 17-hostname-guard-inventory]: new NextResponse(null, {status: 404}) chosen for fail-closed response — no HTML body, lowest overhead
 
 ### Pending Todos
 
@@ -123,7 +126,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T17:34:50.561Z
-Stopped at: Completed 17-01-PLAN.md — host-guard-inventory.md written; Phase 17 Plan 1 complete
+Last session: 2026-05-08T17:36:05.442Z
+Stopped at: Completed 17-02-PLAN.md — proxy.ts hardened fail-closed, 332/332 tests GREEN, v2.9.1 bumped; Phase 17 complete
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)

@@ -32,7 +32,7 @@ The Drizzle schema + select helpers extracted into a private GitHub Packages npm
 Catalog and harden the v2.1 hostname-aware routing before introducing a second valid host.
 
 - [x] **HOST-01**: Inventory document at `.planning/host-guard-inventory.md` listing every `host ===` / `headers().get('host')` / `x-forwarded-host` reference in admin codebase (with file:line + current behavior)
-- [ ] **HOST-02**: Admin's `src/proxy.ts` (or `src/middleware.ts`) fails closed for hosts that are neither `admin.triarch.dev` nor `localhost:300x` — returns 404 instead of marketing fallback
+- [x] **HOST-02**: Admin's `src/proxy.ts` (or `src/middleware.ts`) fails closed for hosts that are neither `admin.triarch.dev` nor `localhost:300x` — returns 404 instead of marketing fallback
 
 ### Portal Auth Scaffolding
 
@@ -177,7 +177,7 @@ Updated by roadmapper during phase mapping.
 | PKG-03 | Phase 16 | Complete |
 | PKG-04 | Phase 16 | Complete |
 | HOST-01 | Phase 17 | Complete |
-| HOST-02 | Phase 17 | Pending |
+| HOST-02 | Phase 17 | Complete |
 | AUTH-01 | Phase 18 | Pending |
 | AUTH-02 | Phase 18 | Pending |
 | AUTH-03 | Phase 18 | Pending |
