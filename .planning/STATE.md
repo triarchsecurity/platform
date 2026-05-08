@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: planning
-stopped_at: Completed 10-01-PLAN.md — migration 0016 applied to admin_dev, release_log_links + preview lock columns, v2.5.1
-last_updated: "2026-05-08T04:27:22.253Z"
+status: executing
+stopped_at: Completed 11-01-PLAN.md — commit-parser.ts GREEN, 27 tests pass, LINK-02/LINK-03 regex layer complete
+last_updated: "2026-05-08T04:43:31.330Z"
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 13
+  completed_plans: 10
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 10 — Schema Gate
+**Current focus:** Phase 11 — Commit Parser and Tracker Linkage Authoring
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
+Phase: 11 (Commit Parser and Tracker Linkage Authoring) — EXECUTING
+Plan: 2 of 4
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -43,7 +43,7 @@ Plan: Not started
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -98,6 +98,9 @@ v2.1 decisions captured at roadmap creation:
 - [Phase 10]: CHECK constraint enforces link_type discriminant at DB level — robust against Phase 11 commit-parser bugs
 - [Phase 10]: Non-partial FK indexes on release_log_links for Drizzle idiomaticity; performance negligible at expected row counts
 - [Phase 10]: 0015_snapshot.json backfilled manually to isolate Phase 9 slack_channel_id from Phase 10 migration
+- [Phase 11]: Pattern B (verb-prefixed UUID) fires before Pattern A; verb-prefix regions space-padded before Pattern A scan to prevent double-counting
+- [Phase 11]: ParsedRef is a discriminated union: bug/feature carry id, external carries ref — downstream switch on type field without field existence checks
+- [Phase 11]: Bare #N GitHub issue refs only match when preceded by verb (closes/fixes/resolves) — no verb = no match (Pitfall 5 false-positive guard)
 
 ### Pending Todos
 
@@ -112,7 +115,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-08T04:24:08.475Z
-Stopped at: Completed 10-01-PLAN.md — migration 0016 applied to admin_dev, release_log_links + preview lock columns, v2.5.1
+Last session: 2026-05-08T04:43:31.328Z
+Stopped at: Completed 11-01-PLAN.md — commit-parser.ts GREEN, 27 tests pass, LINK-02/LINK-03 regex layer complete
 Resume file: None
 Next action: `/gsd:plan-phase 8`

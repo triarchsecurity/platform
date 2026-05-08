@@ -34,8 +34,8 @@
 ### Tracker ↔ Release Linkage (LINK)
 
 - [x] **LINK-01**: System has `release_log_links` join table with FK indexes (links release entries to bug_reports / feature_requests / external)
-- [ ] **LINK-02**: Release ingest auto-detects bug/feature IDs in commit messages via regex (patterns: `#BUG-123`, `closes FEAT-45`, `fixes #99`) and writes to `release_log_links`
-- [ ] **LINK-03**: Auto-detected IDs are validated against existing bug/feature IDs in DB before stamping (no false positives surfaced)
+- [x] **LINK-02**: Release ingest auto-detects bug/feature IDs in commit messages via regex (patterns: `#BUG-123`, `closes FEAT-45`, `fixes #99`) and writes to `release_log_links`
+- [x] **LINK-03**: Auto-detected IDs are validated against existing bug/feature IDs in DB before stamping (no false positives surfaced)
 - [ ] **LINK-04**: Authoring UI in `/admin/modules/release-logs` lets staff manually add or remove links per release entry (override auto-detection)
 - [ ] **LINK-05**: Bug detail page (`/admin/modules/bug-reports/<id>`) shows "Released in vX.Y dev / vA.B prod" sidebar section
 - [ ] **LINK-06**: Feature detail page (`/admin/modules/feature-requests/<id>`) shows same "Released in" sidebar section
@@ -113,8 +113,8 @@ Populated by `gsd-roadmapper` 2026-05-07.
 | DIFF-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | LINK-01 | Phase 10 — Schema Gate | Complete |
 | PREV-01 | Phase 10 — Schema Gate | Complete |
-| LINK-02 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
-| LINK-03 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
+| LINK-02 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Complete |
+| LINK-03 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Complete |
 | LINK-04 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
 | LINK-07 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
 | LINK-05 | Phase 12 — Bug and Feature Detail Pages | Pending |
