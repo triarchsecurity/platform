@@ -223,7 +223,12 @@
   3. A user with no `project_members` row attempting Google sign-in is rejected at signIn callback; a staff user is allowed in but sees the persistent "Switch to admin.triarch.dev" callout banner; a customer admin/viewer sees no banner
   4. Vitest grep-test confirms no portal source file references the OAuth `sub` claim (everywhere keys on `email`, AUTH-06)
   5. Unauthenticated visit to portal `/` redirects to `/login`; post-login, a 0-membership user lands on an empty state with "Contact your project admin" copy, a 1-membership user auto-redirects to that project, a 2+ membership user lands on `/projects`
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 18-01-PLAN.md — Portal Next.js scaffold (package.json, configs, apphosting yamls, ci-cd.yml, layout/page skeletons) — AUTH-01 baseline (cookie config plumbing)
+- [ ] 18-02-PLAN.md — NextAuth core (src/lib/auth.ts with host-only cookies + STUB signIn, route handler, login page) — AUTH-01, AUTH-02
+- [ ] 18-03-PLAN.md — signIn callback (real customer-membership rule via getCurrentUserContext) + StaffCallout banner in layout — AUTH-03, AUTH-04
+- [ ] 18-04-PLAN.md — Post-login routing decision tree at src/app/page.tsx + /no-memberships + /projects stubs — AUTH-07
+- [ ] 18-05-PLAN.md — Vitest tests (cookies shape, no-.sub grep guard, signIn callback unit tests) + portal v0.2.0 deploy — AUTH-05, AUTH-06
 
 ### Phase 19: Database Connectivity
 **Goal**: Portal connects to the same CockroachDB cluster via `pg.Pool` using a DML-only role; admin remains sole migration authority and rogue schema writes from portal are blocked at the database.
