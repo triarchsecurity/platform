@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@myalterlego/secrets": "^0.1.0",
-    "@myalterlego/triarch-shared": "file:./packages/triarch-shared",
+    "@myalterlego/triarch-shared": "^0.3.0",
     "@myalterlego/shared-ui": "^1.2.0",
     "drizzle-orm": "^0.45.2",
     "jose": "^5",
