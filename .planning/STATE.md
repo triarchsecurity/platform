@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: planning
-stopped_at: Completed 11-05-PLAN.md — LinksClient mount-fetch hydration gap closure (LINK-04 chip-visibility), Phase 11 fully closed
-last_updated: "2026-05-08T05:20:59.488Z"
+status: executing
+stopped_at: Completed 12-01-PLAN.md — release-history lib + TDD tests (LINK-05, LINK-06 data layer)
+last_updated: "2026-05-08T05:34:39.447Z"
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 17
+  completed_plans: 15
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 11 — Commit Parser and Tracker Linkage Authoring
+**Current focus:** Phase 12 — Bug and Feature Detail Pages
 
 ## Current Position
 
-Phase: 12
-Plan: Not started
+Phase: 12 (Bug and Feature Detail Pages) — EXECUTING
+Plan: 2 of 3
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -43,7 +43,7 @@ Plan: Not started
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -110,6 +110,8 @@ v2.1 decisions captured at roadmap creation:
 - [Phase 11]: UUID-paste fallback for LinksClient picker: bug/feature typeahead search endpoints not yet built; picker uses direct UUID paste with placeholder text — POST API contract unchanged so future plan can add typeahead without route changes
 - [Phase 11]: sanitizeBlockKitBlocks helper added to slack.ts: walks block.text.text and fields[].text — covers all Block Kit patterns in current codebase; sanitize-at-chokepoint pattern means future callers cannot bypass sanitization
 - [Phase 11]: Option A (useEffect) over Option B (platform route augment) for LinksClient mount-fetch — self-contained, per-row expand, no N+1 cost
+- [Phase 12-bug-and-feature-detail-pages]: Two separate query functions (getReleaseHistoryForBug, getReleaseHistoryForFeature) — not a shared internal — per pipeline-summary.ts precedent; simpler test mocking, clearer callsites
+- [Phase 12-bug-and-feature-detail-pages]: toIso helper local to release-history.ts (not re-exported) — self-contained pattern per codebase convention
 
 ### Pending Todos
 
@@ -124,7 +126,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-08T05:17:15.578Z
-Stopped at: Completed 11-05-PLAN.md — LinksClient mount-fetch hydration gap closure (LINK-04 chip-visibility), Phase 11 fully closed
+Last session: 2026-05-08T05:34:39.445Z
+Stopped at: Completed 12-01-PLAN.md — release-history lib + TDD tests (LINK-05, LINK-06 data layer)
 Resume file: None
 Next action: `/gsd:plan-phase 8`
