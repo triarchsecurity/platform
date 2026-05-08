@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Plus, Bot, Hand, ExternalLink } from 'lucide-react';
 import { sanitizeForRender } from '@/lib/sanitize-commit';
 
@@ -63,6 +63,31 @@ type LinkType = (typeof LINK_TYPES)[number];
 export default function LinksClient({ releaseId, initialLinks, project: _project }: LinksClientProps) {
   const [links, setLinks] = useState<ReleaseLogLink[]>(initialLinks);
   const [showPicker, setShowPicker] = useState(false);
+
+  // Mount-time fetch: hydrate chip list from the staff-only GET endpoint.
+  // Skip if parent already provided links — server-provided wins (forward-compat
+  // for any future page.tsx pre-fetch).
+  useEffect(() => {
+    if (initialLinks.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/release-logs/${releaseId}/links`);
+        if (!res.ok) {
+          console.error('[LinksClient] GET failed', res.status);
+          return;
+        }
+        const data = (await res.json()) as { links: ReleaseLogLink[] };
+        if (!cancelled && Array.isArray(data.links)) {
+          setLinks(data.links);
+        }
+      } catch (err) {
+        console.error('[LinksClient] GET error', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [releaseId, initialLinks.length]);
   const [pickerType, setPickerType] = useState<LinkType>('bug');
   const [pickerValue, setPickerValue] = useState('');
   const [pickerError, setPickerError] = useState<string | null>(null);
