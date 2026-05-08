@@ -1,122 +1,181 @@
 # Feature Research
 
-**Domain:** CI/CD Pipeline UI — Release gating and visibility surfaces for a dev→prod promotion console
-**Researched:** 2026-05-07
-**Confidence:** HIGH (established patterns from Vercel, GitHub Actions, Netlify, Heroku, Sentry, Linear all verified via official docs)
+**Domain:** B2B dev-shop client portal — service provider giving each customer a brand-aware view of their delivered project's release pipeline + bug/feature tracker
+**Researched:** 2026-05-08
+**Confidence:** HIGH
+
+---
+
+## Executive Summary
+
+The v2.2 portal fork is **not greenfield**. The existing admin app already implements ~80% of what a customer portal needs (release page with two-step approve, branch preview, lifecycle timeline, bug/feature detail views, project_members role model, NextAuth Google OAuth). The work is **porting + customer-shaping**, not net-new feature invention.
+
+**Opinionated stance:**
+
+- Ship the **existing customer surface, ported faithfully**, plus the **two missing primitives** (project list landing page, customer-side bug/feature submission). Defer everything else.
+- **Reuse Google OAuth** — the staff side already runs it, customer admins on Truth+Treason already authenticate with it, and adding magic links/email-password in a single-customer pilot milestone is yak-shaving. (Magic link is a v3 conversation when we onboard customers without Google Workspace.)
+- **No white-label, no per-customer accent color, no PWA, no in-app notifications, no Slack integration** in v2.2. Each is a distraction from the "fork app, redirect customers, prove the seam" milestone.
+- **Mobile-responsive: yes**, but only for read paths (release list, bug detail). Approve/reject is a desktop action — Slack notifications already cover the mobile-trigger case.
+- **The Slack notifications stay in admin's domain** (admin app posts to customer Slack, Slack deep-links to portal). Portal is the *destination*, not a notification source, in v2.2.
+
+The dependency map is heavy: every customer feature in portal depends on at least one shared infrastructure piece in the admin codebase (auth-context, schema, release-entry-summary, fah-rollout, slack-audit, release feedback APIs). v2.2 must move shared lib code into a place both apps can import (likely `@triarch/shared-portal` or vendored copies — to be decided in research/STACK.md).
 
 ---
 
 ## Feature Landscape
 
-### Table Stakes (Users Expect These)
+### TABLE STAKES (Must Ship in v2.2)
 
-Features that a pipeline UI needs to not feel broken or incomplete.
+Features without which the portal is incomplete and customers will ping Mike/Triarch directly.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Per-project prod version + dev version side-by-side | Every modern deploy dashboard (Vercel, Netlify, Heroku) shows env status at a glance; missing = must leave admin to know state | LOW | Read from `release_logs` WHERE env='prod'/'dev' ORDER BY deployed_at DESC LIMIT 1 per project; no new tables needed |
-| Last-deploy timestamp per env | Operators need "how stale is dev vs prod"; Heroku tiles show "most recent deployment" | LOW | Same query as above; `deployed_at` already in `release_logs` |
-| Pending-approval count badge | Vercel/Netlify both surface "needs action" indicators on project tiles; missing = operators miss backlog | LOW | COUNT from `release_approvals` WHERE status='pending'; existing table |
-| Clickable tile → project releases page | Every dashboard tile is a navigation surface; non-clickable tiles feel like a dead end | LOW | Already noted as discoverability fix in PROJECT.md; pure routing change |
-| Branch label on each RC row | Netlify deploy list shows branch per row; users need to know which branch is pending | LOW | Already in `release_logs.branch`; display change only |
-| Deploy status pill (pending / approved / promoted / conflict) | GitHub Actions, Netlify both surface status per row via color-coded pills | LOW | Derived from existing `release_logs.status` + `release_approvals` |
-| Promote button disabled state with reason | GitHub Actions shows "waiting for approval" with explanation; Vercel shows staged/promoted state; missing reason = confusion | LOW | Conditional rendering + tooltip; no backend change |
-| "What's changed" section header on customer release page | Every release tool (Sentry, Linear, GitHub Releases) surfaces a diff or summary at top; users expect to see delta before approving | MEDIUM | Requires comparing dev release log entries to last prod deployed_at; cross-query but no new tables |
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| **Google OAuth sign-in** | Already what customer admins use on admin.triarch.dev today; switching auth method mid-pilot creates support burden | S | NextAuth v4 (existing), Google OAuth client (new client ID for portal.triarch.dev origin) | Same provider, separate NextAuth secret + cookie domain. Reject on `email.endsWith('@triarchsecurity.com')` and redirect with "Switch to admin.triarch.dev" callout (per PROJECT.md staff bypass spec). |
+| **Post-login project list landing page (`/projects`)** | First thing customer sees; without it, post-login lands somewhere arbitrary or 404s | S | `getCurrentUserContext()` (existing in `src/lib/auth-context.ts`) returns memberships array | Tile per membership. **If user has exactly 1 project membership, server-side redirect to `/projects/<key>/releases`** — saves a click for the 90% case (single-project customers). Empty state: "You haven't been invited to a project yet. Contact your Triarch contact." |
+| **Project tile metadata** | Customer needs at-a-glance status; otherwise they click into every project | S | `pipeline-summary.ts` (existing in admin: prod/dev versions, pending approval count, what-changed one-liner) | Reuse `getProjectPipelineSummaries()` filtered to user's memberships. Tile shows: project name, prod version, dev version (if dev > prod), pending-approval amber pill (if any), open-bugs count, last-deploy relative time. Click → release page. |
+| **Release page port (`/projects/[slug]/releases`)** | This IS the product — the v2.0/v2.1 work that justified the milestone | M | All of: `ReleasesClient.tsx`, `BranchSection.tsx`, `WhatsComingCard.tsx`, `FilterChips.tsx`, `BranchPreviewClient.tsx`, `Timeline.tsx`, `group-sections.ts`, `release-entry-summary.ts`, conflict query, approve/reject API routes (`/api/projects/[slug]/releases/[id]/approve|reject|feedback`), branch preview API routes (`/api/projects/[slug]/branch/preview` + status) | Lift-and-shift. The two-step approve, conflict badge, FilterChips, WhatsComingCard, BranchPreviewBanner+Button singleton split, lifecycle timeline — all already shipped in v2.1 Phase 14. **Delete the staff-only ExpandedPanel branches** (none exist today, but verify) and ensure `userRole='viewer'` path is read-only. |
+| **Customer-readable bug detail page (`/bugs/[id]`)** | Customer needs to see status of bugs they reported AND bugs Triarch logged for their project | M | Existing `/admin/modules/bug-reports/[id]` page logic + `ReleasedInSidebar` component + `getReleaseHistoryForBug` (Phase 12) | Customer URL pattern differs: `/projects/[slug]/bugs/[id]` (membership-gated, 404 to non-members per GATE-01 leak prevention). Reuses `release_log_links` data, "Released in vX.Y dev / vA.B prod" sidebar, status badge, comments thread (read-only for customer viewer; comment-add for customer admin). |
+| **Customer-readable feature detail page (`/features/[id]`)** | Same justification as bug detail | M | Existing `/admin/modules/feature-requests/[id]` + same sidebar + `getReleaseHistoryForFeature` | Same shape as bug detail. Status workflow visible to customer (open → in-progress → released). |
+| **Customer-side bug submission form (`/projects/[slug]/bugs/new`)** | Customer admins file bugs against their project; without this, they email Mike | M | Existing `/api/admin/bug-reports` POST route (already exists, currently staff-form-driven) — needs project-scope guard so customer can only file against THEIR project | Fields (opinionated minimal set): title (required, 200ch), description (required, markdown, 5000ch), severity (low/medium/high/critical — dropdown, default medium), URL where seen (optional), reproduction steps (optional, free-text). **No attachments in v2.2** (file upload = S3 bucket = scope creep). On submit → POST → redirect to bug detail. |
+| **Customer-side feature request submission form (`/projects/[slug]/features/new`)** | Same justification as bugs | M | Existing `/api/admin/feature-requests` POST + scope guard | Fields: title, description, "why this matters to us" (free-text — surfaces business value to Triarch). **No upvotes, no target dates, no priority field in v2.2** — customer admin saying "we want X" is the priority signal. |
+| **Customer bug list (`/projects/[slug]/bugs`)** | Customer needs an index of "bugs we filed + bugs Triarch logged for us" without scrolling release pages | M | `bug_reports` table query filtered by project_key, status filter chips (open/in-progress/closed), pagination | Keep it simple: title, status badge, severity pill, "released in vX.Y" if linked, last-updated relative time. URL-mirrored `?status=open` filter. Same load-more pattern as ReleasesClient. |
+| **Customer feature list (`/projects/[slug]/features`)** | Same justification as bug list | M | `feature_requests` table query, same pattern | Same shape. |
+| **Customer-friendly post-login routing** | Post-login dead-end ("you don't have access") is the worst UX | S | `getCurrentUserContext()` membership lookup | If 0 memberships: empty state with "Contact your Triarch project lead — they'll invite you." If 1: redirect to `/projects/<key>/releases`. If 2+: project list at `/projects`. |
+| **Login wall on `/`** | Unauthenticated users hitting portal.triarch.dev need a clear sign-in CTA | S | NextAuth `signIn('google')` button | Marketing copy NOT needed — portal is invitation-only. Page shows "Sign in with Google" + one-line "Triarch Customer Portal — invitation only. If you weren't invited, you're in the wrong place." |
+| **301 redirects from admin's `/projects/[slug]/*` to portal** | v2.2 milestone explicitly calls for grace-period redirect | S | Next.js middleware OR per-route redirect on admin app | Implementation lives in admin app, not portal. Listed here for completeness — without it, Slack deep links from previous releases break. |
+| **Mobile-responsive read paths** | Customer admin will check release status on phone after Slack notification | S | Existing components are Tailwind-built, mostly responsive already | Verify ReleasesClient, BranchSection, bug detail render below 640px. Approve flow can stay desktop-only (footnote: "approve releases from desktop"). |
+| **Customer header (already exists: `CustomerHeader.tsx`)** | Project name + signed-in user must be visible on every page | S | Existing component | Port as-is. Add "Sign out" link. Optionally add a project switcher dropdown for multi-project customers (defer — link back to `/projects` is enough). |
+| **404 → notFound() for non-members (GATE-01 leak prevention)** | Existing release page does this; portal must preserve it | S | Existing pattern in `page.tsx`: `if (!isMember) notFound();` | Apply to all `/projects/[slug]/*` routes. Project existence MUST NOT leak to non-members. |
 
-### Differentiators (Competitive Advantage)
+### DIFFERENTIATORS (Nice in v2.2.x or v2.3, Skip for v2.2)
 
-Features that go beyond what Vercel/Netlify/Heroku offer — meaningful for this domain because the user is a customer gating releases, not an engineer deploying code.
+Features that distinguish a "good" customer portal from a "great" one. None block the v2.2 milestone.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| Branch preview selector on customer release page | Vercel/Netlify give each PR its own URL (different model); this system has one shared dev backend per project, so the selector is the unique primitive. Lets customers validate any RC branch without needing admin involvement | MEDIUM | Requires: (1) Firebase App Hosting API call to swap deployed branch, (2) concurrency lock row in DB or `release_logs` metadata, (3) disabled state on competing RCs |
-| Web-UI Promote to prod button (staff role) | Vercel has this but requires navigating to Deployments tab and using ellipsis menu; Linear does not offer it; Sentry does not offer it. Here it's on the same customer-visible release page the customer already approved — co-locating action with evidence reduces context switching for staff | MEDIUM | Calls existing `dispatchWorkflow` (same as Slack path); needs staff-role guard; confirm modal required |
-| Bug/feature ID auto-detection from commit messages | Sentry does commit-level linking but requires SDK integration; Linear does it via CI integration. Here it's built directly into release ingestion for the specific `#BUG-123` / `FEAT-45` / `closes #99` patterns in use — no third-party dependency | MEDIUM | Regex parse on `release_logs.commit_sha` messages at ingest time OR on a separate commit-message field; requires join table `release_item_links(release_id, item_type, item_id)` — NEW table |
-| "Released in vX.Y dev / vA.B prod" badge on bug/feature detail | Jira has Fix Version field (manual); Sentry has "first seen in release" (error-only); Linear shows release in sidebar (requires their CI integration). Ours is automatic from the linkage above, and spans both envs — customer-visible too | LOW | Once `release_item_links` table exists, this is a join query on the bug/feature detail page; display only |
-| Filter by type on customer release page (bug fix / feature / other) | Linear allows filtering releases by issue type; Sentry does not; Netlify/Vercel show no such filter. For a customer release gating page this lets the approver focus on "what bugs got fixed" before approving | LOW | Once items have type classification (from `bug_reports` / `feature_requests` linkage), add filter chips above the RC list; no new tables |
-| Branch swap lock with actor + timestamp | Azure DevOps has deployment slot locks; Heroku does not expose this in UI; Vercel/Netlify have per-PR URLs so no conflict. The shared-slot model requires knowing who locked it and when — unique to this architecture | LOW | Store `current_preview_branch`, `preview_locked_by`, `preview_locked_at` on `projects` table OR in `release_logs` metadata; display as banner "Previewing feat/payments (locked by alice@, 3 min ago)" |
+| Feature | Value Proposition | Complexity | Dependencies | Notes |
+|---------|-------------------|------------|--------------|-------|
+| **Per-release email digest** | Customer admin gets daily/weekly "here's what's pending your approval" email even if they miss Slack | M | Email infra (SendGrid/Postmark — none currently wired), digest job (cron/GitHub Action) | v2.2.x. Slack notification already covers urgency. Email is the durability backstop. |
+| **Customer admin can invite teammates** | Self-serve member management instead of Mike running SQL | M | New `/api/projects/[slug]/members` POST/DELETE endpoints, invite-flow page, reuse `project_members` table | v2.2.x. Today, Mike seeds members manually. Self-serve invite is the obvious next step but not a v2.2 blocker. |
+| **Per-release threaded comment improvements** | Today: flat feedback list. Differentiator: threaded replies, @mentions, edit window beyond 24h | M | Schema additions to `release_feedback` (parent_id), UI changes | v2.3. Current 24h-delete + flat list is good enough. |
+| **Calendar export of upcoming prod deploys (.ics feed)** | Customer admin imports into Google Calendar — visibility into approved-but-not-yet-deployed releases | S | New `/api/projects/[slug]/calendar.ics` endpoint, no auth (token-in-URL) | v2.3. Slack notifies on dispatch. Calendar is for planning. |
+| **Project-scoped Slack workspace integration (customer's own Slack)** | Customer admin connects their workspace; portal posts release-ready notifications to their channel directly (instead of Triarch's Slack) | L | Slack OAuth app per customer, per-project Slack token storage, OttoBot multi-tenant routing | v3. Today, customer admin is on Truth+Treason's shared Slack with us. Multi-tenant Slack is a serious project. |
+| **Bulk approve "approve all clean RCs"** | Customer admin batches approval across branches | S | Single button, multi-row PATCH | v2.3 if requested. Today's two-step single-row approve is intentionally friction-ful — bulk approve undermines the gating philosophy. |
+| **Approval delegation** | Customer admin designates a backup approver | M | Schema: `project_members.delegated_to`, UI to set, audit trail | v3. Two customer admins per project (the v2.2 plan) covers this case organically. |
+| **In-app notification bell** | Reduces Slack-dependency for customers without Slack | M | New `notifications` table, read/unread state, polling endpoint | v3. Slack + email cover this. |
+| **Q&A / commenting threads on bugs** | Customer asks "what's the status?" without emailing | M | Reuse `release_feedback` pattern on `bug_reports` | v2.2.x — light lift if customer demand surfaces. |
+| **Account settings page** | Customer self-serve: notification preferences, profile photo, email change | M | New routes, schema additions for prefs | v2.3. Profile is read-only-from-Google in v2.2; if customer wants email change, they change Google account. |
+| **Activity feed across all customer's projects** | Multi-project customer sees one stream of "X released, Y bug filed, Z feature shipped" | M | Cross-project query, paginated feed | v3. Today's project-list landing covers the multi-project case adequately. |
 
-### Anti-Features (Explicitly NOT Building)
+### ANTI-FEATURES (Do NOT Build — They Distract from Core Value)
 
-These are things Vercel, Netlify, and Heroku do that would be wrong for this system.
+Features that *seem* good for a customer portal but would derail v2.2 specifically.
 
-| Feature | Why Requested | Why This System Should NOT Build It | What to Do Instead |
-|---------|---------------|-------------------------------------|--------------------|
-| Per-branch ephemeral backend URLs | Vercel/Netlify give each PR its own preview URL; feels like "best practice" | The architecture decision was already made: one shared dev backend per project, branch-swap selector model. Ephemeral URLs require Firebase App Hosting provisioning per branch (slow, costly, quota-limited) and the customer would need to manage N URLs per project | The "Preview this branch" selector on the customer page IS the equivalent — use it |
-| Real-time deploy log streaming | Vercel/Netlify both stream build logs live; feels like completeness | Build logs live in GitHub Actions, not in this system. This admin is a monitoring surface, not a build runner. Streaming would require webhook ingest of every log line and a WebSocket connection — massive complexity for marginal value | Link directly to the GitHub Actions run URL (already available via `metadata.dispatch`) — one click gets you to the real log |
-| Automatic per-commit deploys to dev | Netlify/Vercel auto-deploy every commit; feels like standard CI | This system triggers and monitors — it does not run pipelines. Auto-deploy is handled by shared-workflows. Adding a trigger button here creates a second path that can diverge | Leave trigger ownership in shared-workflows; the admin surfaces the result |
-| Rollback button | Vercel Instant Rollback is a marquee feature; users ask for it | Firebase App Hosting does not support "deploy a past artifact" without a new workflow dispatch. A fake rollback button that just re-triggers the old branch would be confusing and potentially dangerous if the branch has moved | Surface the last-promoted SHA in the "what's changed" view and document the manual procedure in docs |
-| Notification / alert configuration UI | Vercel has a Notifications settings panel; feels like admin polish | This system's notification path is Slack, and the Slack wiring is established (OttoBot). A second notification settings surface would duplicate and potentially conflict | Slack channel config stays in the project registry; no new UI needed |
-| "type project name to confirm" delete-style modals | GitLab uses this for high-severity destructive actions; feels safe | Promote-to-prod is consequential but reversible (you can promote a different branch) and happens frequently. Typing friction on a routine action breaks flow and conditions users to type without reading | Use a two-step modal: (1) show what will be promoted (branch, version, domains affected), (2) single confirm button labeled "Promote [branch] to production" — matches the existing two-step Approve UX customers already know |
+| Feature | Why Tempting | Why Problematic for v2.2 | What to Do Instead |
+|---------|--------------|--------------------------|--------------------|
+| **White-label per-customer (custom logo, accent color, subdomain like `truthandtreason.portal.triarch.dev`)** | "Customers love seeing their brand" — common B2B portal selling point | Adds DNS provisioning per customer, theming layer, asset hosting, brand-config schema. Fundamentally a v3 problem. **Triarch's brand = Triarch's quality**; customer admin signs in once a month, brand consistency is a *feature* not a bug. | Single Triarch-branded portal. Project name in header. Done. |
+| **Email/password auth + signup form** | "What if customer doesn't have Google?" | Today's customer (Truth+Treason) uses Google. Building email/password = SMTP integration, password reset flow, rate limiting, account lockout, MFA — entire auth surface area. **You're not running an identity provider.** | Google OAuth only. If a future customer doesn't have Google, switch to magic link (in v3) or onboard them through their Google Workspace. |
+| **PWA / offline support** | "Mobile feels like an app!" | Adds service worker, manifest, install prompt, offline cache invalidation strategy. Customer admin opens this once a week. **The mobile use case is "read on phone after Slack ping" — a responsive web page solves this with zero PWA cost.** | Tailwind responsive breakpoints. Done. |
+| **Real-time updates (websockets / SSE) on release status** | "Approve happens, page updates instantly!" | SWR polling on branch-preview already covers the only flow where it matters (preview swap, ~5s interval). Approve is acted on by ONE customer admin who just clicked the button — they already saw the optimistic UI update. **No second-screen real-time problem exists.** | Optimistic updates + SWR poll on long-running flows. |
+| **Customer-facing Triarch marketing copy on `/`** | "Sell the portal to prospects who land here!" | Portal is invitation-only. Prospects hit triarch.dev (the marketing site), not portal.triarch.dev. **Conflating marketing site and customer portal is a category error.** | One-line "Triarch Customer Portal — invitation only" + Sign in. |
+| **Public docs / customer-facing changelog of the portal itself** | "Customers want to know what changed in the portal" | Changes to the portal are communicated by Triarch directly. A public changelog implies more product-management-style ownership than a 1-2 customer pilot warrants. **Versioning the portal is internal.** | Defer until 5+ active customers. |
+| **Customer-side Triarch staff invitation / "request access" form** | "What if a teammate at Truth+Treason wants in?" | Email Triarch. Mike runs one INSERT statement. **Self-serve member invite is a v2.2.x feature, not v2.2.** | Documentation: "To invite a teammate, ask your Triarch project lead." |
+| **Customer billing / usage dashboard** | "B2B portals usually show invoices" | Triarch's billing model (one-time + retainer) doesn't map to portal-style usage. **Out of scope per PROJECT.md.** | Stripe portal link or PDF invoice email. Out of v2.2 entirely. |
+| **Customer-facing roadmap / "what's coming next" project-management board** | "Customer wants to see Triarch's roadmap for their project" | Roadmap UX = Trello/Linear surface. **WhatsComingCard already shows what's actually shipping (real release-driven data).** A separate product-management board is fiction; release flow is truth. | WhatsComingCard. Done. |
+| **Voting / upvoting on feature requests** | "Common pattern in customer portals" | Triarch's customer count is 1 (Truth+Treason). **You can't crowdsource priority across 1 organization.** Adds schema, UI, controversy ("why didn't you build the upvoted one?"). | Customer admin says "this is important." Triarch builds it. The conversation IS the prioritization. |
+| **File attachments on bug reports** | "Screenshots are useful!" | S3 / GCS bucket, signed URLs, malware scan, max-size limits, EXIF stripping, retention policy. Each = 4-8 hours. **Customer admin can paste a Loom URL or imgur link in description.** | Markdown description with image links. v2.2.x or v2.3 if pain emerges. |
+| **Feature request "target date" customer-supplied input** | "Customer says when they need it!" | Triarch's date estimate is the source of truth, not customer's wishful date. **Customer's "we want it by Friday" → conflict with Triarch's "this is 2 weeks of work."** Surfaces the wrong negotiation in the wrong place. | Customer's "why this matters" free-text. Triarch responds with their estimate in a comment. |
+| **Multi-customer admin "switch customer" dropdown** | "I work across 3 customers!" | Customer admins are scoped to ONE customer org by definition (they're at Truth+Treason; they don't also work at the next customer). **Triarch staff are the multi-customer users — they use admin.triarch.dev, which already has this.** | Customer admins see only their org's projects. Staff use admin app. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Pipeline Dashboard Tile
-    └──reads──> release_logs (prod + dev latest) [EXISTS]
-    └──reads──> release_approvals (pending count) [EXISTS]
-    └──links──> /projects/[slug]/releases [EXISTS]
+[Google OAuth + cookie/session]
+    └──requires──> [NextAuth v4 setup with portal-scoped client ID + secret]
+            └──requires──> [Shared CockroachDB access — getCurrentUserContext()]
 
-Branch Preview Selector
-    └──requires──> Firebase App Hosting branch-swap API call [NEW integration]
-    └──requires──> Branch lock state on projects table [NEW column(s)]
-    └──reads──> release_logs.branch (which RCs exist) [EXISTS]
+[Project list landing]
+    └──requires──> [getCurrentUserContext()]
+    └──requires──> [getProjectPipelineSummaries() — currently in admin/src/lib/pipeline-summary.ts]
+    └──enhances──> [Post-login routing logic]
 
-Web-UI Promote Button
-    └──requires──> Staff role guard [EXISTS via project_members]
-    └──calls──> dispatchWorkflow (same as Slack path) [EXISTS]
-    └──requires──> Confirm modal with branch/version/domain context [NEW UI]
-    └──posts──> Slack notification (existing notifyReleaseApproved path) [EXISTS]
+[Release page port]
+    └──requires──> [getCurrentUserContext() + project membership check]
+    └──requires──> [shared lib: release-entry-summary, release-history, group-sections]
+    └──requires──> [API routes: approve, reject, feedback, branch/preview]
+    └──requires──> [BranchPreviewClient + SWR]
+    └──requires──> [FilterChips, WhatsComingCard, Timeline, BranchSection components]
 
-Bug/Feature Linkage (release_item_links)
-    └──requires──> NEW join table: release_item_links(release_id, item_type, item_id)
-    └──populated by──> Commit message parser at ingest time [NEW logic in /api/platform/ingest]
-    └──displayed on──> bug_reports detail page [NEW UI: "Released in"]
-    └──displayed on──> feature_requests detail page [NEW UI: "Released in"]
-    └──filters──> Customer release page RC entry list [NEW filter chips]
+[Bug detail (customer-readable)]
+    └──requires──> [getReleaseHistoryForBug() + ReleasedInSidebar]
+    └──requires──> [Project-scoped GET on /api/admin/bug-reports/[id] OR new /api/projects/[slug]/bugs/[id]]
+    └──conflicts──> [Today's staff-only guard on /admin/modules/bug-reports/[id] — needs split]
 
-What's Changed View
-    └──requires──> release_logs entries between last prod deploy and now [EXISTS, query only]
-    └──compact form on──> Admin pipeline dashboard tile [NEW UI]
-    └──expanded form on──> Per-project admin pipeline page [NEW page]
-    └──summary section on──> Customer release page [NEW UI section]
-    └──enhanced by──> Bug/Feature linkage (shows "3 bug fixes, 2 features") [DEPENDS ON release_item_links]
+[Bug submission form]
+    └──requires──> [Existing POST /api/admin/bug-reports — must add project-scope check]
+    └──requires──> [Customer admin role gate (viewer can't submit, debatable — see notes)]
+
+[Bug list / Feature list]
+    └──requires──> [bug_reports / feature_requests table queries scoped to project_key]
+    └──requires──> [Pagination pattern (reuse load-more from ReleasesClient)]
+
+[Feature detail / submission / list]
+    └──mirrors──> [Bug detail / submission / list — same shape, different table]
+
+[301 redirects from admin]
+    └──requires──> [Next.js middleware in admin app (NOT portal)]
+    └──conflicts──> [Existing /projects/[slug]/* routes in admin — must remove or 301]
+
+[Customer header]
+    └──requires──> [Project name lookup by slug]
+    └──enhances──> [All /projects/[slug]/* pages]
 ```
 
 ### Dependency Notes
 
-- **Branch Preview Selector requires Firebase API integration**: Firebase App Hosting REST API or gcloud CLI wrapper must be callable from the Next.js server action. This is the highest-risk integration in the milestone — needs feasibility verification.
-- **Bug/Feature Linkage requires new table first**: `release_item_links` must exist before any of the display surfaces (detail pages, customer filter) can be built. Phase ordering must put table creation before UI.
-- **Web-UI Promote is additive**: It calls the same `dispatchWorkflow` and `notifyReleaseApproved` already wired for Slack. Zero new backend logic needed beyond the server action wrapper and role check.
-- **What's Changed requires no schema changes**: It's a query against existing `release_logs` rows filtered by `project`, `env`, and `deployed_at`. Pure display work.
+- **Shared lib code is the biggest unknown.** `pipeline-summary.ts`, `release-entry-summary.ts`, `release-history.ts`, `group-sections.ts`, `auth-context.ts`, `fah-rollout.ts`, `slack-audit.ts` all live in admin. Portal needs them too. Three options for STACK.md to decide: (1) extract to `@triarch/shared-portal` npm workspace package, (2) vendored copy in portal repo with a sync script, (3) git submodule. **Recommendation: Option 1 (npm workspace).** Most idiomatic; the admin and portal both check in to the same monorepo OR both consume a published package.
+- **API routes split is non-trivial.** Today, `/api/projects/[slug]/releases/[id]/approve` lives in admin. Portal will call it from portal.triarch.dev. Two choices: (a) admin keeps the API, portal proxies (CORS pain), or (b) portal owns its own copy of the API route, both apps connect to the same DB. **Recommendation: (b)** — portal is its own app, owns its own routes, shared DB.
+- **`isStaff` check on portal.** Staff users hitting portal must NOT see admin actions. The existing `userRole = ctx.isStaff || membership.role === 'admin' ? 'admin' : 'viewer'` line in `releases/page.tsx` conflates staff with customer-admin. **In portal, treat staff as viewer** (or block access entirely with a "Switch to admin" callout). This is a behavior change, not a code-port — call it out in roadmap.
+- **`viewer` role for bug submission.** Today's `project_members.role` enum is `admin | viewer | staff`. Question: can a customer viewer file a bug? Opinion: **yes, viewers can file bugs and feature requests** (they need to report things they see), but they cannot approve releases or invite teammates. Read FEATURES.md anti-feature on member invite — customer admin only.
 
 ---
 
 ## MVP Definition
 
-### v2.1 Launch With
+### Launch With (v2.2)
 
-These are the core features that make the pipeline legible and operable from the web, per the PROJECT.md goal statement.
+The minimum to fork the customer surface out and prove the seam. Each item is a **Phase candidate** for the roadmap.
 
-- [ ] Pipeline dashboard tile: prod version, dev version, pending-approval count, last-deploy timestamp, link to releases page — *eliminates the "must check Slack" workflow*
-- [ ] "What's changed" compact summary on admin dashboard tile — *answers "is dev ahead of prod" at a glance*
-- [ ] Branch preview selector on customer release page with lock/disable state — *the primary customer-facing new capability*
-- [ ] Web-UI Promote button (staff) with two-step modal — *closes the last manual Slack-only action loop*
-- [ ] `release_item_links` table + commit message parser at ingest — *foundation for linkage features*
-- [ ] "Released in vX.Y dev / vA.B prod" badge on bug and feature detail pages — *immediate payoff from linkage table*
+- [ ] **Phase: Bootstrap** — New Next.js app at `~/claude/triarch/development/portal`, separate FAH backend, separate ci-cd.yml, DNS, NextAuth Google OAuth (portal-scoped client + secret + cookie domain), shared DB connection, `@triarch/shared-portal` package extracted from admin (or equivalent code-sharing decision)
+- [ ] **Phase: Project list + post-login routing** — `/projects` landing page, single-project auto-redirect, empty state for non-members, login wall on `/`
+- [ ] **Phase: Release page port** — full release page with FilterChips, WhatsComingCard, BranchPreviewBanner+Button, conflict badges, two-step approve, reject, feedback compose, lifecycle timeline. Staff users see a "Switch to admin.triarch.dev" callout instead of admin actions.
+- [ ] **Phase: Bug list + detail (customer view)** — list, status filter, detail page with ReleasedInSidebar, comment thread (read for viewer, post for admin)
+- [ ] **Phase: Bug submission form** — `/projects/[slug]/bugs/new`, customer-side fields, POST to scoped API, redirect to detail
+- [ ] **Phase: Feature list + detail + submission** — same shape as bugs, different table
+- [ ] **Phase: 301 redirects + admin route deprecation** — admin app's `/projects/[slug]/*` 301s to portal
+- [ ] **Phase: Verify mobile responsive read paths** — manual QA pass on mobile breakpoint for releases / bug detail / project list
 
-### Add After Validation (v2.1.x)
+### Add After Validation (v2.2.x)
 
-- [ ] Customer release page filter by entry type (bug fix / feature / other) — *add once linkage table has real data to filter*
-- [ ] Per-project admin pipeline page (full expanded what's-changed + deploy history) — *useful but not blocking day-1 workflows*
-- [ ] Authoring UI for manual bug/feature ID add/remove on release entries — *helpful once auto-detection is live and staff want to correct it*
+Customer asks for these post-pilot. Easy lifts on a working portal foundation.
 
-### Future Consideration (v2.2+)
+- [ ] **Email digest** — daily/weekly "pending approvals" email (trigger: customer admin says "I miss Slack pings sometimes")
+- [ ] **Customer admin self-serve teammate invite** — `/projects/[slug]/members` (trigger: Truth+Treason wants to add a 3rd person without Mike's involvement)
+- [ ] **File attachments on bugs** — paste-to-upload with size cap (trigger: customer says "screenshots in URL form is awkward")
+- [ ] **Bug Q&A thread** — comment thread on bug detail (trigger: customer asks status of bug X via email)
+- [ ] **Calendar (.ics) feed of approved-pending-deploy releases** — token-URL endpoint (trigger: customer asks "when is X going live?")
 
-- [ ] GitHub Actions run link surfaced from release row — *nice-to-have trace but not blocking operations*
-- [ ] Branch swap history log (who previewed what, when) — *audit trail useful after adoption*
+### Future Consideration (v2.3+)
+
+Real value but premature for a 1-customer-pilot codebase.
+
+- [ ] **In-app notification bell** — defer until 5+ active customers using portal weekly
+- [ ] **Per-customer Slack workspace integration** — defer until 3+ customers asking for it
+- [ ] **Approval delegation** — defer until customer reports backup-approver friction
+- [ ] **Account settings (notification prefs, profile)** — defer until customer asks for prefs
+- [ ] **Bulk approve** — defer indefinitely; gating philosophy is intentionally friction-ful
+- [ ] **White-label per customer** — v3+ when we have a brand-conscious customer like a Fortune 500
+- [ ] **Magic link auth (alternate)** — v3+ when onboarding a customer without Google Workspace
 
 ---
 
@@ -124,108 +183,101 @@ These are the core features that make the pipeline legible and operable from the
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Admin pipeline dashboard tile (prod/dev versions + badge) | HIGH | LOW | P1 |
-| "What's changed" compact on dashboard | HIGH | LOW | P1 |
-| Branch preview selector + lock | HIGH | MEDIUM | P1 |
-| Web-UI Promote button + modal | HIGH | MEDIUM | P1 |
-| `release_item_links` table + ingest parser | MEDIUM | MEDIUM | P1 (foundation) |
-| "Released in" badge on bug/feature detail | MEDIUM | LOW | P1 (depends on above) |
-| Customer page filter by type | MEDIUM | LOW | P2 |
-| Per-project admin pipeline page (expanded view) | MEDIUM | MEDIUM | P2 |
-| Manual bug/feature ID authoring UI | LOW | MEDIUM | P3 |
+| Google OAuth sign-in (portal-scoped) | HIGH | LOW | P1 |
+| Project list landing + 1-project auto-redirect | HIGH | LOW | P1 |
+| Release page port | HIGH | MEDIUM | P1 |
+| Bug detail (customer-readable) | HIGH | MEDIUM | P1 |
+| Bug submission form | HIGH | MEDIUM | P1 |
+| Feature detail + submission | HIGH | MEDIUM | P1 |
+| Bug list + Feature list | MEDIUM | MEDIUM | P1 |
+| Customer header + sign-out | HIGH | LOW | P1 |
+| 301 redirects from admin app | HIGH | LOW | P1 |
+| Mobile responsive read paths | MEDIUM | LOW | P1 |
+| Login wall on `/` | HIGH | LOW | P1 |
+| 404 (not 403) for non-members | HIGH | LOW | P1 |
+| Staff "switch to admin" callout on portal | MEDIUM | LOW | P1 |
+| Email digest of pending approvals | MEDIUM | MEDIUM | P2 |
+| Customer admin self-serve invite teammates | MEDIUM | MEDIUM | P2 |
+| File attachments on bugs | LOW | MEDIUM | P2 |
+| Bug Q&A thread | MEDIUM | LOW | P2 |
+| Calendar (.ics) feed | LOW | LOW | P2 |
+| In-app notification bell | LOW | MEDIUM | P3 |
+| Per-customer Slack integration | MEDIUM | HIGH | P3 |
+| Approval delegation | LOW | MEDIUM | P3 |
+| Account settings page | LOW | MEDIUM | P3 |
+| Bulk approve | LOW | LOW | P3 |
+| White-label branding | LOW | HIGH | P3 |
+| Magic link auth alternate | LOW | MEDIUM | P3 |
+| PWA / offline | LOW | HIGH | P3 (anti) |
+| Public marketing copy on `/` | NEGATIVE | LOW | NEVER |
+| Multi-customer switcher dropdown | NEGATIVE | MEDIUM | NEVER (admin app's job) |
+| Real-time websocket release updates | LOW | HIGH | NEVER (SWR poll covers) |
+| Voting on feature requests | NEGATIVE | MEDIUM | NEVER for 1-customer-pilot |
+| Customer billing dashboard | NEGATIVE | HIGH | OUT OF SCOPE per PROJECT.md |
+
+**Priority key:**
+- **P1**: Must ship in v2.2 milestone — without this, the milestone goal isn't met
+- **P2**: Should ship in v2.2.x patch series — unblocks customer self-service
+- **P3**: Defer to v2.3+ — real value but premature for current customer count
+- **NEVER**: Anti-feature, do not build
 
 ---
 
-## Competitor Feature Analysis — Specific Questions
+## Customer Role Split (Honored Throughout)
 
-### 1. Pipeline-at-a-glance: What info density per project tile?
+The `project_members.role` enum (`admin | viewer | staff`) per `src/lib/auth-context.ts` is preserved in portal. Behavior table:
 
-| Data Point | Vercel | Netlify | Heroku | Our Approach |
-|------------|--------|---------|--------|--------------|
-| Production screenshot/preview | YES (added 2026) | NO | NO | NO — too heavy for a dev ops tool |
-| Production version/commit | Implied (production deployment link) | Deploy ID shown | "Most recent deployment" shown | Explicit semver (e.g., v1.4.2) from `release_logs` |
-| Dev/staging version | Not on tile (click through) | Not on tile | Not on tile | YES — show side by side; this is the core differentiator |
-| Last deploy timestamp | Not on tile | Not on tile | Yes (app tile) | YES — relative time ("3 hours ago") |
-| Pending actions badge | Not on tile | NOT shown | NOT shown | YES — pending approval count is the key operational signal |
-| Branch being deployed | Not on tile | Not on tile | Not on tile | Show dev branch name under dev version |
-| Link to detail | YES (tile is link) | YES | YES | YES — full tile is clickable |
+| Action | customer admin | customer viewer | staff (on portal) |
+|--------|----------------|-----------------|-------------------|
+| Sign in to portal | YES | YES | YES (with "Switch to admin" callout) |
+| See project list | YES (their projects only) | YES (their projects only) | YES (all projects via wildcard `*` membership) — but discouraged via callout |
+| View release page | YES | YES (read-only) | YES (read-only on portal — admin actions only on admin.triarch.dev) |
+| Approve release | YES | NO | NO (must use admin.triarch.dev's web promote OR Slack OttoBot) |
+| Reject release | YES | NO | NO |
+| Post release feedback | YES | NO (debatable: could be YES if v2.2.x demand surfaces) | NO |
+| Trigger branch preview swap | YES | NO | NO |
+| View bug list / detail | YES | YES | YES (project-scoped only — staff using portal sees the customer view) |
+| Submit bug report | YES | YES | NO (staff use admin /admin/modules/bug-reports/new) |
+| Comment on bug | YES (v2.2.x) | NO | NO |
+| View feature list / detail | YES | YES | YES |
+| Submit feature request | YES | YES | NO |
+| Invite teammate | YES (v2.2.x) | NO | NO (staff use admin SQL or admin UI) |
+| See cross-customer data | NO (membership-scoped) | NO | YES (but should switch to admin app for that view) |
 
-**Recommendation:** Show 6 data points per tile: project name, prod version + deployed_at, dev version + branch + deployed_at, pending approvals badge. Keep tile compact — one card row, not a status board. Progressive detail via click-through.
+---
 
-### 2. Branch Preview UX — Shared Slot, Selector Model
+## Competitor Feature Analysis
 
-No reference platform does the shared-slot selector model because all major platforms (Vercel, Netlify) provision per-branch URLs. The closest analogy is **Azure App Service deployment slots** (fixed number of slots, swap operation) and **Heroku staging-to-prod promotion** (single staging app, manual swap).
+Brief — the competitive landscape isn't deeply relevant because Triarch's customer portal is bespoke for a service-delivery model, not a SaaS product.
 
-From those patterns:
-- Show currently-previewing branch prominently (banner: "Previewing feat/x since 14:22")
-- Disable other RC rows with tooltip: "feat/payments-v2 currently previewing (locked by alice, 3 min ago)"
-- While swap is in-flight: disable ALL RCs with "Branch swap in progress…" spinner state
-- Swap should complete in ~30s (Firebase App Hosting deploy); optimistic UI with polling is appropriate
-- Who can swap: match the existing approve permission (customer admin role for the project)
+| Feature | Linear (issue tracker) | GitHub (public PR-as-portal) | Vercel customer portal | Triarch v2.2 |
+|---------|------------------------|------------------------------|-----------------------|--------------|
+| Auth | Email/password + Google + SSO | GitHub account | SSO + email/password | Google OAuth only |
+| Branding | Single Linear brand | Single GitHub brand | Single Vercel brand | Single Triarch brand (no white-label) |
+| Release approval gating | NO (build tool, not gate) | Manual via PR review | Preview deploys + production promote | Two-step approve with conflict badges + branch swap (DIFFERENTIATOR) |
+| Bug + feature unified | YES | Issues label-scoped | NO (deployment-only) | YES (existing v1.14) |
+| Customer-side comments | YES (issue thread) | YES (PR thread) | NO | YES (release feedback + bug Q&A v2.2.x) |
+| Lifecycle timeline | Project view | PR timeline | Deployment log | Per-release Timeline component (DIFFERENTIATOR) |
+| Branch preview UX | NO | YES (PR preview) | YES (preview deploy) | YES with FAH rollout swap (DIFFERENTIATOR) |
 
-**Anti-pattern to avoid:** Do not show a modal asking "Are you sure you want to preview this branch?" — previewing is low-stakes (no prod impact) and adding friction kills the UX. Just swap immediately with a visible loading state.
-
-### 3. Promote-from-Web Confirm UX
-
-Vercel's flow: Deployments tab → ellipsis menu → "Promote to Production" → popup showing which domains will be affected → single "Promote to Production" button.
-
-GitHub Actions: Job pauses, reviewer gets notification, navigates to run, sees pending job → optional comment field → "Approve and deploy" button.
-
-GitLab pattern: Medium-severity action = additional step (dropdown requiring multiple clicks), NOT type-to-confirm.
-
-**Our recommendation:** Two-step modal, matching the existing customer Approve UX:
-1. Button label: "Promote to production" (on the RC row, staff-only)
-2. Modal shows: branch name, version, what-changed summary (N entries), last approved by, "This will trigger the GitHub Actions promote-branch workflow and post to Slack."
-3. Single confirm button labeled "Promote [branch] v[version] to production" — specific label forces reading
-4. On click: dispatch workflow, immediately show "Promotion dispatched — check Slack for status" inline (no navigation away)
-
-**Do not use:** Type-to-confirm (routine action, too much friction). Do not use: checkbox "I understand this will…" (patronizing for staff who do this regularly).
-
-### 4. Tracker Linkage — "Released in" Notation
-
-Jira: "Fix Version" field in issue sidebar, shows version label with released/unreleased badge.
-
-Linear: Release shown in issue properties sidebar; release detail page shows associated issues grouped by release.
-
-Sentry: Issue detail shows "first seen in release vX.Y.Z" and "resolved in release vA.B.C" — two distinct data points.
-
-**Our recommendation:** On bug/feature detail pages, add a "Releases" section in the detail sidebar with:
-- "Dev: v1.4.2 (feat/payments, 3 days ago)" if linked to a dev release
-- "Prod: v1.3.0 (2 weeks ago)" if linked to a promoted release
-- "Not yet released" if linked to no release
-
-On customer release page, filter chips above the RC list: **All | Bug fixes | Features | Other** — chips show counts (e.g., "Bug fixes (3)"). Default to "All". This matches Linear's issue type filter pattern.
-
-### 5. What's-Changed Display — Compact vs Expanded
-
-Sentry: Release detail shows commit list with author + sha + message, grouped by type.
-GitHub Releases: Markdown body (manual or auto-generated from PR titles), compact on the releases list, expanded on click.
-Netlify: No native diff view — links to GitHub.
-Vercel: No native diff view — links to GitHub.
-Linear: Release notes auto-generated from associated issues, grouped by type.
-
-**Our recommendation — two contexts:**
-
-**Compact (admin dashboard tile, customer page header):** Single-line summary — "4 entries since last prod deploy: 2 bug fixes, 1 feature, 1 other." Link to expanded view. No timestamps. No authors. Fits in a tile without overflow.
-
-**Expanded (per-project pipeline page, customer page "What's Changed" section):** Table with columns: Type (pill), Title/message, Branch, Author, Date. Grouped by bug fixes first, then features, then other. Entries link to their bug/feature detail page if linked; plain text if unlinked. No commit SHA shown (too technical for customer context).
+**Triarch's distinguishing surface:** the release-gating flow + branch preview swap. Everything else (bugs, features) is table stakes; the gating UX is what makes the portal worth porting versus telling customers to use Slack only.
 
 ---
 
 ## Sources
 
-- [Vercel Promoting Deployments](https://vercel.com/docs/deployments/promoting-a-deployment) — HIGH confidence (official docs, updated 2026-02-27)
-- [Vercel Managing Deployments](https://vercel.com/docs/deployments/managing-deployments) — HIGH confidence (official docs, updated 2026-02-27)
-- [Vercel Projects Overview](https://vercel.com/docs/projects) — HIGH confidence (official docs, updated 2026-02-26)
-- [GitHub Actions: Reviewing Deployments](https://docs.github.com/en/actions/managing-workflow-runs/reviewing-deployments) — HIGH confidence (official docs)
-- [Heroku Review Apps](https://devcenter.heroku.com/articles/github-integration-review-apps) — HIGH confidence (official docs)
-- [Sentry Releases](https://docs.sentry.io/product/releases/) — HIGH confidence (official docs)
-- [Linear Releases](https://linear.app/docs/releases) — HIGH confidence (official docs)
-- [GitLab Destructive Actions Pattern](https://design.gitlab.com/patterns/destructive-actions/) — HIGH confidence (official design system)
-- [Netlify Deploy Overview](https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/) — HIGH confidence (official docs)
-- [NN/G Confirmation Dialogs](https://www.nngroup.com/articles/confirmation-dialog/) — HIGH confidence (authoritative UX research)
+- [SaaS Authentication Best Practices in 2026 — supastarter](https://supastarter.dev/blog/saas-authentication-best-practices)
+- [Customer portal authentication options: SSO, magic links, and invite-only access — supportbench](https://www.supportbench.com/customer-portal-authentication-sso-magic-links-invite-only-access/)
+- [Magic Links: UX, Security, and Growth Impacts for SaaS — Baytech Consulting](https://www.baytechconsulting.com/blog/magic-links-ux-security-and-growth-impacts-for-saas-platforms-2025)
+- [B2B Portal Development in 2026: Features, Benefits & Enterprise Architecture — TechVoot](https://www.techvoot.com/blog/b2b-portal-development-enterprise-architecture)
+- [B2B Customer Portal: Definition, Features, & Examples in 2026 — AgencyHandy](https://www.agencyhandy.com/b2b-customer-portal/)
+- [Top 5 Features of a Modern B2B Portal in 2026 — Asabix](https://asabix.com/blog/top-5-features-b2b-portal-in-2026/)
+- Internal: `/Users/mikegeehan/claude/triarch/development/admin/.planning/PROJECT.md` (v2.2 milestone definition, target features, constraints)
+- Internal: `/Users/mikegeehan/claude/triarch/development/admin/src/app/projects/[slug]/releases/ReleasesClient.tsx` (existing release page — 916 lines of customer surface to port)
+- Internal: `/Users/mikegeehan/claude/triarch/development/admin/src/app/projects/[slug]/releases/page.tsx` (membership/auth pattern to mirror)
+- Internal: `/Users/mikegeehan/claude/triarch/development/admin/src/lib/auth-context.ts` (3-role membership model: admin | viewer | staff)
 
 ---
 
-*Feature research for: Triarch Dev Admin v2.1 Pipeline UI*
-*Researched: 2026-05-07*
+*Feature research for: B2B dev-shop client portal (v2.2 Customer Portal Split — admin → portal fork)*
+*Researched: 2026-05-08*

@@ -1,444 +1,460 @@
-# Architecture Research
+# Architecture Research: Customer Portal Split (v2.2)
 
-**Domain:** Operations console — Pipeline UI integration (v2.1)
-**Researched:** 2026-05-07
-**Confidence:** HIGH (based on direct codebase analysis)
+**Domain:** Multi-app fork of an existing Next.js operations console — staff app stays at `admin.triarch.dev`, customer surface forks to a new Next.js app at `portal.triarch.dev`. Both apps share one CockroachDB cluster, share `@myalterlego/shared-ui` design tokens, and federate identity through one Google OAuth client — but are otherwise independently versioned, independently deployed, and have isolated cookie scopes.
+**Researched:** 2026-05-08
+**Confidence:** HIGH (decisions are anchored in an in-house precedent that already shipped: `triarchsecurity-admin` ↔ `triarchsecurity-portal` runs the exact same split and is operational at portal v0.14.3 / admin in production. We are reproducing a pattern that works, not inventing one.)
 
-## Standard Architecture
+---
 
-### System Overview
+## Decisions Up Front
+
+| # | Question | Decision | Rationale |
+|---|----------|----------|-----------|
+| 1 | Code-sharing strategy | **Two independent repos. Promote one new internal npm package: `@myalterlego/triarch-shared`** (schema + 4 helpers). NO monorepo. NO submodule. | Mirrors the working `triarchsecurity-admin` ↔ `triarchsecurity-portal` precedent. Independent deploy cadence is non-negotiable (admin ships from `MyAlterLego/triarch-dev`, portal ships from a new repo `MyAlterLego/triarch-portal`). |
+| 2 | DB access | **Direct pg.Pool from portal**, same DATABASE_URL secret value, separate Firebase secret reference. | Lower latency, simpler auth surface, no proxy hop. Existing portal precedent (`/Users/mikegeehan/claude/MyAlterLego/triarchsecurity-portal/src/lib/db.ts`) connects directly. |
+| 3 | NextAuth scope | **Same Google OAuth client, separate NextAuth secret per app, no cookie sharing.** | Sign-in is per-host. Brand isolation. Cookies stay scoped to their host (default behavior — DO NOT set `cookieDomain` to `.triarch.dev`). |
+| 4 | OAuth callback | **One Google OAuth client app with two registered callback URIs.** | Google supports multiple redirect URIs on one client. No need to manage two clients. |
+| 5 | Authorization on portal | **Staff who land on portal get a "Switch to admin.triarch.dev" callout AND can act as a viewer on any project they're a member of.** Customer admin who lands on admin.triarch.dev gets a 403 with link back to portal. | Staff occasionally need to verify what a customer sees; outright reject is hostile. Customers have no business on admin. |
+| 6 | Migration | **301 redirect from admin's `/projects/*` → portal's `/projects/*` after portal ships, with a 30-day overlap where both URLs work.** | Customer bookmarks must keep working. Hard cutover risks lost links. |
+| 7 | Branch swap ownership | **Portal owns `POST /api/projects/[slug]/branch/preview` end-to-end.** Portal's Firebase project gets `FAH_PROMOTER_SA_KEY`. Admin's copy is removed once portal canonical. | Lower latency, single auth surface, no proxy. The SA key is a secret value and can live in two Firebase projects without conflict. |
+| 8 | CI/CD | **New `.github/workflows/ci-cd.yml` in portal repo, references `MyAlterLego/shared-workflows@v4` unchanged.** No shared-workflows fork needed. | shared-workflows v4 is already environment-aware (Phase 7.5 work). Portal is just another consumer. |
+| 9 | v2.1 hostname guards | **Remove from admin once portal canonical.** No defense-in-depth. | Admin will be staff-only post-cutover. Hostname checks become dead code. Auth role gates remain. |
+| 10 | Schema ownership | **Admin remains the migration authority. `drizzle-kit push` runs from admin only. Schema lives in `@myalterlego/triarch-shared` but the package is published BY admin's repo. Portal consumes read-only.** | One schema, one migrator. Two migrators race. |
+
+---
+
+## System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│  PAGES (Server Components — data fetched at render, no client state on load)    │
-├────────────────────┬────────────────────┬───────────────────┬───────────────────┤
-│  /admin            │  /admin/modules/   │  /admin/modules/  │  /projects/       │
-│  (MODIFIED)        │  pipeline/[slug]   │  release-logs     │  [slug]/releases  │
-│  + prod/dev split  │  (NEW)             │  (MODIFIED)       │  (MODIFIED)       │
-│  + pending count   │  + env state       │  + linkage UI     │  + branch swap    │
-│  + last deploy ts  │  + branch RCs      │  + entry links    │  + what-changed   │
-│  + release page lk │  + what-changed    │  + auto-stamp     │  + filter by type │
-│                    │  + promote btn     │                   │                   │
-└────────────────────┴────────────────────┴───────────────────┴───────────────────┘
-           │                   │                    │                  │
-┌──────────▼───────────────────▼────────────────────▼──────────────────▼──────────┐
-│  CLIENT COMPONENTS (hydrated islands — user interactions only)                  │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│  PipelineDashboard  │  PromoteButton     │  BranchSwap       │  EntryTypeFilter  │
-│  Client.tsx (NEW)   │  Client.tsx (NEW)  │  Client.tsx (NEW) │  Client.tsx (NEW) │
-│  (branch swap       │  (calls POST       │  (calls POST      │  (filters         │
-│   in-flight state)  │   /api/admin/      │   /api/projects/  │   BranchSection   │
-│                     │   releases/[id]/   │   [slug]/branch/  │   by entry type)  │
-│                     │   promote)         │   preview)        │                   │
-└─────────────────────┴────────────────────┴───────────────────┴───────────────────┘
-           │                   │                    │                  │
-┌──────────▼───────────────────▼────────────────────▼──────────────────▼──────────┐
-│  API ROUTES                                                                     │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│  POST /api/admin/           │  POST /api/projects/       │  GET /api/platform/  │
-│  releases/[id]/promote      │  [slug]/branch/preview     │  release-logs        │
-│  (NEW — staff only)         │  (NEW — member+admin)      │  (EXISTING, extended)│
-│  reuses promoteAndAudit()   │  calls Firebase App        │                      │
-│  posts Slack notification   │  Hosting API rollout       │                      │
-│  same idempotency model     │  concurrency via DB lock   │                      │
-│  as Slack handler           │  row in release_logs       │                      │
-└─────────────────────────────┴────────────────────────────┴──────────────────────┘
-           │                                    │
-┌──────────▼────────────────────────────────────▼──────────────────────────────────┐
-│  LIB / SERVICES                                                                 │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│  release-promotion.ts       │  github-app.ts              │  commit-parser.ts    │
-│  (EXISTING, reused)         │  (EXISTING, reused)         │  (NEW)               │
-│  promoteAndAudit()          │  dispatchWorkflow()         │  parseCommitRefs()   │
-│  now callable from web      │  called by both Slack       │  regex #BUG #FEAT    │
-│  route — no duplication     │  and web promote paths      │  #REQ closes/fixes   │
-└─────────────────────────────┴─────────────────────────────┴──────────────────────┘
-           │                                    │                    │
-┌──────────▼────────────────────────────────────▼────────────────────▼─────────────┐
-│  DATABASE (CockroachDB via Drizzle)                                             │
-├──────────────────────────────────────────────────────────────────────────────────┤
-│  release_logs (EXISTING)    │  release_log_links (NEW)   │  projects (EXISTING) │
-│  + branch_preview_active    │  release_id → bug_id       │  + devBackendUrl     │
-│    boolean (NEW COLUMN)     │  release_id → feature_id   │    (NEW COLUMN)      │
-│                             │  external_url nullable      │                      │
-│                             │  link_type enum            │                      │
-└─────────────────────────────┴─────────────────────────────┴──────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                            User-Facing Surface                            │
+├──────────────────────────────────────────────────────────────────────────┤
+│   ┌─────────────────────┐                ┌─────────────────────┐         │
+│   │  admin.triarch.dev  │                │ portal.triarch.dev  │         │
+│   │   (staff console)   │                │  (customer portal)  │         │
+│   │  Next.js 16 App     │                │  Next.js 16 App     │         │
+│   │  Firebase project:  │                │  Firebase project:  │         │
+│   │ triarch-dev-website │                │ triarch-dev-portal  │         │
+│   │  Backend: triarch-  │                │  Backend: triarch-  │         │
+│   │  dev (+ -prod)      │                │  portal-dev (+-prod)│         │
+│   └──────────┬──────────┘                └──────────┬──────────┘         │
+│              │                                      │                    │
+│              │     ── independent cookies ──        │                    │
+│              │     ── independent secrets ──        │                    │
+│              │     ── independent versions ──       │                    │
+└──────────────┼──────────────────────────────────────┼────────────────────┘
+               │                                      │
+               │   ┌──────────────────────────────┐   │
+               └──▶│   @myalterlego/triarch-      │◀──┘
+                   │   shared (npm pkg, GH        │
+                   │   Packages)                   │
+                   │  • Drizzle schema (read)     │
+                   │  • auth-context helper       │
+                   │  • sanitize-commit helper    │
+                   │  • slack-status builder      │
+                   │  • TypeScript types          │
+                   └──────────────────────────────┘
+               │                                      │
+               ▼                                      ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                              Shared Storage                               │
+├──────────────────────────────────────────────────────────────────────────┤
+│   CockroachDB cluster: triarchdev-dev-15666                               │
+│   Database: triarch_dev                                                   │
+│   Driver: pg.Pool (both apps)                                             │
+│   ORM: Drizzle (admin: read+write+migrate, portal: read+write)            │
+│                                                                           │
+│   Tables both apps touch:                                                 │
+│     projects, project_members, release_logs, release_approvals,           │
+│     release_feedback, release_log_links, bug_reports, feature_requests,   │
+│     slack_action_audit                                                    │
+│   Tables admin-only:                                                      │
+│     menu_sections/_pages/_subpages, role_permissions, module_settings,    │
+│     report_section_types, reports, service_offerings, offering_*          │
+└──────────────────────────────────────────────────────────────────────────┘
+                                    ▲
+                                    │
+┌───────────────────────────────────┴──────────────────────────────────────┐
+│                       External Identity & Plumbing                        │
+├──────────────────────────────────────────────────────────────────────────┤
+│   Google OAuth client (single):                                          │
+│     • Authorized redirect 1: https://admin.triarch.dev/api/auth/callback │
+│                              /google                                      │
+│     • Authorized redirect 2: https://portal.triarch.dev/api/auth/callback│
+│                              /google                                      │
+│                                                                           │
+│   GCP Secret Manager (per Firebase project):                              │
+│     admin: NEXTAUTH_SECRET, DATABASE_URL, GOOGLE_CLIENT_*,                │
+│            FAH_PROMOTER_SA_KEY, GH_APP_*, SLACK_*                         │
+│     portal: PORTAL_NEXTAUTH_SECRET, DATABASE_URL (same value),            │
+│             GOOGLE_CLIENT_* (same values), FAH_PROMOTER_SA_KEY (same      │
+│             value), SLACK_BOT_TOKEN (read-only, for OttoBot post)         │
+│                                                                           │
+│   Firebase App Hosting (Cloud Build → Cloud Run):                        │
+│     admin: project triarch-dev-website, backends triarch-dev / -prod     │
+│     portal: project triarch-dev-portal (NEW), backends                    │
+│             triarch-portal-dev / -prod                                    │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Responsibilities
 
-| Component | Responsibility | New or Modified |
-|-----------|----------------|-----------------|
-| `/admin` page | Project health at-a-glance, now with prod+dev split per row | MODIFIED |
-| `/admin/modules/pipeline/[slug]` | Per-project consolidated pipeline view | NEW |
-| `/admin/modules/release-logs` | Release authoring + linkage UI | MODIFIED |
-| `/projects/[slug]/releases` | Customer RC page with branch swap + what-changed + entry type filter | MODIFIED |
-| `PipelineDashboardClient` | In-flight state for branch swap across all projects | NEW |
-| `PromoteButton` | Web-UI promote action, optimistic disabled state | NEW |
-| `BranchSwapClient` | Branch selector + concurrency lock display | NEW |
-| `EntryTypeFilterClient` | Filter release entries by bug/feat/other | NEW |
-| `POST /api/admin/releases/[id]/promote` | Web-initiated promotion — delegates to `promoteAndAudit` | NEW |
-| `POST /api/projects/[slug]/branch/preview` | Firebase App Hosting rollout swap | NEW |
-| `src/lib/commit-parser.ts` | Regex parse commit messages for bug/feat/req IDs | NEW |
-| `release_log_links` table | Join table linking release entries to bug/feature IDs | NEW |
-| `projects.devBackendUrl` | Stores the FAH dev backend URL for branch swap target | NEW COLUMN |
+| Component | Responsibility | Implementation |
+|-----------|----------------|----------------|
+| `admin.triarch.dev` | Staff platform: project registry, pipeline, OttoBot dispatch, Slack audit, member management, schema migrations | Next.js 16 App Router (existing), Drizzle write authority |
+| `portal.triarch.dev` | Customer surface: release page, branch swap, bug/feature view+submit, lifecycle timeline, customer-side notifications | Next.js 16 App Router (NEW), Drizzle read+limited-write |
+| `@myalterlego/triarch-shared` | Schema, types, sanitization, slack-status block builder, auth-context helper | NEW npm package; published from admin repo via tag-driven workflow |
+| `@myalterlego/shared-ui` | Design tokens, shared primitives | EXISTING — no change |
+| CockroachDB `triarch_dev` | Single source of truth for project data | EXISTING; admin owns schema, both apps read+write |
+| Google OAuth client | Single identity provider | EXISTING admin client; add second redirect URI |
+| Firebase App Hosting (portal project) | Build, deploy, custom domain, secrets | NEW project `triarch-dev-portal` with admin-equivalent backend topology |
 
 ---
 
-## Feature Integration Details
+## Recommended Project Structure
 
-### Feature 1: Pipeline-at-a-Glance Admin Dashboard
-
-**Decision: Modify `/admin` page, not a new `/admin/modules/pipeline` page.**
-
-The existing Project Health section already renders per-project rows. Adding prod/dev version split, pending-approval count, and last-deploy timestamp is a targeted extension of the `getDashboardStats` query — not a new module with its own nav entry.
-
-A new `/admin/modules/pipeline` page would duplicate the project list and add nav overhead. The existing dashboard is the right home for this glanceable information.
-
-**What changes:**
-- `src/app/admin/page.tsx` — MODIFIED: `getDashboardStats` extended with two sub-queries per project: latest `release_logs WHERE env='dev' ORDER BY deployed_at DESC LIMIT 1` and latest `WHERE env='prod'`. The `ProjectHealth` interface gains `devVersion`, `prodVersion`, `pendingApprovals`, `lastDeployAt` fields.
-- Project Health card template — renders two version badges (dev in blue, prod in green), pending count pill, last deploy timestamp, and a link icon to `/projects/<key>/releases`.
-- No new lib file needed — query lives inline in the server component.
-
-**Auth:** Staff sees all projects; non-staff sees only their project_member projects. Existing `projectKeys` filter logic is unchanged.
-
-**Per-project pipeline deep-dive:** A new `/admin/modules/pipeline/[slug]` page (NEW) serves the consolidated env state + branch RC list + deploy history view. This is staff-only and accessible via the project tile link. It reuses the same `groupIntoSections` utility from the customer page but without the approval actions.
-
----
-
-### Feature 2: Customer Branch Preview Swap
-
-**API route:** `POST /api/projects/[slug]/branch/preview`
-
-**What it does:** Takes `{ branchName: string }` in the request body. Calls the Firebase App Hosting Rollouts API to swap the dev backend to serve the named branch. Updates a concurrency lock in the DB so other RCs show "branch X currently previewing."
-
-**Auth model:**
-- `requireSignedIn` + project membership check (same as the approve route pattern).
-- Role: `admin` only (same as Approve button). Viewer role cannot trigger a swap.
-- Staff always passes.
-
-**Concurrency lock — DB row approach (recommended over in-process mutex):**
-
-Firebase App Hosting returns a 409 if a rollout is already in progress, so there is a natural server-side guard. However, the UI needs to show "currently previewing" state to other RC rows before the Firebase API call resolves. An in-process mutex dies on serverless cold start; a DB column is the correct solution.
-
-Add `branch_preview_active varchar(256)` to `release_logs` — nullable, populated with the branch name when a swap is dispatched, cleared when the new deploy ingest arrives (the `POST /api/platform/ingest/release-logs` handler can clear it on success). Alternatively, add `preview_branch_locked_at timestamp` and `preview_branch_locked_to varchar(256)` to the `projects` table as a project-scoped lock (one lock per project rather than per-release). The project-scoped lock is cleaner: one row to check, one row to clear.
-
-**Recommended:** Add `previewBranchLocked` + `previewBranchLockedAt` to `projects` table. The `POST /api/projects/[slug]/branch/preview` route:
-1. Reads the lock row; if locked and `lockedAt` is within 15 minutes, return 409 with the locked branch name in the body.
-2. Updates the lock (`UPDATE projects SET preview_branch_locked = $branch, preview_branch_locked_at = now() WHERE key = $slug`).
-3. Calls Firebase App Hosting API (programmatically via `gcloud` REST or the Firebase Admin SDK `apphosting` module — see PITFALLS.md for the SDK gap).
-4. Returns 200; the lock is cleared by the next successful ingest.
-
-**Firebase API uncertainty (MEDIUM confidence):** The `firebase apphosting:rollouts:create --git-branch` CLI command exists and is documented. The REST API equivalent for programmatic invocation from Next.js route handlers is less clearly documented. This may require using the `googleapis` Node SDK with Firebase App Hosting REST endpoints. Flag this for a deeper research spike before Phase 2.
-
-**Schema change required:** Two columns on `projects` table — `preview_branch_locked varchar(256)`, `preview_branch_locked_at timestamp`.
-
----
-
-### Feature 3: Web-UI Promote Button
-
-**API route:** `POST /api/admin/releases/[id]/promote`
-
-**Auth model:**
-- `requireStaff` (from `src/lib/api-auth.ts`). The Promote button is staff-only on the admin side. Customer admins do not get web-UI promotion — they approve via the customer page, which triggers the Slack path. Keeping promotion staff-gated prevents customers from bypassing Slack audit.
-- If the admin pipeline page serves customers too in the future, reconsider; for now staff-only is correct.
-
-**Idempotency:** Reuse `promoteAndAudit()` from `src/lib/release-promotion.ts` exactly as the Slack handler does. The function already audits `promotion_dispatched_at` on the release row. Calling it twice for the same release ID is safe — the second dispatch goes to GitHub Actions anyway and the GitHub API is idempotent for `workflow_dispatch` (it just queues another run, which the promote-branch workflow handles by checking branch state).
-
-**Slack notification:** `promoteAndAudit()` already posts to the `#release-approvals` Slack channel via `postSlackThreadedReply`. The web path gets Slack notification for free by reusing the function — no duplicate notification logic needed.
-
-**Body of the route:**
-1. `requireStaff()` — 401/403 on failure.
-2. Look up the release by `id`, verify it belongs to a project the staff member can see (all projects for staff).
-3. Verify `release.status === 'approved'` — only approved releases can be promoted. Return 409 if not.
-4. Look up project `githubRepo`, `slackChannelId`, `slackMessageTs` from `release.metadata.dispatch`.
-5. Call `promoteAndAudit({ release, actorEmail, channelId, messageTs, slackUserName })`.
-6. Return `{ ok: true }` or `{ ok: false, error }`.
-
-**Client component:** `PromoteButton` renders only on approved rows, only for staff (role check passed as prop from server page). Optimistic disabled state while the `fetch` is in flight. On success, trigger a router refresh.
-
-**No new lib file needed** — the route handler calls `promoteAndAudit` directly.
-
----
-
-### Feature 4: Bug/Feature Release Linkage
-
-#### 4a. Storage: Join Table (Recommended Over Extending `entries[]`)
-
-**Decision: New `release_log_links` join table, not extending `entries[]` JSONB.**
-
-`entries` is an append-only JSONB array that CI writes at ingest time. Adding bug/feature IDs to it would require mutating ingested data or changing the ingest payload contract — both bad. A join table is the correct relational pattern: queryable, indexable, auditable.
-
-**Schema (new table):**
-
-```sql
-CREATE TABLE release_log_links (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  release_id UUID NOT NULL REFERENCES release_logs(id) ON DELETE CASCADE,
-  link_type  VARCHAR(16) NOT NULL,   -- 'bug' | 'feature' | 'req' | 'external'
-  bug_id     UUID,                   -- FK to bug_reports.id (nullable)
-  feature_id UUID,                   -- FK to feature_requests.id (nullable)
-  external_url TEXT,                  -- for 'external' type: GitHub issue URL, Jira, etc.
-  source     VARCHAR(16) NOT NULL,   -- 'auto' (commit parser) | 'manual' (UI)
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
-CREATE INDEX release_log_links_release_id_idx ON release_log_links(release_id);
-CREATE INDEX release_log_links_bug_id_idx ON release_log_links(bug_id) WHERE bug_id IS NOT NULL;
-CREATE INDEX release_log_links_feature_id_idx ON release_log_links(feature_id) WHERE feature_id IS NOT NULL;
-```
-
-**Drizzle schema addition** goes in `src/db/schema.ts`. Add relations to `releaseLogsRelations` (many links) and add `releaseLogLinksRelations` with one-to-one back to `releaseLogs`, `bugReports`, `featureRequests`.
-
-#### 4b. Auto-Stamp: Commit Message Parser
-
-**New lib file:** `src/lib/commit-parser.ts`
-
-Parses a commit message string and returns structured link candidates. Called server-side from the ingest route after inserting the release row.
-
-**Patterns to detect:**
-- `#BUG-\d+` → links to `bug_reports` by numeric ID suffix
-- `#FEAT-\d+` or `#FEATURE-\d+` → links to `feature_requests`
-- `#REQ-\d+` → external_url type (requirements tracker, no internal FK)
-- `closes #\d+` / `fixes #\d+` → GitHub issue number → external_url (GitHub issue link constructed from `projects.githubRepo`)
-- `closes BUG-\d+` / `fixes FEAT-\d+` → same as direct hash patterns
-
-**Where it runs:** In `POST /api/platform/ingest/release-logs/route.ts` (MODIFIED), after `db.insert(releaseLogs)`. Fetch the commit message via GitHub App API (`GET /repos/{owner}/{repo}/commits/{sha}`), parse, upsert links.
-
-**GitHub fetch for commit message:** `dispatchWorkflow` already shows the pattern for GitHub App authenticated fetch. A new exported helper `getCommitMessage(owner, repo, sha)` in `github-app.ts` (or a small addition inline in the ingest route) makes the GET request. This requires the GitHub App to have `contents:read` permission — already granted per `SCHEMA-03`.
-
-**Failure mode:** If GitHub is unreachable or the SHA is invalid, log the error and continue — ingest must not fail because of commit message parsing. Links can be created manually via the authoring UI.
-
-**Authoring UI changes:** In `/admin/modules/release-logs` (MODIFIED), the release creation/edit form shows detected link candidates (read from `release_log_links WHERE source='auto'`) plus a manual add/remove interface. The manual interface writes `release_log_links` rows with `source='manual'`.
-
-#### 4c. Bug/Feature Detail Pages: "Released In" Query
-
-**No new tables required.** The query is:
-
-```sql
-SELECT rl.version, rl.env, rl.deployed_at
-FROM release_log_links rll
-JOIN release_logs rl ON rl.id = rll.release_id
-WHERE rll.bug_id = $bugId
-ORDER BY rl.deployed_at DESC
-```
-
-Run on the bug detail page (currently no detail page — backlog item `BUG-03` deferred). For v2.1, add a lightweight "Released in" section to the existing bug/feature list row expansion or a new detail route at `/admin/modules/bug-reports/[id]` and `/admin/modules/feature-requests/[id]`.
-
-These detail pages are NEW server components with a single join query. The "released in vX.Y dev / vA.B prod" display is computed server-side from the env column.
-
----
-
-### Feature 5: What's-Changed Between Dev and Prod
-
-**No new tables needed.** Pure SQL derived from existing data.
-
-**Query:**
-
-```sql
--- Releases deployed to dev after the latest prod deploy for this project
-SELECT rl.*
-FROM release_logs rl
-WHERE rl.project = $project
-  AND rl.env = 'dev'
-  AND rl.deployed_at > (
-    SELECT COALESCE(MAX(deployed_at), '1970-01-01')
-    FROM release_logs
-    WHERE project = $project AND env = 'prod'
-  )
-ORDER BY rl.deployed_at DESC
-```
-
-**Where this runs:**
-- Admin pipeline page (`/admin/modules/pipeline/[slug]`) — NEW server component, compact view in a "Pending Changes" section.
-- Customer releases page (`/projects/[slug]/releases`) — MODIFIED: a summary card at the top of the page, above the branch sections. Server-fetched, no client state. Shows count + version range + entry snippet.
-- Admin home `/admin` — optional future addition via the project health tile; out of scope for Phase 1.
-
-**Implementation:** A shared server-side query helper `getUnreleasedDevChanges(projectKey: string)` in `src/lib/release-sync.ts` (which already exists — MODIFIED or a sibling `release-delta.ts`). Returns `ReleaseRow[]`. Each call site decides how much to render.
-
----
-
-### Feature 6: Discoverability Fixes
-
-**Pure UI changes — zero schema, zero new API routes.**
-
-- `/admin` page Project Health tile: wrap each tile in a `<Link href="/projects/${p.key}/releases">` (currently `<div>`).
-- Customer releases page: the existing `PreviewLink` component already renders preview URLs. The dev backend URL (the FAH dev backend hostname) needs to surface in the UI. This is stored as `metadata.previewUrl` on the most recent dev release row — already available.
-- Per-project dev URL: staff should see the FAH dev backend URL without opening a release row. Add a column to the admin pipeline page or the project list page.
-
----
-
-## Build Order and Dependencies
-
-The features have a clear dependency graph. This determines phase sequencing.
+### New repository: `MyAlterLego/triarch-portal`
 
 ```
-[1] Schema: release_log_links table + projects lock columns
-    (blocks: tracker linkage UI, branch swap)
-
-[2] Admin home: prod/dev split + pending count + project tile links
-    (depends on: nothing — pure query change; no schema change)
-    (independent of Feature 1 — can ship in Phase 1)
-
-[3] Per-project pipeline page /admin/modules/pipeline/[slug]
-    (depends on: Feature 2's data is nice-to-have; can ship without branch swap)
-    (reuses: groupIntoSections from customer page)
-
-[4] Web-UI Promote button
-    (depends on: nothing new — reuses promoteAndAudit + requireStaff)
-    (can ship: as soon as the admin pipeline page exists to host the button)
-    (independent of schema changes)
-
-[5] What's-changed view
-    (depends on: nothing — pure query on existing data)
-    (can ship: alongside Feature 3 on the pipeline page, or standalone)
-
-[6] commit-parser lib + ingest route auto-stamp
-    (depends on: [1] release_log_links table must exist)
-    (blocks: auto-populated link data in the authoring UI)
-
-[7] Tracker linkage authoring UI (release-logs page)
-    (depends on: [1] schema, [6] commit parser)
-
-[8] Bug/feature detail pages with "released in"
-    (depends on: [1] schema, [7] data must exist to be useful)
-
-[9] Branch preview swap
-    (depends on: [1] projects lock columns)
-    (needs: Firebase App Hosting programmatic API research spike first)
-
-[10] Customer page: entry type filter + what-changed summary + branch swap UI
-    (depends on: [5] what-changed query, [9] branch swap API)
-    (entry type filter is independent — can ship before [9])
+triarch-portal/
+├── apphosting.yaml              # FAH config — minimal, dev backend defaults
+├── apphosting.prod.yaml         # FAH config — prod overlay (per Phase 7.5 convention)
+├── package.json                 # version starts at 0.1.0; depends on:
+│                                #   @myalterlego/triarch-shared ^0.1
+│                                #   @myalterlego/shared-ui ^1.4
+│                                #   next-auth ^4.24
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml            # uses shared-workflows@v4, mirrors admin
+├── drizzle.config.ts            # READ-ONLY USE: introspection only,
+│                                # NO db:push from this repo
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx           # PortalShell (no AdminSidebar)
+│   │   ├── page.tsx             # post-login: list of user's projects
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── projects/
+│   │   │   └── [slug]/
+│   │   │       ├── layout.tsx
+│   │   │       └── releases/
+│   │   │           └── page.tsx # MIGRATED from admin
+│   │   ├── bugs/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx     # NEW customer-friendly view
+│   │   ├── features/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx     # NEW customer-friendly view
+│   │   └── api/
+│   │       ├── auth/[...nextauth]/route.ts
+│   │       ├── projects/[slug]/
+│   │       │   ├── branch/preview/route.ts        # MIGRATED from admin
+│   │       │   ├── branch/preview/status/route.ts # MIGRATED from admin
+│   │       │   └── releases/[releaseId]/
+│   │       │       ├── approve/route.ts           # MIGRATED from admin
+│   │       │       ├── reject/route.ts            # MIGRATED from admin
+│   │       │       └── feedback/route.ts          # MIGRATED from admin
+│   │       └── bugs/route.ts                      # NEW customer submit
+│   ├── components/              # portal-specific components only
+│   │   ├── PortalShell.tsx      # NEW header/footer/branding
+│   │   ├── ProjectList.tsx
+│   │   └── (migrated)/          # FilterChips, WhatsComingCard,
+│   │                            # BranchPreviewClient, ReleasesClient
+│   └── lib/
+│       ├── auth.ts              # Portal NextAuth config (PORTAL_NEXTAUTH_SECRET)
+│       ├── db.ts                # pg.Pool wrapped with drizzle from shared pkg
+│       ├── fah-rollout.ts       # MIGRATED from admin (same FAH SA pattern)
+│       └── version.ts
+└── tsconfig.json
 ```
 
-**Recommended phase structure based on dependencies:**
+### Existing repository: `MyAlterLego/triarch-dev` (admin)
 
-| Phase | Features | Schema Changes | Independent? |
-|-------|----------|---------------|-------------|
-| Phase 1 | Admin home pipeline split + project tile links + discoverability fixes | None | Yes — ship first |
-| Phase 2 | Per-project pipeline page + what-changed view + Web-UI Promote button | None | Yes — no schema needed |
-| Phase 3 | Schema: `release_log_links` + `projects` lock columns | YES — `release_log_links` table + 2 `projects` columns | Gate for Phase 4+ |
-| Phase 4 | commit-parser + ingest auto-stamp + tracker linkage authoring UI | None (uses Phase 3 schema) | Blocked on Phase 3 |
-| Phase 5 | Bug/feature detail pages | None | Blocked on Phase 4 (needs data) |
-| Phase 6 | Branch preview swap (with Firebase API research) | None (uses Phase 3 lock columns) | Blocked on Phase 3 + research spike |
-| Phase 7 | Customer page: entry type filter + what-changed summary + branch swap UI | None | Blocked on Phases 5+6 |
+```
+triarch-dev/
+├── packages/                    # NEW workspace dir (admin repo only)
+│   └── triarch-shared/          # NEW — published as @myalterlego/triarch-shared
+│       ├── package.json         # name: @myalterlego/triarch-shared
+│       ├── tsconfig.json
+│       └── src/
+│           ├── index.ts         # public re-exports
+│           ├── schema.ts        # MOVED from src/db/schema.ts (re-exported back)
+│           ├── auth-context.ts  # MOVED from src/lib/auth-context.ts
+│           ├── sanitize-commit.ts # MOVED from src/lib/sanitize-commit.ts
+│           └── slack-status.ts  # MOVED from src/lib/slack-status.ts
+├── src/
+│   ├── db/schema.ts             # NOW: re-export shim
+│   │                            #   export * from '@myalterlego/triarch-shared/schema';
+│   ├── lib/auth-context.ts      # NOW: re-export shim
+│   ├── lib/sanitize-commit.ts   # NOW: re-export shim
+│   ├── lib/slack-status.ts      # NOW: re-export shim
+│   ├── lib/db.ts                # unchanged
+│   ├── lib/auth.ts              # unchanged (still admin-specific)
+│   └── app/
+│       ├── projects/[slug]/releases/page.tsx  # AFTER cutover: 301 redirect
+│       └── (rest unchanged)
+└── .github/workflows/
+    ├── ci-cd.yml                # unchanged (admin app deploy)
+    └── publish-shared.yml       # NEW — publishes @myalterlego/triarch-shared
+                                 # on `packages/triarch-shared/v*` tag
+```
 
-**Phases 1 and 2 can ship with zero schema migrations.** This is significant — the admin pipeline visibility improvements go live before any DB migration risk. Schema changes are isolated to Phase 3, after which Phases 4–7 build on stable ground.
+### Structure Rationale
 
----
-
-## New vs Modified Components
-
-### New Files
-
-| File | Purpose |
-|------|---------|
-| `src/app/admin/modules/pipeline/[slug]/page.tsx` | Per-project pipeline server component |
-| `src/app/admin/modules/pipeline/[slug]/PipelineClient.tsx` | Branch swap in-flight state island |
-| `src/app/api/admin/releases/[id]/promote/route.ts` | Web-UI promote endpoint |
-| `src/app/api/projects/[slug]/branch/preview/route.ts` | Branch preview swap endpoint |
-| `src/app/admin/modules/bug-reports/[id]/page.tsx` | Bug detail with "released in" |
-| `src/app/admin/modules/feature-requests/[id]/page.tsx` | Feature detail with "released in" |
-| `src/lib/commit-parser.ts` | Commit message regex parser |
-| `src/lib/release-delta.ts` | `getUnreleasedDevChanges()` shared query helper |
-| `src/components/PromoteButton.tsx` | Reusable staff-only promote button island |
-| `src/components/BranchSwapClient.tsx` | Customer branch selector with concurrency lock UI |
-
-### Modified Files
-
-| File | What Changes |
-|------|-------------|
-| `src/app/admin/page.tsx` | `getDashboardStats` extended; ProjectHealth tile extended with prod/dev split, pending count, link |
-| `src/app/projects/[slug]/releases/page.tsx` | Add what-changed query; pass to `ReleasesClient`; add entry type filter state |
-| `src/app/projects/[slug]/releases/ReleasesClient.tsx` | Entry type filter state; what-changed summary card; branch swap button per section header |
-| `src/app/projects/[slug]/releases/types.ts` | Extend `ReleaseRow` with `links: ReleaseLink[]` field |
-| `src/app/projects/[slug]/releases/BranchSection.tsx` | Branch swap button in section header; filter applies to entries |
-| `src/app/api/platform/ingest/release-logs/route.ts` | Post-insert: call commit parser + upsert `release_log_links` |
-| `src/app/admin/modules/release-logs/` | Link display in release rows; manual add/remove link UI |
-| `src/db/schema.ts` | Add `releaseLogLinks` table + relations; add lock columns to `projects` |
-| `src/lib/release-promotion.ts` | Extract Slack channel/ts lookup to reusable helper callable without Slack origin context |
-
-### Schema Changes (Phase 3 Only)
-
-**New table `release_log_links`** — see schema definition in Feature 4a above.
-
-**New columns on `projects`:**
-- `preview_branch_locked varchar(256)` — nullable; current branch being previewed
-- `preview_branch_locked_at timestamp with timezone` — nullable; when the lock was set (enables timeout clearing after 15 minutes)
-
-**No changes to `release_logs`** — the entries JSONB is not extended. Links are in the join table.
-
-**No changes to `bug_reports` or `feature_requests`** — the "released in" query comes from `release_log_links` pointing at these tables, not from new columns on those tables.
-
----
-
-## Auth Model by Route
-
-| Route | Auth Check | Role Required | Notes |
-|-------|-----------|--------------|-------|
-| `GET /admin/modules/pipeline/[slug]` | `requireStaff()` | staff | Reuses existing staff pattern |
-| `POST /api/admin/releases/[id]/promote` | `requireStaff()` | staff | Web promote is staff-only; customer admins use the approval flow |
-| `POST /api/projects/[slug]/branch/preview` | `requireSignedIn()` + membership + role check | admin (per project) | Customer admin drives previews; viewer cannot |
-| `GET /admin/modules/bug-reports/[id]` | `requireStaff()` | staff | Bug detail is admin-only |
-| `GET /admin/modules/feature-requests/[id]` | `requireStaff()` | staff | Feature detail is admin-only |
-| `POST /api/platform/ingest/release-logs` | `requireApiKey()` | CI/CD Bearer token | Unchanged; commit parsing runs server-side post-insert |
+- **Two repos, not a monorepo.** Each app already deploys via its own Firebase App Hosting backend keyed off `package.json` version (per workspace CLAUDE.md). A monorepo would require either Turborepo with affected-build detection, or always rebuilding both — both add ceremony without benefit. The precedent (triarchsecurity-admin/portal) is two separate repos and works fine.
+- **Shared package lives inside admin repo.** Avoids creating a third repo (`triarch-shared`) just for one package. Admin repo becomes the publisher; portal repo is a consumer. Tag-driven publish (e.g., `shared/v0.2.0`) keeps the admin app version line and the shared-package version line orthogonal.
+- **Portal uses Drizzle but doesn't run migrations.** Portal's `drizzle.config.ts` is for IDE/introspection only. Admin runs `drizzle-kit push`. Portal's CI deliberately omits a `db-migrate` job. Schema migration coordination is enforced by toolchain, not policy.
+- **Portal raw routes mirror admin's existing customer routes 1:1.** This is a fork, not a redesign. Same path conventions, same handler shape — just hostname-isolated.
 
 ---
 
 ## Architectural Patterns
 
-### Pattern 1: Server Component Fetches All, Client Island Handles Actions
+### Pattern 1: Shared Schema, Federated Writes
 
-**What:** Server components fetch all data at render time (no loading states, no client-side fetches on mount). Client components (`*Client.tsx`) receive typed props and handle only user interactions (button clicks, filter changes, fetch-on-action).
+**What:** Both apps import the same Drizzle schema from `@myalterlego/triarch-shared`. Both write to the same tables. Admin runs migrations.
 
-**When to use:** Everywhere in this codebase. This is the established pattern — `ReleasesClient`, `SlackAuditClient` already follow it.
+**When to use:** When you have a single canonical data model split across UI surfaces (staff vs customer) but neither surface has authority over the schema independent of the other.
 
-**Trade-offs:** Page-level revalidation is via `router.refresh()` after mutations. No streaming, no Suspense boundaries needed for these pages. Works well for this use case.
+**Trade-offs:**
+- Pro: Type safety across both apps; one schema source; no drift.
+- Pro: Customer writes (approve/reject, feedback, branch lock acquisition) skip a proxy hop, reducing latency from ~600ms to ~150ms.
+- Con: Schema bumps require coordinated deploys (publish shared package → portal consumes new version → admin pushes migration → both deploy). Phase 0 of this milestone formalizes that procedure.
+- Con: Both apps can race on the same row. Existing optimistic-lock guards (`UPDATE … WHERE preview_branch_locked IS NULL` from v2.1 Phase 13; partial-unique-index on `release_approvals.decision='approved'` from Phase 9) already cover the customer-write surface. Audit before adding new write paths in portal.
 
-### Pattern 2: Shared Business Logic in `src/lib/`, Not in Route Handlers
+**Example:**
+```typescript
+// Both apps:
+import { releaseApprovals } from '@myalterlego/triarch-shared/schema';
+import { db } from '@/lib/db';
 
-**What:** Route handlers call lib functions (`approveRelease`, `promoteAndAudit`, `recordSlackAudit`) rather than duplicating logic inline. The lib functions are independently testable.
+await db.insert(releaseApprovals).values({
+  releaseId,
+  approverEmail: session.user.email,
+  decision: 'approved',
+  actorSource: 'web',
+});
+```
 
-**When to use:** Any logic that could be called from multiple entry points (Slack handler + web handler, ingest route + backfill route). The web-UI promote route MUST reuse `promoteAndAudit` rather than reimplementing dispatch + audit inline.
+### Pattern 2: Hostname-Per-Cookie Isolation
 
-**Trade-offs:** Requires careful design of function signatures to be context-agnostic. `promoteAndAudit` currently takes Slack-specific `channelId`/`messageTs` parameters. For the web promote path, these may need to be nullable with a fallback notification strategy (or the function can skip the Slack thread reply when `channelId` is null).
+**What:** Each NextAuth instance writes a session cookie scoped to its own host. Default behavior — DO NOT set `cookieDomain` to `.triarch.dev`. The SameSite default (`lax`) plus host-only scope keeps `admin.triarch.dev` and `portal.triarch.dev` cookies fully isolated.
 
-### Pattern 3: DB-Backed Locks for Cross-Request State
+**When to use:** When two apps share an OAuth client but have different brand contexts and authorization models.
 
-**What:** Any state that must persist across serverless invocations (concurrency locks, in-flight flags) goes in the database, not in-process Maps or module-level variables.
+**Trade-offs:**
+- Pro: Sign-in on admin does not authenticate portal (and vice versa). Brand boundary enforced at the cookie layer.
+- Pro: A leaked admin cookie cannot be replayed against portal.
+- Con: Staff who happen to use both apps sign in twice. This is the desired behavior (admin is staff-only; staff rarely visit portal except for verification).
+- Con: CSRF tokens are also host-isolated — a CSRF token from admin will not validate on portal. Each app maintains its own CSRF. NextAuth handles this by default; do not customize.
 
-**When to use:** Branch preview swap concurrency. The existing `inflight` Promise in `github-app.ts` is intentionally process-local (token cache for same-request reuse). Branch swap state must survive across requests.
+**Example:**
+```typescript
+// portal/src/lib/auth.ts
+export const authOptions: NextAuthOptions = {
+  // ... providers same Google client ID/secret
+  secret: process.env.PORTAL_NEXTAUTH_SECRET,  // distinct from admin's NEXTAUTH_SECRET
+  // No cookies.sessionToken.options.domain — leave default (host-only).
+  // No cookies.csrfToken — leave default.
+};
+```
 
-**Trade-offs:** One extra DB round-trip per swap request. Acceptable — swap is not high frequency.
+### Pattern 3: Shared OAuth Client, Multiple Redirect URIs
+
+**What:** One Google OAuth client app registered in Google Cloud Console with two authorized redirect URIs. Both apps use the same `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` env values.
+
+**When to use:** When you have multiple sibling apps under related domains and want users to see "Sign in with Google" once at the consent screen, regardless of which app they're entering.
+
+**Trade-offs:**
+- Pro: Users see one consent screen (already approved if they've signed into admin previously).
+- Pro: One set of credentials to rotate, in two Firebase secrets pointing at the same value.
+- Pro: Verified by the precedent — triarchsecurity-admin and triarchsecurity-portal share their Google OAuth client.
+- Con: Compromise of either app's secret compromises the other. Mitigation: standard secret rotation, no portal staff/Slack writes that admin doesn't already authorize.
+- Con: Adding a third app later requires only adding a third redirect URI. Not a real con.
+
+**Setup steps (operational, not code):**
+1. In Google Cloud Console → APIs & Services → Credentials → existing OAuth 2.0 Client ID
+2. Add `https://portal.triarch.dev/api/auth/callback/google` to "Authorized redirect URIs"
+3. Save. No code change in admin. Portal auth.ts uses the same client ID/secret values.
+
+### Pattern 4: Hostname Redirect for Migration
+
+**What:** After portal ships, admin's `/projects/[slug]/*` routes return a 301 to `portal.triarch.dev/projects/[slug]/*` (preserving slug, query string, and any sub-path). Implemented as a Next.js middleware in admin checking `pathname.startsWith('/projects/')`.
+
+**When to use:** Any URL fork where existing bookmarks must keep working.
+
+**Trade-offs:**
+- Pro: Customer bookmarks continue to resolve.
+- Pro: Search engines and any external links pick up the canonical portal URL.
+- Pro: 30-day overlap (defined per the migration phase) gives time to email customers and verify telemetry on portal-side.
+- Con: Brief flash of admin → portal for already-signed-in admin staff who hit the deprecated URL. Acceptable.
+
+**Example:**
+```typescript
+// admin/middleware.ts (NEW; already exists for hostname guards in v2.1, extend)
+import { NextResponse, type NextRequest } from 'next/server';
+
+export function middleware(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+  if (pathname === '/projects' || pathname.startsWith('/projects/')) {
+    return NextResponse.redirect(
+      `https://portal.triarch.dev${pathname}${search}`,
+      301,
+    );
+  }
+}
+
+export const config = { matcher: ['/projects/:path*'] };
+```
+
+### Pattern 5: Portal-Owned FAH Branch Swap
+
+**What:** Portal owns `POST /api/projects/[slug]/branch/preview` and the polling status endpoint. Portal's Firebase project (`triarch-dev-portal`) has its own copy of the `FAH_PROMOTER_SA_KEY` secret. The SA itself is the same (`release-promoter@triarch-vault.iam.gserviceaccount.com`); only its IAM bindings on each consumer's FAH backend matter, and those are unchanged.
+
+**When to use:** When a customer-facing action triggers infrastructure mutations and a proxy hop adds nothing.
+
+**Trade-offs:**
+- Pro: Single auth surface — portal's NextAuth session protects the route.
+- Pro: ~half the latency of a proxy through admin.
+- Pro: Existing v2.1 Phase 13 fah-rollout helper migrates to portal verbatim.
+- Con: SA key now lives in two Firebase secret stores. Risk is bounded — both stores are equally trusted, and rotation rotates both.
+
+---
+
+## Data Flow
+
+### Customer Approve-Release Flow (post-portal cutover)
+
+```
+Customer clicks Approve on portal.triarch.dev/projects/<slug>/releases
+    ↓
+[BrowserComponent] → POST /api/projects/<slug>/releases/<id>/approve
+    ↓
+[portal NextAuth middleware]: validate portal session cookie
+    ↓
+[handler] → @myalterlego/triarch-shared auth-context: lookup membership
+    ↓                          (Drizzle query against project_members)
+[handler] → atomic INSERT into release_approvals with partial-unique guard
+    ↓
+[handler] → call admin's promoteAndAudit endpoint OR import from shared pkg?
+    ↓                                     ↑
+    ↓                                     │
+    └────── DECISION POINT ───────────────┘
+            Owns the call: portal.
+            How: portal imports github-app helper from shared package
+                 OR proxies to admin's promoteAndAudit endpoint.
+            Recommend: import from shared package. Portal needs
+                       GH_APP_PRIVATE_KEY and GH_APP_INSTALLATION_ID
+                       in its Firebase secrets, identical values to admin.
+```
+
+**Decision on the "promoteAndAudit" question (slack/github-app):** portal imports `promoteAndAudit` from `@myalterlego/triarch-shared`, gets its own copies of `GH_APP_*` and `SLACK_BOT_TOKEN` secrets in the portal Firebase project. NO proxy through admin. Same rationale as branch-swap: lower latency, single auth surface, secrets are bounded-trust.
+
+### Branch Preview Swap Flow
+
+```
+Customer clicks "Preview this branch" on portal release page
+    ↓
+[BranchPreviewButton] → POST /api/projects/<slug>/branch/preview
+    ↓
+[portal NextAuth]: validate session, lookup membership for project
+    ↓
+[handler] → atomic UPDATE projects SET preview_branch_locked = $1
+            WHERE key = $slug AND preview_branch_locked IS NULL
+    ↓ (lock acquired? else 409)
+[fah-rollout helper] → jose JWT → token cache → POST FAH rollouts API
+    ↓                                                    │
+[portal-side FAH_PROMOTER_SA_KEY secret] ────────────────┘
+    ↓
+[handler] → release lock on FAH error path; persist rolloutName on success
+    ↓
+[response] → 202 Accepted, client SWR-polls status endpoint
+```
+
+### Schema Migration Flow
+
+```
+Admin developer modifies @myalterlego/triarch-shared/schema
+    ↓
+[admin repo] → packages/triarch-shared version bump (e.g., 0.1.0 → 0.2.0)
+    ↓
+[admin repo CI] → publish-shared.yml on tag `shared/v0.2.0`
+    ↓
+[GitHub Packages] → @myalterlego/triarch-shared@0.2.0 available
+    ↓
+[admin repo] → bump dep in admin package.json AND portal package.json
+    ↓ (two PRs: one in each repo)
+[admin repo CI] → quality-gate → drizzle-kit push (existing) → deploy
+    ↓
+[portal repo CI] → quality-gate → deploy (NO db-migrate)
+    ↓
+Both apps now talk to the migrated schema.
+```
+
+### Key Data Flows Summary
+
+1. **Customer release approval:** Portal owns the write path, but the side-effect (Slack notify + GitHub workflow dispatch) reuses helpers from the shared package. No proxy through admin.
+2. **Branch swap:** Portal owns the entire path. Admin loses this route post-cutover (becomes redirect).
+3. **Customer bug submission:** Portal `POST /api/bugs` → INSERT into `bug_reports`. Admin's existing Slack notifier (`bug-action`) picks it up via the existing slack-actions worker. No coupling needed.
+4. **Schema changes:** Admin repo is the source. Bumps land first in shared package, then both apps consume.
+5. **Audit/observability:** Both apps write to `slack_action_audit` directly using the shared helper. Admin's `/admin/platform/slack-audit` page reads from the same table — gets portal events for free.
+
+---
+
+## Scaling Considerations
+
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| ~10 customer users (current pilot) | No change — single CRDB cluster, single FAH backend per env handles it. |
+| ~100 customer users | No change. CRDB autoscaling handles it. May need to bump portal FAH `maxInstances` from 2 → 4. |
+| ~1000 customer users | Add CRDB read replicas (CockroachDB Cloud handles this). Move customer Slack notifications behind a queue (Cloud Tasks) instead of synchronous in-request. |
+| ~10000+ customer users | Multi-region FAH deployment (FAH supports this natively). Schema sharding by `ecosystem` column already in projects table. |
+
+### Scaling Priorities
+
+1. **First bottleneck:** synchronous Slack POST in customer write paths (`/approve`, `/reject`). Already mitigated by the v2.0 Phase 06 audit pattern — fire-and-forget try/catch. Will not break before user count exceeds Slack's rate limits.
+2. **Second bottleneck:** FAH cold-start on portal (max 2 instances, min 0). Bump `minInstances: 1` once customer activity justifies the always-on cost (~$15/mo per always-on instance).
+3. **Third bottleneck:** schema migration coordination with two consumers. Already addressed by tagged-publish flow. Will not bottleneck until 5+ apps consume the shared package.
 
 ---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Extending `entries[]` JSONB for Structured Links
+### Anti-Pattern 1: Sharing the NextAuth secret across apps
 
-**What people do:** Add `{ bug_id: "uuid", feature_id: "uuid" }` fields to the entries JSONB array on `release_logs`.
+**What people do:** Set `NEXTAUTH_SECRET` to the same value in admin and portal, hoping for SSO.
+**Why it's wrong:** A leak in either app compromises sessions in both. NextAuth's intent is per-app secret. SSO across hosts is a separate concern (it would require an external SSO provider, not shared signing material).
+**Do this instead:** Distinct secrets (`NEXTAUTH_SECRET` vs `PORTAL_NEXTAUTH_SECRET`). Users sign in twice. That's correct.
 
-**Why it's wrong:** The entries array is written by CI at ingest time and is not easily queryable. You cannot efficiently find "all releases that fixed BUG-123" by scanning JSONB arrays. Index-based queries on a join table are O(1); JSONB containment queries are O(n).
+### Anti-Pattern 2: Setting `cookieDomain: '.triarch.dev'`
 
-**Do this instead:** `release_log_links` join table with indexed FK columns.
+**What people do:** Configure NextAuth to set the session cookie on the parent domain so admin and portal share session.
+**Why it's wrong:** Defeats the brand-isolation goal of the entire milestone. A staff session token (with elevated capabilities) becomes valid on portal — undoing the v2.1 hostname-guard work that motivated this fork.
+**Do this instead:** Leave `cookieDomain` unset. Cookies stay host-only. Two sign-ins, two scopes.
 
-### Anti-Pattern 2: Reimplementing Promote Logic in the Web Route
+### Anti-Pattern 3: Letting portal run drizzle-kit push
 
-**What people do:** Copy the `dispatchWorkflow` call and Slack notification from `release-promotion.ts` into the new web promote route handler.
+**What people do:** Wire `db-migrate.yml` from shared-workflows@v4 into portal's CI just like admin has it.
+**Why it's wrong:** Two CI pipelines racing on `drizzle-kit push` against the same database is a foot-gun. Drizzle's push is not transactional across statements; mid-flight conflicts produce inconsistent schema state.
+**Do this instead:** Portal's `ci-cd.yml` deliberately omits the `db-migrate` job. Admin is the schema authority. Portal's `package.json` doesn't include `drizzle-kit` as a dep at all.
 
-**Why it's wrong:** Creates two code paths for the same business operation. When the Slack promote path is updated (e.g., new Slack notification format), the web path silently diverges.
+### Anti-Pattern 4: Proxying portal API calls through admin
 
-**Do this instead:** Call `promoteAndAudit()` directly from the web route handler. Adjust the function signature if needed to handle nullable Slack context.
+**What people do:** Portal hits `https://admin.triarch.dev/api/projects/.../approve` from its server-side handlers, passing user identity through a custom header.
+**Why it's wrong:** Adds latency, introduces a bespoke auth-passing protocol, couples portal availability to admin availability, doubles the attack surface for cross-app token replay.
+**Do this instead:** Portal owns its own API routes. Shared logic (github-app, slack post, fah-rollout) lives in the shared package and is imported, not proxied.
 
-### Anti-Pattern 3: In-Process Mutex for Branch Swap Concurrency
+### Anti-Pattern 5: Forgetting to bump shared package version
 
-**What people do:** Use a `Map<string, boolean>` at module level to track in-flight preview swaps.
+**What people do:** Edit `packages/triarch-shared/src/schema.ts`, deploy admin, then later realize portal is still pinned to the old version.
+**Why it's wrong:** Portal's TypeScript will compile against stale types, leading to runtime errors when the new column is queried.
+**Do this instead:** PROCESS: any change to `packages/triarch-shared/**` requires a version bump in `packages/triarch-shared/package.json` and a corresponding tag push (`shared/v0.X.Y`). CI guards: `quality-gate.yml` in admin repo checks `git diff` against `packages/triarch-shared/` and fails if version unchanged.
 
-**Why it's wrong:** Firebase App Hosting runs the Next.js app as a serverless function. Multiple instances can be active simultaneously. A module-level Map is not shared across instances.
+### Anti-Pattern 6: Keeping the v2.1 hostname guards as defense-in-depth
 
-**Do this instead:** DB row lock on `projects.preview_branch_locked`. Rely on Firebase App Hosting's own 409 as the final guard; the DB lock provides UI feedback before the API call.
+**What people do:** Leave the `headers().get('host')` checks in `src/app/page.tsx`, `src/app/admin/layout.tsx`, etc., in case role-based auth fails.
+**Why it's wrong:** Dead code rots. The hostname check was a band-aid for a single-host deployment. Once portal is canonical, admin only ever serves at `admin.triarch.dev` (Firebase App Hosting custom domain enforces this). The check becomes a tautology that future developers misread as load-bearing.
+**Do this instead:** Remove the hostname guards from admin in the cutover phase. Keep auth role gates (the actual security boundary).
 
 ---
 
@@ -446,43 +462,117 @@ The features have a clear dependency graph. This determines phase sequencing.
 
 ### External Services
 
-| Service | Integration Pattern | New for v2.1? |
-|---------|---------------------|--------------|
-| GitHub Actions API | `dispatchWorkflow()` via `github-app.ts` — existing pattern | No — reused as-is |
-| GitHub Commits API | `GET /repos/{owner}/{repo}/commits/{sha}` — new call for commit message fetch | Yes — new call in ingest route |
-| Firebase App Hosting Rollouts API | REST or `googleapis` SDK — programmatic branch swap | Yes — needs research spike |
-| Slack API | `postSlackThreadedReply` / `updateSlackMessage` — existing helpers | No — reused via `promoteAndAudit` |
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| Google OAuth | Single client, two redirect URIs | Add `https://portal.triarch.dev/api/auth/callback/google` to existing client. No code change in admin. |
+| CockroachDB | pg.Pool with `DATABASE_URL` secret | Same connection string in both apps' Firebase secrets. Drizzle schema imported from shared package. |
+| Firebase App Hosting (portal) | New project `triarch-dev-portal`, two backends (`-dev`, `-prod`) | Mirror admin's Phase 7.5 overlay convention: minimal `apphosting.yaml` (dev defaults) + `apphosting.prod.yaml` (env=prod overrides). |
+| Firebase App Hosting (rollout API) | jose JWT → access token → REST | Existing `fah-rollout.ts` migrates verbatim. SA key stored in portal Firebase project. |
+| GoDaddy DNS | A/CNAME record for `portal.triarch.dev` | Use existing `mcp__godaddy__` MCP server. Point at FAH custom domain target (Firebase publishes this on backend creation). |
+| GitHub Packages | npm registry for `@myalterlego/triarch-shared` and `@myalterlego/shared-ui` | Both consumed via `.npmrc` + `GH_PAT` build-time secret. |
+| Slack | OttoBot bot token, post-only from portal | Portal needs read-only Slack post capability for customer notifications. Reuse existing bot. New scope: none. |
+| GitHub App (Triarch Release Gate) | RS256 JWT, cached token, single-flight | `GH_APP_PRIVATE_KEY` + `GH_APP_INSTALLATION_ID` Firebase secrets in portal project. Same values as admin. |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| Web promote route → `promoteAndAudit` | Direct function call | May need signature adjustment for nullable Slack context |
-| Ingest route → commit parser | Direct function call post-insert | Failure must not block ingest return |
-| Customer page → branch swap route | `fetch POST` from client component | Concurrency state reflected via DB lock read on page re-render |
-| Pipeline page → what-changed query | Shared `getUnreleasedDevChanges()` helper | Called server-side; no API route needed |
+| portal ↔ shared package | Build-time npm dep | Pinned version (`^0.1.0`). Bumps coordinated via Phase 0 publish-bump workflow. |
+| portal ↔ admin app | NONE (no runtime coupling) | Both reach DB and external services independently. Cross-app coupling is forbidden by design. |
+| portal ↔ CRDB | Direct pg connection | Read+write. No proxy. Existing connection-pool pattern (10 max, 30s idle). |
+| admin ↔ shared package | Workspace import (admin's monorepo-of-one), then re-export | `src/db/schema.ts` becomes `export * from '@myalterlego/triarch-shared/schema';` etc. Existing import paths in admin source code don't change. |
+| admin's `/projects/*` ↔ portal `/projects/*` | 301 redirect | One-way. Portal canonical, admin is graveyard. |
+| portal CI ↔ admin CI | Independent | Each repo's `ci-cd.yml` runs shared-workflows@v4 against its own Firebase project. No cross-pipeline triggering. |
 
 ---
 
-## Open Questions / Research Flags
+## Build Order Constraints
 
-1. **Firebase App Hosting programmatic rollout API** — The CLI `firebase apphosting:rollouts:create --git-branch` is documented. The REST API for calling this from a Next.js route handler (without spawning a child process) is not clearly documented. Options: (a) `googleapis` Node SDK `firebaseapphosting.v1beta.projects.locations.backends.rollouts.create`, (b) spawn `firebase` CLI as a child process (fragile in serverless), (c) GitHub Actions workflow dispatch to trigger the swap (roundabout but reliable). This is the highest-risk unknown in v2.1 and should be spiked in Phase 6 before committing to a design.
+The roadmapper decides phases. The constraints are:
 
-2. **`promoteAndAudit` signature for web context** — Currently requires `channelId` and `messageTs` (Slack message coordinates for threaded reply). The web-initiated promote has no Slack message to thread onto. Either: (a) make these nullable and skip the threaded reply, posting a new Slack message instead; (b) split the function into `dispatchPromotion` (pure GitHub dispatch + DB audit) and `notifySlack` (separate call). Option (b) is cleaner for future flexibility.
+1. **Shared package extraction precedes everything.** `@myalterlego/triarch-shared@0.1.0` must be published and consumable from GitHub Packages BEFORE any portal-app work begins. Without it, portal can't import schema or helpers, and starting portal first would create copy-paste drift. (~1-2 days; admin source moves to `packages/triarch-shared/`, plus a re-export shim in `src/db/schema.ts` so admin keeps working unchanged.)
 
-3. **Entry type classification in `entries[]` JSONB** — The customer page entry type filter (`bug fix` / `feature release` / `other`) needs a `type` field on each entry in the JSONB array. CI currently writes free-text entries. Either CI must start classifying entries at ingest time, or the filter derives type from `release_log_links` (if a release has a linked bug, it's a "bug fix"). The link-based derivation is more robust and requires no CI changes.
+2. **Portal Firebase project + GitHub repo + DNS exist before code.** `triarch-dev-portal` Firebase project, `MyAlterLego/triarch-portal` GitHub repo, GoDaddy DNS for `portal.triarch.dev` pointing at FAH — these are operational tasks that happen before app code is written. A skeleton `next build` of the new repo proves the deploy pipeline works before any feature code lands. (~half a day, mostly waiting on DNS propagation.)
+
+3. **Google OAuth client gets second redirect URI before portal sign-in works.** Operational, ~5 min. Easy to forget; first portal sign-in will fail with `redirect_uri_mismatch` until done.
+
+4. **Portal NextAuth + login + project list before any feature route.** Without auth working, no feature route can be safely tested. This is the portal app's foundation.
+
+5. **Migrated routes ship in dependency order:**
+   - Releases page (read-only) FIRST — most-used customer surface, least risk.
+   - Branch swap SECOND — depends on releases page being canonical so the "Preview this branch" buttons make sense.
+   - Bug/feature view THIRD — these are linked from the releases page lifecycle timeline.
+   - Bug/feature submission FOURTH — write paths, want read paths verified first.
+
+6. **Admin redirects ship LAST in the migration phase**, after portal is verified working in production. Until that point, admin's `/projects/*` routes stay live as the canonical surface. Switching the redirect on too early breaks customers if portal has a bug.
+
+7. **v2.1 hostname-guard removal is the FINAL cleanup**, after redirects have been live for the grace period (~30 days). Until then, the guards remain as paranoia (acceptable inconsistency).
+
+8. **Schema changes during portal build are forbidden where possible.** Treat `@myalterlego/triarch-shared@0.1.0` as immutable through the portal-build phases. If a schema bump becomes necessary, branch the shared package, ship admin first with the new schema, only then unblock portal. This avoids the case where portal compiles against shared@0.2 but admin's database hasn't been migrated yet.
+
+### Dependency-Ordered Topology
+
+```
+[shared package extraction]
+       ↓
+[publish shared@0.1.0]
+       ↓
+[admin re-import shared] ────┐
+       ↓                     │
+[verify admin still GREEN]   │  (parallel, ops)
+       ↓                     │   [Firebase project]
+       ↓                     │   [GitHub repo]
+       ↓                     │   [DNS]
+       ↓                     │   [Google OAuth URI]
+       ↓                     ↓
+       └─────────────► [portal skeleton: next build → deploy → 200 OK]
+                              ↓
+                       [portal NextAuth + login + project list]
+                              ↓
+                       [migrate releases page]
+                              ↓
+                       [migrate branch swap]
+                              ↓
+                       [migrate bug/feature view]
+                              ↓
+                       [add customer bug/feature submission]
+                              ↓
+                       [admin → portal 301 redirect ON]
+                              ↓
+                       [30-day grace period]
+                              ↓
+                       [remove v2.1 hostname guards from admin]
+                              ↓
+                       [v2.2 done]
+```
+
+---
+
+## Open Questions for the Roadmapper
+
+These are things the architecture decision leaves OPEN for the roadmapper / phase-builder to resolve:
+
+1. **Phase decomposition:** the build-order topology above can be split into 4 phases or 8 — that's the roadmapper's call, not the architect's.
+2. **Test strategy:** Does portal get its own Vitest setup or share admin's test files via the shared package? Recommend portal-local tests for portal-only routes; shared package gets unit tests in admin repo.
+3. **Branding rollout:** When does portal get its own visual identity (logo, hero copy, footer) vs ship with the existing AdminSidebar dark theme? Not an architecture concern, but the roadmap should address.
+4. **Customer email seeding:** Once portal goes live, customer admins need to know it exists. Email blast, in-product banner, or both? Out of architecture scope.
+5. **Existing Phase 8 (Truth+Treason pilot):** flagged in PROJECT.md as deferred — does v2.2 unblock it or further postpone? Architect's read: portal cutover is a clean place to relaunch the pilot since URL-stable customer surface is what the pilot needed.
 
 ---
 
 ## Sources
 
-- Direct codebase analysis: `src/db/schema.ts`, `src/lib/github-app.ts`, `src/lib/release-promotion.ts`, `src/lib/release-actions.ts`, `src/lib/auth-context.ts`, `src/lib/api-auth.ts`
-- Direct codebase analysis: `src/app/admin/page.tsx`, `src/app/projects/[slug]/releases/page.tsx`, `src/app/projects/[slug]/releases/types.ts`, `src/app/projects/[slug]/releases/group-sections.ts`
-- Direct codebase analysis: `src/app/api/projects/[slug]/releases/[releaseId]/approve/route.ts`, `src/app/api/platform/ingest/release-logs/route.ts`, `src/app/api/slack/interact/route.ts`
-- `.planning/PROJECT.md` — milestone context and constraints
-- `.planning/REQUIREMENTS.md` — v2.0 shipped requirements, patterns to follow
+- [Existing precedent: triarchsecurity-portal](file:///Users/mikegeehan/claude/MyAlterLego/triarchsecurity-portal) — separate-repo split that already shipped at portal v0.14.3, mirroring this exact architecture (shared CRDB, separate Firebase project, separate version line, shared OAuth client). HIGH confidence: this is a working production pattern, not a hypothesis.
+- [Admin auth.ts](file:///Users/mikegeehan/claude/triarch/development/admin/src/lib/auth.ts) — NextAuth v4 + Google + JWT pattern that portal will mirror.
+- [Admin auth-context.ts](file:///Users/mikegeehan/claude/triarch/development/admin/src/lib/auth-context.ts) — DB-backed membership lookup that becomes a shared-package export.
+- [Admin schema.ts](file:///Users/mikegeehan/claude/triarch/development/admin/src/db/schema.ts) — 489-line Drizzle schema; ~9 tables are customer-relevant (must be in shared package), ~12 are admin-only (can stay in admin source).
+- [Admin ci-cd.yml](file:///Users/mikegeehan/claude/triarch/development/admin/.github/workflows/ci-cd.yml) — shared-workflows@v4 pattern that portal's ci-cd.yml clones with a project-id swap.
+- [Admin apphosting.yaml + .prod.yaml](file:///Users/mikegeehan/claude/triarch/development/admin/apphosting.yaml) — overlay convention from v2.0 Phase 7.5 that portal will replicate.
+- PROJECT.md milestone v2.2 spec — defines the brand-isolation, schema-sharing, and migration goals this architecture serves.
+- NextAuth v4 cookie defaults (host-only, SameSite=lax) — confirms hostname-isolated cookies require no special configuration. Verified by reading the existing admin config (no `cookieDomain` set, sessions are correctly host-scoped).
+- Google OAuth 2.0 Authorized Redirect URIs allow multiple values per client — verified empirically by triarchsecurity-portal's working setup against the same client used for triarchsecurity-admin.
 
 ---
 
-*Architecture research for: Triarch Dev Admin v2.1 Pipeline UI integration*
-*Researched: 2026-05-07*
+*Architecture research for: Triarch Customer Portal Split (admin → portal fork)*
+*Researched: 2026-05-08*

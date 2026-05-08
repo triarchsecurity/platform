@@ -1,167 +1,423 @@
-# Stack Research — v2.1 Pipeline UI (Additions Only)
+# Technology Stack — Customer Portal (v2.2)
 
-**Domain:** Internal admin UI — CI/CD pipeline visualization, bidirectional linkage, branch-swap control
-**Researched:** 2026-05-07
-**Confidence:** HIGH (existing stack confirmed from package.json; new additions verified via npm registry and official docs)
-
----
-
-## Existing Stack (Validated — Do Not Re-Research)
-
-Next.js 16.2.2, React 19.2.4, Tailwind v4, Drizzle ORM 0.45.2, NextAuth v4.24.13, pg 8.20.0, CockroachDB (PostgreSQL-compatible), Firebase App Hosting, @myalterlego/shared-ui ^1.2.0, Vitest 4.x + RTL + jsdom, lucide-react ^1.7.0, @myalterlego/secrets ^0.1.0, jose.
-
-Existing client data-fetching pattern: `useState` + `useEffect` + `fetch()`. No SWR or polling library currently in the project.
+**Project:** triarch-dev portal (`portal.triarch.dev`)
+**Researched:** 2026-05-08
+**Mode:** Project Research — STACK only
+**Confidence:** HIGH (anchored to admin's already-shipped baseline; web research confirms cookie-domain + multi-backend patterns)
 
 ---
 
-## v2.1 Stack Additions
+## Executive Summary
 
-### New Dependencies
+The portal is a brand-new Next.js app that must mirror admin's stack 1:1 to share the CockroachDB schema, the `@myalterlego/shared-ui` design tokens, and the `@myalterlego/secrets` vault. **No new runtime libraries are required** beyond what admin already ships. The work is overwhelmingly *configuration*, not *dependencies*: a separate Firebase App Hosting backend, a separate NextAuth secret, an explicit `cookies.sessionToken.options.domain = 'portal.triarch.dev'` (NOT `.triarch.dev`) so that admin and portal sessions cannot bleed across the brand boundary, and a separate Google OAuth client so the consent screen reflects the portal brand.
+
+The single material decision the team must make for this milestone is **how to share the Drizzle schema across two repos**. Recommendation below: publish `@myalterlego/triarch-schema` as a private GitHub Packages npm module — same pattern admin already uses for `@myalterlego/shared-ui` and `@myalterlego/secrets`, zero new tooling, no monorepo migration, idiomatic Drizzle.
+
+---
+
+## Recommended Stack
+
+### Core Framework — pinned 1:1 to admin
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `next` | `16.2.2` | App Router framework | Match admin exactly so build/deploy parity holds and shared-workflows quality-gate runs identically |
+| `react` | `19.2.4` | UI runtime | Pinned by admin; `@myalterlego/shared-ui ^1.2.0` peer-deps against React 19 |
+| `react-dom` | `19.2.4` | DOM renderer | Match React major |
+| `typescript` | `^5` | Types | Same compiler line as admin |
+
+### Database — same cluster, same schema, no new driver
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `drizzle-orm` | `^0.45.2` | ORM | Identical version pin — required so schema types from `@myalterlego/triarch-schema` (see below) compile against the same drizzle internals admin produces |
+| `drizzle-kit` | `^0.31.10` (devDep only) | Migration tooling — **read-only in portal** | Portal **does not own migrations**. `db:push` only runs from admin. Keep drizzle-kit installed so devs can run `drizzle-kit check` locally, but disable `db:push` script in portal's `package.json` to enforce single-writer discipline |
+| `pg` | `^8.20.0` | Postgres driver (CRDB) | Same as admin; `pg.Pool` is the established CRDB driver in this workspace |
+| `@types/pg` | `^8.20.0` | Types | Match runtime version |
+
+### Auth — same NextAuth, **different secret + cookie domain + OAuth client**
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `next-auth` | `^4.24.13` | Auth | **Stay on v4.** Do NOT migrate to `@auth/core` / NextAuth v5 for v2.2 — admin is on v4, types and session shape match, and the portal must fork cleanly. v5 migration is a separate decision the org should make jointly later, not buried inside a portal split. |
+| `jose` | `^5` | JWT signer | Already in admin for FAH rollouts (Phase 13). Promote in portal too — needed if portal also drives branch swap (per milestone scope) |
+
+### Infrastructure & Deploy
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Firebase App Hosting | (managed) | Runtime | New backend `portal-prod` + `portal-dev` in **same Firebase project** as admin (`angular-concord-489522-c4`) — see ARCHITECTURE.md decision rationale below |
+| Node.js (CI runtime) | `nodejs22` | Server runtime | Match admin's `apphosting.yaml` `runConfig.runtime: nodejs22` |
+| Node.js (local dev) | 25 | Dev | Match admin convention; lockfile parity enforced |
+| npm | 10 | Lockfile | Mandatory parity per workspace `~/claude/CLAUDE.md` |
+| shared-workflows | `v4` (after Phase 7.5 tag) | Reusable GHA | Use the same `quality-gate.yml` + `deploy-firebase.yml` + `db-migrate.yml` ref — see fitness analysis below |
+
+### Shared Internal Packages — already-published, reuse as-is
+
+| Package | Version | Purpose | Why |
+|---------|---------|---------|-----|
+| `@myalterlego/shared-ui` | `^1.2.0` | Design tokens + UI primitives | **Same package as admin**. Brand differentiation comes from layout/copy/header composition, NOT from a forked design system. Anti-feature: do not publish a separate `@myalterlego/portal-ui`. |
+| `@myalterlego/secrets` | `^0.1.0` | GCP Secret Manager wrapper | Same pattern; portal will register its own per-secret IAM grants under a new `portal@triarch-vault.iam.gserviceaccount.com` runtime SA |
+| **`@myalterlego/triarch-schema`** | `^0.1.0` (NEW — to be published in Phase 1) | Shared Drizzle schema + relations | See "Schema Sharing Decision" below. This is the **only new internal package** v2.2 introduces. |
+
+### Client-Side & UI
 
 | Library | Version | Purpose | Why |
 |---------|---------|---------|-----|
-| `swr` | ^2.4.1 | Polling for branch-swap "in flight" status on client components | Already-established Vercel library; `refreshInterval` option replaces manual `setInterval` + cleanup; deduplicates concurrent calls; pauses on tab blur by default; fits the 5–10 second polling cadence needed for deploy status without SSE complexity |
-| `compare-versions` | ^6.1.1 | Semver comparison for prod-vs-dev version diff (highlight which is ahead) | Zero dependencies, 1 KB, handles pre-release tags; no need to pull full `semver` package for simple gt/lt checks |
+| `swr` | `^2.4.1` | Polling | Already used in admin (BranchPreviewClient lifecycle polling). Portal inherits the same pattern. |
+| `lucide-react` | `^1.7.0` | Icons | Match admin |
+| `tailwindcss` | `^4` | CSS | Match admin |
+| `@tailwindcss/postcss` | `^4` | PostCSS adapter | Match admin |
 
-### No New Dependencies Needed
+### Testing
 
-| Capability | Decision | Rationale |
-|-----------|----------|-----------|
-| Changelog/diff rendering | Roll own from `release_logs.entries[]` JSONB | The "diff" between dev and prod is a **data diff** (which entries appear in dev but not prod), not a code diff. `react-diff-view`, `react-diff-viewer`, and `diff2html` are all code diff renderers (git patch format). The correct approach: query two release log rows, compute `devEntries.filter(e => !prodEntries.find(match))` in a utility function, render with existing Tailwind classes and lucide icons. Zero library needed. |
-| Commit-message ID parsing | Regex in a utility module | `conventional-commits-parser` (v6.4.0, 9.3M weekly downloads) is built for Conventional Commits format (`feat:`, `fix:`) — it does not natively handle `#BUG-123`, `closes FEAT-45`, or `fixes #99` without custom configuration. These three patterns are simple enough for a single 3-branch regex: `/(?:closes?|fixes?)\s+(?:#|(?:BUG|FEAT)-)(\d+)|#(BUG|FEAT)-(\d+)/gi`. A 15-line utility function is more maintainable than a library dependency for this scope. |
-| Multi-select filter UI | Tailwind + React state, no library | `react-tailwindcss-select` is last-published 3 years ago with only 6 registry dependents — effectively unmaintained. Headless UI's Combobox requires a separate package. The existing `SlackAuditClient.tsx` already implements a working URL-mirrored filter pattern with `useState` + `useEffect`. The entry-type filter (bug fixes / feature releases / other) is a 3-option checkbox group — trivially done in 20 lines of Tailwind. Use the same pattern already in the codebase. |
-| SSE for branch-swap status | Not viable on Firebase App Hosting | Firebase App Hosting has a 5-minute request timeout (confirmed at firebase.google.com/docs/app-hosting/product-comparison). Long-lived SSE connections would terminate at 5 min and require client reconnect logic. For a branch swap that completes in 30–120 seconds, SWR polling at `refreshInterval: 5000` is simpler, more reliable on Firebase infrastructure, and requires zero server-side streaming code. |
-| WebSockets | Do not add | Same Firebase constraint. Overkill for unidirectional server-to-client status updates. |
-| Redux / Zustand / Jotai | Do not add | All pipeline state is request-scoped or per-component. React Server Components handle static data; SWR handles live data. No shared cross-page state store is needed. |
+| Library | Version | Purpose | Why |
+|---------|---------|---------|-----|
+| `vitest` | `^4.1.5` | Test runner | Match admin |
+| `@testing-library/react` | `^16.3.2` | Component tests | Match admin |
+| `@testing-library/jest-dom` | `^6.9.1` | DOM matchers | Match admin |
+| `@testing-library/user-event` | `^14.6.1` | User interaction sim | Match admin |
+| `jsdom` | `^25.0.1` | DOM env | Match admin |
+| `@vitest/ui` | `^4.1.5` | UI runner (devDep) | Match admin |
+
+### Tooling (devDependencies)
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| `eslint` | `^9` | Lint |
+| `eslint-config-next` | `16.2.2` | Next.js ESLint preset |
+| `tsx` | `^4.21.0` | Script runner (seeds, etc.) |
+| `@types/node` | `^20` | Node types |
+| `@types/react` | `^19` | React types |
+| `@types/react-dom` | `^19` | React-DOM types |
 
 ---
 
-## Polling Architecture for Branch-Swap Status
+## What's NEW vs Admin
 
-SWR with `refreshInterval` is the correct choice for the "branch swap in progress" UI. The flow:
+Just **one package**: `@myalterlego/triarch-schema` (the extracted Drizzle schema). Everything else is identical.
 
-1. Client POSTs to `/api/platform/projects/[slug]/swap-branch`
-2. Response sets a `swapping: true` flag in local state
-3. SWR polls `/api/platform/projects/[slug]/pipeline-status` every 5 seconds
-4. When `swapState.status` transitions from `in_progress` → `complete` | `failed`, SWR stops (via conditional `refreshInterval: swapping ? 5000 : 0`)
-5. Other RCs rendered as disabled during swap via the `swapState` value
-
-This requires **no new Route Handler changes** beyond the pipeline-status endpoint that v2.1 would add anyway. SWR deduplicates if multiple components mount the same key.
+| Library | Verdict | Reason |
+|---------|---------|--------|
+| `@auth/core` / NextAuth v5 | **NO** | Stay on v4 to match admin. Migration is org-wide work, not in scope for v2.2. |
+| Edge runtime middleware (`middleware.ts` for cookie isolation) | **NOT NEEDED** | Cookie isolation is achieved by per-app `cookies.sessionToken.options.domain` config, not by middleware. Standard NextAuth v4 config handles it. |
+| Separate UI tokens package | **NO** | Reuse `@myalterlego/shared-ui`. Brand the portal via layout composition. |
+| Separate ORM | **NO** | Drizzle stays. Single source of truth. |
+| Separate database driver | **NO** | `pg.Pool` stays. |
+| Workspace tool (pnpm/turbo) | **NO** for v2.2 | Two-repo strategy keeps deploy independence. See "Repo Strategy Decision" below. Re-evaluate at v3.0 if package count grows. |
+| Submodules / symlinks for schema | **NO** | Submodules add CI complexity; symlinks don't survive `npm ci`. Published package is idiomatic Drizzle. |
 
 ---
 
-## Regex Utility for Commit ID Parsing
+## Schema Sharing Decision (the one that matters)
 
-The three patterns the spec calls out map to one regex:
+**Decision: Publish `@myalterlego/triarch-schema` as a private GitHub Packages npm module.**
 
-```typescript
-// src/lib/parse-commit-refs.ts
-const REF_PATTERN =
-  /(?:closes?|fixes?|resolves?)\s+(?:#|(?:BUG|FEAT)-)(\d+)|#(BUG|FEAT)-(\d+)/gi;
+### Options Evaluated
 
-export function parseCommitRefs(message: string): string[] {
-  const refs: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = REF_PATTERN.exec(message)) !== null) {
-    const id = m[1] ?? m[3];
-    const prefix = m[2] ?? m[4] ?? 'ISSUE';
-    refs.push(`${prefix}-${id}`);
-  }
-  return refs;
-}
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **(a) Published `@myalterlego/triarch-schema` npm package** | Same pattern admin already uses for `shared-ui` + `secrets`. Zero new tooling. Works with both repos' existing `.npmrc` + `NODE_AUTH_TOKEN` build secret. Drizzle Discord + GitHub discussions explicitly recommend this for multi-app cases. Versioned, semver, lockfile-tracked. | Requires a tiny publish step on schema changes (`npm version patch && npm publish`). Migration discipline: only admin runs `db:push`. | **CHOSEN** |
+| (b) Git submodule (`db-schema/`) | No publish step | Submodule hell on CI: extra clone step, token setup for private submodules, contributors confused, `npm ci` doesn't see submodule contents until they're checked out. Drizzle community calls this "an option of last resort." | Reject |
+| (c) Duplicate schema in portal repo | Zero coordination | **Drift risk = guaranteed bugs.** Portal writes a row admin can't read because column types diverged silently. Workspace rules forbid this category of risk. | Reject |
+| (d) Symlink (`ln -s ../admin/src/db/schema.ts`) | Works locally | Doesn't survive `npm ci` on Firebase App Hosting build. CI breaks. | Reject |
+| (e) Monorepo (Turborepo / pnpm workspaces) | First-class shared package | **Not in scope for v2.2.** Migrating admin into a monorepo is a separate refactor. Defers v2.2. | Defer to future milestone |
+
+### Why Published Package Wins
+
+1. **Pattern consistency:** Admin already consumes `@myalterlego/shared-ui` and `@myalterlego/secrets` from GitHub Packages with `NODE_AUTH_TOKEN` BUILD secret in `apphosting.yaml`. Adding a third package follows the exact same wire — no new auth, no new CI step, no new build flag. Portal's `apphosting.yaml` will get the same `NODE_AUTH_TOKEN` block.
+2. **Drizzle idiom:** Drizzle's official position (per the team's discussions board: "Sharing schema across monorepo" #885 and "How to share Drizzle schema in multiple projects?") is that Drizzle schemas are pure TypeScript modules and the supported sharing strategy is *publish them*. There's no Drizzle-specific magic; schema files export typed objects.
+3. **Type safety:** Portal imports `import { releaseLogs, projects, releaseLogLinks, bugReports, featureRequests } from '@myalterlego/triarch-schema'` and gets full type inference from `drizzle-orm@^0.45.2`. Lockfile pins both packages, so types stay coherent.
+4. **Migration discipline:** Single-writer rule is enforced by **convention + portal's package.json removing `db:push`**. Schema changes go: admin PR → schema package PR → version bump → portal updates dep. This is the same discipline `@myalterlego/secrets` already follows.
+5. **Reverts cleanly:** If portal needs to roll back, `npm install @myalterlego/triarch-schema@0.1.0` is one line. Submodules require a `git submodule update` dance.
+
+### Schema Package Structure (Phase 1 of v2.2)
+
+```
+@myalterlego/triarch-schema/
+├── package.json              # name, version, main: dist/index.js, types: dist/index.d.ts
+├── tsconfig.json
+├── src/
+│   ├── index.ts              # re-exports everything below
+│   ├── projects.ts           # projects + relations
+│   ├── release-logs.ts       # releaseLogs + releaseFeedback + releaseApprovals + releaseLogLinks + relations
+│   ├── trackers.ts           # bugReports + featureRequests
+│   ├── menu.ts               # menuSections + menuPages + menuSubpages + rolePermissions
+│   ├── audit.ts              # accessAuditLogs + slackActionAudit + workflowTransitions
+│   ├── promote.ts            # promoteAttempts
+│   └── members.ts            # projectMembers
+└── dist/                     # tsc output, published, gitignored in source
 ```
 
-Pattern covers: `#BUG-123`, `closes FEAT-45`, `fixes #99` (treated as bare numeric ref), `FEAT-12`, `BUG-88`. The `conventional-commits-parser` library is **not appropriate** because it expects `type(scope): description` format, not free-form issue references in message bodies.
+Re-exports: identical exports admin currently has at `src/db/schema.ts`. Admin's `src/db/schema.ts` becomes a one-liner: `export * from '@myalterlego/triarch-schema';`. Migrations folder stays in admin (`src/db/migrations/`) — admin is still the only writer.
 
 ---
 
-## Version Comparison for Prod-vs-Dev Dashboard
+## Auth Configuration Strategy
 
-`compare-versions` handles `gt(devVersion, prodVersion)` cleanly including pre-release tags. The existing stack has no semver utility — this is the only addition worth pulling in:
+### Cookie Domain Isolation — the critical bit
 
-```typescript
-import { gt, lt } from 'compare-versions';
+**Goal:** A session cookie set at `portal.triarch.dev` MUST NOT be sent to `admin.triarch.dev`, and vice versa.
 
-const devAhead = gt(devVersion, prodVersion);   // true if dev is newer
-const prodAhead = gt(prodVersion, devVersion);  // true if rollback scenario
+**Mechanism:** In NextAuth v4, when you do **NOT** specify `cookies.sessionToken.options.domain`, the cookie is host-scoped to the exact subdomain. This is the default and exactly what we want — opposite of the cross-subdomain SSO setup most blog posts cover.
+
+**Therefore:** Portal's `auth.ts` should **omit** the `cookies` config block entirely (or explicitly set `domain: undefined`). Result: `Set-Cookie: __Secure-next-auth.session-token=…; Path=/; HttpOnly; Secure; SameSite=lax` with no `Domain=` attribute → host-only cookie scoped to `portal.triarch.dev`.
+
+**Anti-pattern to avoid:** Do NOT set `domain: '.triarch.dev'` on either app. That would share cookies across the brand boundary — exactly what the milestone forbids.
+
+**Verification (downstream consumer test):** After deploy, `curl -I https://portal.triarch.dev/api/auth/session` → response `Set-Cookie` header has NO `Domain=` attribute. Open admin in same browser → admin session unaffected.
+
+### Separate NextAuth Secret
+
+- Generate a **new** `NEXTAUTH_SECRET` for portal: `openssl rand -base64 32`
+- Store as a separate GCP secret (e.g., `NEXTAUTH_SECRET_PORTAL` in `triarch-vault`)
+- Bind in portal's `apphosting.yaml` as `NEXTAUTH_SECRET` env
+- Rotation: rotate independently; admin's secret rotation does not invalidate portal sessions
+
+### Separate Google OAuth Client
+
+- **New OAuth client in Google Cloud Console**, not the admin one. Reasons:
+  1. Branding: consent screen says "Sign in to Triarch Customer Portal" not "Sign in to Triarch Admin"
+  2. Authorized redirect URI: `https://portal.triarch.dev/api/auth/callback/google` (different host)
+  3. Client secret rotation independence
+- Store as `GOOGLE_CLIENT_ID_PORTAL` + `GOOGLE_CLIENT_SECRET_PORTAL` in `triarch-vault`; bind in `apphosting.yaml` as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` so the NextAuth code path is identical to admin's
+
+### `signIn` Callback Differences
+
+Portal's `signIn` callback inverts the staff/customer logic:
+- **Admin (existing):** allows staff via wildcard `project_members` row + customer admins; falls back to `@triarchsecurity.com` allowlist
+- **Portal (new):** allows users with ANY `project_members` row (customer admin or viewer); **rejects staff with no customer membership**; staff with both staff role AND customer memberships sign in as customer (and see "Switch to admin.triarch.dev" callout per milestone scope)
+
+This logic reuses the same `getCurrentUserContext` from `@/lib/auth-context` — which means `auth-context.ts` ALSO needs to be in a shared package OR duplicated. Recommendation: pull `auth-context.ts` (and the small `requireAuth` helpers) into a new `@myalterlego/triarch-auth` package OR duplicate (it's small, ~50 lines). **For v2.2 Phase 1: duplicate.** Promote to a package only if a third app appears.
+
+### JWT Strategy
+
+Stay on `session: { strategy: 'jwt' }`. No DB session table. Same as admin. Both apps independently sign their own JWTs with their own secrets — no cross-trust, no shared session store.
+
+---
+
+## Repo Strategy Decision
+
+**Decision: NEW repo `MyAlterLego/triarch-dev-portal`, separate from `MyAlterLego/triarch-dev`.**
+
+### Options Evaluated
+
+| Option | Pros | Cons | Verdict |
+|--------|------|------|---------|
+| **(a) New repo `triarch-dev-portal`** | Independent version line (portal v0.1.0 → v1.0.0 while admin stays v2.x). Independent CI runs. Independent FAH backend deploys can't fail each other. Mirrors workspace precedent (`triarchsecurity-admin` + `triarchsecurity-portal` are separate repos per workspace `~/claude/CLAUDE.md`). | Schema package needs to be published (already decided above — not extra cost). | **CHOSEN** |
+| (b) Subdirectory in `triarch-dev` (workspace-style) | One PR can change both apps | Couples deploys (any portal change re-runs admin's quality-gate). Couples versioning. Couples FAH backend setup. Forces monorepo tooling (turbo/pnpm) which is out of scope. | Reject |
+| (c) Branch off in same repo (e.g., long-lived `portal` branch) | None | Workspace `~/claude/CLAUDE.md` explicitly forbids long-lived branches. | Reject (rule violation) |
+
+### CI/CD Independence
+
+Portal's `.github/workflows/ci-cd.yml` references shared-workflows v4 the same way admin does:
+
+```yaml
+jobs:
+  quality:
+    uses: MyAlterLego/shared-workflows/.github/workflows/quality-gate.yml@v4
+  deploy:
+    needs: quality
+    uses: MyAlterLego/shared-workflows/.github/workflows/deploy-firebase.yml@v4
+    with:
+      environment: prod
+      app_name: portal
+    secrets: inherit
 ```
 
-Full `semver` package (the npm one) is 78 KB and designed for range resolution — not needed here.
+No changes to shared-workflows are required (see fitness analysis below).
 
 ---
 
-## Changelog (Entries Diff) Rendering Pattern
+## Firebase App Hosting Backend Strategy
 
-The "what's changed between dev and prod" view is a **data diff**, not a patch diff. The correct implementation reads two `release_logs` rows and computes:
+**Decision: Same Firebase project (`angular-concord-489522-c4`), TWO new backends: `portal-prod` (live = `main` → `portal.triarch.dev`) and `portal-dev` (live = `dev` → `portal-dev.triarch.dev`).**
 
-```typescript
-// entries that exist in dev releases but not in the latest prod release
-const newInDev = devEntries.filter(
-  (e) => !prodEntries.some((p) => p.id === e.id || p.message === e.message)
-);
+### Why Same Project, Not New Project
+
+| Factor | Same project (chosen) | New `triarch-dev-portal` project |
+|--------|----------------------|----------------------------------|
+| Secret reuse | Shared `DATABASE_URL`, `FAH_PROMOTER_SA_KEY`, `SLACK_BOT_TOKEN`, `GITHUB_PACKAGES_TOKEN` already exist; just bind to new backend | Have to recreate every secret — duplication, drift risk |
+| Billing | Single GCP billing account already configured | New project = new billing setup |
+| Service account reuse | `release-promoter@triarch-vault.iam.gserviceaccount.com` already has rollout perms across projects; works as-is | Need new SA + IAM grants |
+| Domain mapping | Add `portal.triarch.dev` custom domain to existing project's Firebase Hosting → straightforward | Same complexity, but in a new project |
+| Operational burden | One Firebase Console tab | Two tabs |
+| Risk concern: blast radius | Backend isolation gives sufficient isolation — portal-prod and admin-prod are separate Cloud Run services with separate URLs | Marginally better isolation, not worth the cost |
+
+Firebase docs do recommend separate projects for **environment** isolation (prod vs staging) — that's why we already have `triarchdev-dev-15666` cluster vs prod cluster work in flight. But for **app sibling** isolation (admin vs portal) within the same environment, multiple backends in one project is the supported pattern.
+
+### Per-Backend Secret Bindings (portal `apphosting.yaml`)
+
+```yaml
+runConfig:
+  runtime: nodejs22
+  concurrency: 10
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+
+env:
+  - variable: NEXTAUTH_URL
+    value: https://portal.triarch.dev
+    availability: [BUILD, RUNTIME]
+
+  # Shared with admin — same DB, same vault, same FAH SA, same GH token
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+  - variable: FAH_PROMOTER_SA_KEY
+    secret: FAH_PROMOTER_SA_KEY        # only if portal also drives branch swap
+  - variable: NODE_AUTH_TOKEN
+    secret: GITHUB_PACKAGES_TOKEN
+    availability: [BUILD]
+  - variable: SLACK_BOT_TOKEN
+    secret: SLACK_BOT_TOKEN              # only if portal sends Slack notifications
+
+  # PORTAL-ONLY — separate from admin
+  - variable: NEXTAUTH_SECRET
+    secret: NEXTAUTH_SECRET_PORTAL       # NEW secret in vault
+  - variable: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID_PORTAL      # NEW OAuth client
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: GOOGLE_CLIENT_SECRET_PORTAL  # NEW OAuth client secret
 ```
 
-Rendered with the existing `entry_type` badge pattern already used on the releases page (zinc/teal/amber/red). No diff library. A `<ChangesSinceProd>` server component handles this with a DB query — no client state needed for the read path.
+Plus an `apphosting.dev.yaml` overlay (per Phase 7.5 pattern) for `portal-dev` backend that switches `NEXTAUTH_URL` to `https://portal-dev.triarch.dev` and points to dev-suffixed secrets.
 
 ---
 
-## Installation
+## shared-workflows v4 Fitness Analysis
+
+**Verdict: Existing v4 reusable workflows work as-is for portal. Zero changes required.**
+
+### `quality-gate.yml`
+
+| Check | Admin uses it | Portal needs it |
+|-------|---------------|-----------------|
+| `npm ci` | Yes | Yes (same) |
+| `npx next build` | Yes | Yes (same) |
+| `npx vitest run` | Yes | Yes (same) |
+| `npx eslint` | Yes | Yes (same) |
+| TypeScript check | Yes | Yes (same) |
+
+No admin-specific assumptions — it's a generic Next.js quality-gate. Portal slots in identically.
+
+### `deploy-firebase.yml`
+
+| Concern | Status |
+|---------|--------|
+| `environment: prod \| dev` input | Already added in Phase 7.5 |
+| `app_name` parameter for backend selection | Already supported |
+| Secret resolution from Firebase | Already supported |
+| Per-backend `apphosting.yaml` overlay | Already supported |
+
+### `db-migrate.yml`
+
+**Portal does NOT call this workflow.** Migrations are admin-only (single-writer enforced via missing `db:push` script in portal `package.json`). Schema package publishing is a separate workflow we'll add to `MyAlterLego/triarch-schema` repo (one-liner `npm publish` job).
+
+### Security Headers
+
+Customer-facing apps typically want stricter CSP / security headers than internal admin tools. **However, this is a `next.config.ts`-level concern (`async headers()`)**, not a shared-workflows concern. Phase 1 of v2.2 should add a `headers()` block to portal's `next.config.ts` with `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`. Admin should eventually mirror — but not required for portal launch.
+
+### `/admin/*` Route Testing
+
+Quality-gate doesn't test routes. It runs vitest. Portal has its own test files. No coupling.
+
+---
+
+## Installation Recipe (Phase 1 of v2.2)
 
 ```bash
-# New runtime dependencies only
-npm install swr@^2.4.1 compare-versions@^6.1.1
+# 1. Bootstrap portal repo
+cd ~/claude/triarch/development
+mkdir portal && cd portal
+npx create-next-app@16.2.2 . --ts --tailwind --app --no-src-dir --turbopack false
+# (manually edit package.json to match admin pins exactly — see table above)
+
+# 2. Configure private registry (same .npmrc as admin)
+cat > .npmrc <<'EOF'
+@myalterlego:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+EOF
+
+# 3. Install deps (after schema package is published)
+npm install \
+  next@16.2.2 react@19.2.4 react-dom@19.2.4 \
+  drizzle-orm@^0.45.2 pg@^8.20.0 \
+  next-auth@^4.24.13 jose@^5 \
+  swr@^2.4.1 lucide-react@^1.7.0 \
+  @myalterlego/shared-ui@^1.2.0 \
+  @myalterlego/secrets@^0.1.0 \
+  @myalterlego/triarch-schema@^0.1.0   # publish first; see Phase 1.1
+
+npm install -D \
+  typescript@^5 @types/node@^20 @types/react@^19 @types/react-dom@^19 \
+  @types/pg@^8.20.0 \
+  tailwindcss@^4 @tailwindcss/postcss@^4 \
+  eslint@^9 eslint-config-next@16.2.2 \
+  drizzle-kit@^0.31.10 tsx@^4.21.0 \
+  vitest@^4.1.5 @vitest/ui@^4.1.5 jsdom@^25.0.1 \
+  @testing-library/react@^16.3.2 \
+  @testing-library/jest-dom@^6.9.1 \
+  @testing-library/user-event@^14.6.1
+
+# 4. Phase 1.1 (parallel work): publish @myalterlego/triarch-schema
+#    - Extract admin/src/db/schema.ts → new repo MyAlterLego/triarch-schema
+#    - Build, version 0.1.0, publish to GitHub Packages
+#    - In admin: replace src/db/schema.ts contents with `export * from '@myalterlego/triarch-schema';`
+#    - Commit admin v2.9.0 (no functional change — refactor)
 ```
 
-No dev dependency additions needed.
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Stack pin matches admin | **HIGH** | Direct file read of admin `package.json` — versions verified |
+| Cookie domain isolation strategy | **HIGH** | NextAuth v4 docs + multiple GitHub issues confirm host-only is default when `domain` is omitted; cross-subdomain leak only happens when you opt in |
+| Schema sharing via published package | **HIGH** | Drizzle community consensus, matches existing `@myalterlego/*` pattern in this workspace |
+| Repo split (new repo, not monorepo) | **HIGH** | Workspace precedent (`triarchsecurity-admin` + `triarchsecurity-portal`) and explicit workspace rule against long-lived branches |
+| Firebase backend in same project | **MEDIUM** | Firebase docs prefer separate projects for *environment* split, but support multi-backend within a project for *app sibling* split. Risk is low; if it bites, migrating to a new project later is straightforward (re-bind secrets, change DNS) |
+| shared-workflows v4 fitness | **HIGH** | Workflows are generic; admin already exercises every needed input |
+| OAuth client separation | **HIGH** | Standard OAuth practice — different brand surface = different consent screen |
+| `auth-context.ts` duplication for Phase 1 | **MEDIUM** | Pragmatic call. Promoting to a third package becomes worth it only if there's a third consumer. |
 
 ---
 
-## Alternatives Considered
+## Anti-Features (Explicit Do-Not-Add List)
 
-| Our Choice | Alternative | Why Not |
-|-----------|-------------|---------|
-| SWR polling | SSE with EventSource | Firebase App Hosting 5-min timeout makes persistent SSE connections unreliable; polling at 5s interval is simpler and sufficient for 30–120 second swap operations |
-| SWR polling | Manual `setInterval` in `useEffect` | SWR provides dedup, pause-on-blur, error retry, and cache — all for free vs. manual cleanup |
-| Custom regex | `conventional-commits-parser` ^6.4.0 | Library targets Conventional Commits format; does not parse `#BUG-123` or `closes FEAT-45` without non-trivial custom configuration that would be harder to maintain than the regex |
-| Custom Tailwind filter | `react-tailwindcss-select` | 3-year-old package, 6 dependents, effectively abandoned; a 3-option checkbox group doesn't justify a dependency |
-| Roll own entries diff | `react-diff-view`, `diff2html` | These render git patch format (unified diff); the entries[] field is structured JSON, not text — wrong tool entirely |
-| `compare-versions` | `semver` (npm) | `semver` is 78 KB optimized for range resolution; `compare-versions` is ~1 KB and does exactly gt/lt/eq — no range resolution needed |
-
----
-
-## What NOT to Add
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `react-diff-view` / `react-diff-viewer` | Renders git patch format, not JSONB entry arrays | Custom `<ChangesSinceProd>` component over entries[] |
-| `conventional-commits-parser` | Designed for `type(scope):` format, not `#BUG-123` / `closes FEAT-45` | `parse-commit-refs.ts` utility with single regex |
-| WebSockets | Firebase App Hosting timeout constraint; bidirectional not needed | SWR polling |
-| SSE / EventSource | 5-min Firebase App Hosting timeout; reconnect complexity | SWR polling at 5s |
-| Redux / Zustand / Jotai | No cross-page shared mutable state needed | React Server Components for static, SWR for live |
-| `react-tailwindcss-select` | Abandoned (3 yrs, 6 dependents), Tailwind v4 compatibility unverified | Inline checkbox filter with existing Tailwind pattern |
-| `shadcn/ui` | Project uses `@myalterlego/shared-ui`; adding shadcn creates parallel UI systems | Extend shared-ui or write inline Tailwind |
-
----
-
-## Version Compatibility
-
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| `swr@^2.4.1` | React 19.2.4, Next.js 16.2.2 | SWR 2.x supports React 18+; React 19 compatible confirmed via Vercel/SWR release notes |
-| `compare-versions@^6.1.1` | TypeScript 5, Node 20 | Pure ESM/CJS; no peer dependencies |
+| Don't Add | Why |
+|-----------|-----|
+| `@auth/core` / NextAuth v5 | Stay on v4 to match admin. Migration is org-wide work. |
+| Edge middleware for cookie scoping | Standard NextAuth `cookies` config handles it. |
+| Separate UI library (`@myalterlego/portal-ui`) | Reuse `@myalterlego/shared-ui`. Brand via composition. |
+| Separate ORM (Prisma / Kysely / etc.) | Drizzle stays. Type coherence with shared schema package depends on it. |
+| Separate DB driver | `pg.Pool` stays. |
+| Monorepo migration (Turborepo / pnpm workspaces) | Out of scope. Two repos + published packages keep deploy independence. Reconsider at v3.0. |
+| Submodules | Don't survive `npm ci` cleanly on FAH builds. |
+| Symlinks for schema | Don't survive `npm ci`. |
+| Long-lived `portal/` branch in admin repo | Forbidden by workspace rules. |
+| New Firebase project | Same-project multi-backend is sufficient and simpler. |
+| Shared session cookie across `.triarch.dev` | Explicitly forbidden by milestone scope. |
+| Bearer tokens in localStorage | Workspace rule: jose JWT in httpOnly cookies only. |
 
 ---
 
 ## Sources
 
-- npm registry — `swr@2.4.1` (2002 dependents, last published 2 months ago)
-- npm registry — `compare-versions@6.1.1` (zero dependencies, MIT)
-- npm registry — `conventional-commits-parser@6.4.0` (9.3M weekly downloads — popular but wrong tool for this use case)
-- npm registry — `react-tailwindcss-select@1.8.5` (6 dependents, last published 3 years ago — rejected)
-- firebase.google.com/docs/app-hosting/product-comparison — App Hosting request timeout: 5 minutes (confirmed; separate from Firebase Hosting's 1-minute limit)
-- package.json audit — existing codebase uses `useState`/`useEffect`/`fetch()` only; no SWR currently
-- schema.ts audit — `release_logs.entries` is JSONB array of structured objects, not text diff format
-
----
-*Stack additions research for: v2.1 Pipeline UI (Triarch Dev Admin)*
-*Researched: 2026-05-07*
+- [NextAuth.js Configuration Options — cookies](https://next-auth.js.org/configuration/options) — cookie domain config, session cookie options
+- [NextAuth issue #2414 — Sharing session across subdomains](https://github.com/nextauthjs/next-auth/issues/2414) — confirms host-only is default
+- [NextAuth issue #8222 — Two session token cookies created](https://github.com/nextauthjs/next-auth/issues/8222) — gotcha around explicit domain setting
+- [NextAuth subdomain auth blog](https://sometechblog.com/posts/enable-nextauth-to-work-across-subdomains/) — opt-in cross-subdomain pattern (we want the inverse)
+- [Drizzle Discussion #885 — Sharing schema across monorepo](https://github.com/drizzle-team/drizzle-orm/discussions/885) — official guidance
+- [Answer Overflow — How to share Drizzle schema in multiple projects](https://www.answeroverflow.com/m/1237696925017309215) — confirms published-package pattern
+- [Pliszko — Shared database schema with DrizzleORM and Turborepo](https://pliszko.com/blog/post/2023-08-31-shared-database-schema-with-drizzleorm-and-turborepo) — concrete example
+- [Firebase App Hosting — Multiple environments](https://firebase.google.com/docs/app-hosting/multiple-environments) — multi-backend guidance
+- [Firebase App Hosting — Configure backends](https://firebase.google.com/docs/app-hosting/configure) — per-backend `apphosting.yaml` and secret binding
+- [Firebase blog — App Hosting July 2024 update](https://firebase.blog/posts/2024/07/app-hosting-updates/) — multi-backend support announcement, wildcard subdomains
+- Workspace baseline: `/Users/mikegeehan/claude/triarch/development/admin/package.json` (verified 2026-05-08)
+- Workspace baseline: `/Users/mikegeehan/claude/triarch/development/admin/apphosting.yaml` (verified 2026-05-08)
+- Workspace baseline: `/Users/mikegeehan/claude/triarch/development/admin/src/lib/auth.ts` (verified 2026-05-08)
+- Workspace baseline: `/Users/mikegeehan/claude/triarch/development/admin/src/db/schema.ts` (verified 2026-05-08)
+- Workspace rules: `/Users/mikegeehan/claude/CLAUDE.md` (Next.js 16+ caveat, version-bump rule, repo separation precedent, jose JWT auth standard)

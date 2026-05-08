@@ -1,17 +1,19 @@
-# Project Research Summary
+# Project Research Summary — v2.2 Customer Portal Split
 
-**Project:** Triarch Dev Admin — v2.1 Pipeline UI
-**Domain:** Internal operations console — CI/CD pipeline visualization, release-gating control, bidirectional tracker linkage
-**Researched:** 2026-05-07
+**Project:** triarch-dev (admin) → fork customer surface to `portal.triarch.dev`
+**Domain:** Multi-app fork of an existing Next.js operations console (staff stays at `admin.triarch.dev`, customer surface forks to a new sibling Next.js app)
+**Researched:** 2026-05-08
 **Confidence:** HIGH
+
+---
 
 ## Executive Summary
 
-v2.1 is a brownfield feature milestone on top of a fully operational v2.0 release-gating app. The infrastructure — CockroachDB schema, GitHub App promotion dispatch, Firebase App Hosting backends, Slack/OttoBot dispatcher, per-project membership and role auth — is all live. The research gap is not "how to build this domain" but "how to add pipeline visibility and control surfaces without breaking what already ships." Because the existing codebase is the authoritative source, research was conducted primarily via direct code inspection, not competitor documentation — and confidence is high as a result.
+v2.2 is **not greenfield**. Admin already implements ~80% of the customer surface (release page, two-step approve, branch preview, lifecycle timeline, bug/feature views, project_members role model, NextAuth Google OAuth). The work is **port + isolate**, not invent. The architecture is also **not novel** — the in-house precedent `triarchsecurity-admin` ↔ `triarchsecurity-portal` already runs this exact split in production at portal v0.14.3 and admin in production. We are reproducing a working pattern.
 
-The recommended approach follows the existing codebase patterns exactly: server components fetch all data at render time; client islands handle only user-initiated interactions; business logic lives in `src/lib/` and is called from both web and Slack routes; DB-backed locks handle cross-serverless-instance state. Two new npm packages are justified (`swr@^2.4.1` for branch-swap polling, `compare-versions@^6.1.1` for semver comparisons). Everything else — filters, diffs, commit ID parsing — is implemented inline with existing Tailwind/React patterns and utility functions. The dependency graph is clean: Phases 1 and 2 ship with zero schema migrations, Phase 3 introduces the one schema gate, and Phases 4–7 build on stable ground.
+The single decision that drives everything else is **shared-schema strategy**. Recommendation across all four research files: extract Drizzle schema (and a small set of helpers — `auth-context`, `sanitize-commit`, `slack-status`) into a new private GitHub Packages npm module (`@myalterlego/triarch-shared`), published from admin's repo, consumed by both apps. **Admin is the migration authority.** Portal pins the package, runs no migrations, and has a CockroachDB role without DDL grants as defense-in-depth. This is the only new internal package v2.2 introduces; everything else is configuration.
 
-The highest-risk item in the milestone is the Firebase App Hosting programmatic branch-swap API. The CLI command (`firebase apphosting:rollouts:create --git-branch`) is documented; the REST equivalent callable from a Next.js route handler without spawning a child process is not clearly documented. This must be spiked before building the branch swap UI. The second risk is the double-promote race between the new web Promote button and the existing Slack path — a unique DB constraint on `(release_id, decision='approved')` must ship in the same phase as the button. Both risks are well-understood and have clear prevention strategies.
+The dominant risks are **cookie/secret leakage across the brand boundary** (NextAuth defaults must be preserved — host-only cookies, distinct `NEXTAUTH_SECRET` per app, never set `domain: '.triarch.dev'`), **schema/version drift** between two independently deployed consumers (CI gate + admin-only writes), and **URL rot at cutover** (centralize URL emission in `src/lib/urls.ts` BEFORE flipping the 301). All three are addressable with patterns the team has already shipped (Phase 7.5 hostname overlay, Phase 13 fah-rollout JWT, Phase 11 sanitize helpers). For details, see STACK.md, FEATURES.md, ARCHITECTURE.md, PITFALLS.md.
 
 ---
 
@@ -19,178 +21,176 @@ The highest-risk item in the milestone is the Firebase App Hosting programmatic 
 
 ### Recommended Stack
 
-The stack is locked at v2.0 values. v2.1 adds exactly two new runtime dependencies and zero new dev dependencies. `swr@^2.4.1` replaces manual `setInterval`/`useEffect` cleanup for branch-swap polling and is confirmed React 19 compatible. `compare-versions@^6.1.1` provides a 1 KB semver gt/lt/eq utility for the prod-vs-dev version diff display — the full `semver` npm package (78 KB, range-resolution focused) is explicitly rejected.
+Pin portal **1:1 to admin** for every runtime dep. The work is configuration, not new dependencies.
 
-Firebase App Hosting's 5-minute request timeout rules out SSE and WebSockets for real-time status. SWR polling at 5-second intervals is the correct solution for branch swaps that complete in 30–120 seconds. The existing `useState`/`useEffect`/`fetch()` pattern (no SWR currently in the project) should NOT be extended to new polling use cases — SWR replaces it for those cases only.
+**Core technologies:**
+- `next@16.2.2` + `react@19.2.4` — Match admin exactly so build/deploy parity holds
+- `next-auth@^4.24.13` — Stay on v4 (DO NOT migrate to v5/`@auth/core` in v2.2)
+- `drizzle-orm@^0.45.2` + `pg@^8.20.0` — Same DB cluster, same driver; `drizzle-kit` is devDep-only in portal (read-only)
+- `@myalterlego/shared-ui@^1.2.0` — Reuse, don't fork. Brand differentiation comes from layout composition
+- **NEW:** `@myalterlego/triarch-shared@^0.1.0` — The only new internal package: Drizzle schema + 3-4 helpers, published from admin repo via tag-driven workflow, consumed read-only by portal
 
-**Core technologies (additions only):**
-- `swr@^2.4.1`: polling branch-swap in-flight status — replaces manual setInterval, deduplicates concurrent calls, pauses on tab blur
-- `compare-versions@^6.1.1`: semver gt/lt for prod-vs-dev version diff display — 1 KB, zero deps, handles pre-release tags
+**Cross-cutting decisions (DECIDE ONCE, USED EVERYWHERE):**
 
-**Technologies explicitly rejected:**
-- `conventional-commits-parser`: wrong format — targets `type(scope):` not `#BUG-123`; a 15-line regex utility replaces it
-- `react-tailwindcss-select`: 3-year-old package, 6 dependents, Tailwind v4 compatibility unverified
-- `react-diff-view` / `diff2html`: render git patch format; the "diff" here is JSONB entry array comparison
-- Redux / Zustand / Jotai: no cross-page shared mutable state exists in this app
-- SSE / WebSockets: Firebase App Hosting 5-min timeout makes both unreliable
+| Decision | Verdict | Why |
+|---|---|---|
+| Code-sharing | New private GH Packages npm pkg (NOT submodule, NOT symlink, NOT monorepo) | Mirrors existing `@myalterlego/*` pattern; survives `npm ci` on FAH |
+| Repo strategy | NEW repo `MyAlterLego/triarch-portal` | Independent versions/deploys; matches workspace precedent |
+| Firebase | Same project (`triarch-dev-website`), new backends `portal-prod`/`portal-dev` | Reuses DATABASE_URL, FAH_PROMOTER_SA_KEY, NODE_AUTH_TOKEN, SLACK secrets; reversible if it bites |
+| Cookie scope | Host-only (`__Host-` prefix in prod, NO `domain` attribute) | Default NextAuth v4 behavior |
+| NextAuth secret | DISTINCT per app (`ADMIN_NEXTAUTH_SECRET` vs `PORTAL_NEXTAUTH_SECRET`) | No cross-app JWT replay |
+| OAuth client | SHARED single Google client with TWO redirect URIs | One consent screen; same `email` claim — no `sub`-divergence ghosts |
+| Slack ownership | Portal owns `PORTAL_SLACK_BOT_TOKEN` for direct posting; GitHub App key stays admin-only (portal calls admin via HMAC for dispatch) | Bounded blast radius for GitHub App key; portal posts its own customer notifications directly |
+| FAH branch swap | Portal owns end-to-end; portal's apphosting binding gets its own `FAH_PROMOTER_SA_KEY` ref | Lower latency, single auth surface |
+| Migrations | Admin is sole writer; portal has DML-only DB role; portal `package.json` has NO `db:push` | Two `drizzle-kit push` callers race |
+| URLs | Centralize in `src/lib/urls.ts` + ESLint `no-restricted-syntax` BEFORE cutover | Email/Slack link rot at T+90 is otherwise inevitable |
+| auth-context.ts | Move to shared package (`@myalterlego/triarch-shared/auth`) | We're already creating the package; no point duplicating |
+| Shared pkg name | `@myalterlego/triarch-shared` | Matches actual scope (schema + helpers) better than `triarch-schema` |
 
 ### Expected Features
 
-Research against Vercel, Netlify, Heroku, GitHub Actions, Sentry, and Linear establishes the feature landscape. The v2.1 scope is more ambitious than any single competitor because it combines pipeline visibility, customer-driven branch previews, web-initiated promotion, and bidirectional tracker linkage on a single gating surface.
+The customer surface is **a port + 2 missing primitives** (project list landing, customer-side bug/feature submission).
 
-**Must have (table stakes):**
-- Per-project prod/dev versions side-by-side with last-deploy timestamp — every modern deploy dashboard shows this; absence forces Slack lookups
-- Pending-approval count badge per project tile — Vercel/Netlify both surface "needs action" indicators; missing = operators miss backlog
-- Deploy status pills (pending / approved / promoted / conflict) — established pattern from GitHub Actions and Netlify
-- Promote button disabled state with reason tooltip — GitHub Actions shows "waiting for approval" with explanation
-- Clickable project tiles to releases page — every dashboard tile is a navigation surface
+**Must-have / table stakes (P1 — all in v2.2):**
+- Google OAuth sign-in (portal-scoped)
+- Login wall on `/` + post-login routing (0 → empty state; 1 → auto-redirect; 2+ → project list)
+- Project list landing `/projects` with pipeline-summary tiles
+- Release page port `/projects/[slug]/releases` — lift-and-shift
+- Bug detail + bug list + bug submission form
+- Feature detail + feature list + feature submission form
+- Customer header + sign-out
+- 404 (NOT 403) for non-members on every `/projects/[slug]/*` route
+- 301 redirects from admin (90-day grace)
+- Mobile-responsive READ paths (approve stays desktop)
+- Staff "Switch to admin.triarch.dev" callout (NOT 401)
 
-**Should have (differentiators):**
-- Branch preview selector (shared-slot model) — unique to this architecture; closest analog is Azure App Service deployment slots
-- Web-UI Promote button (staff-only, two-step modal) — co-locates promotion action with customer-approved evidence
-- Bug/feature ID auto-detection from commit messages — built into release ingestion for `#BUG-123`/`FEAT-45`/`closes #99` patterns
-- "Released in vX.Y dev / vA.B prod" badge on bug/feature detail pages — automatic from linkage table; no third-party CI integration needed
-- "What's changed" compact/expanded view across admin dashboard and customer page
+**Should-have (P2 — v2.2.x patch series):**
+- Email digest of pending approvals
+- Customer-admin self-serve teammate invite
+- Bug Q&A / comment thread
 
-**Confirmed anti-features (do not build):**
-- Per-branch ephemeral backend URLs — wrong model for shared-slot architecture
-- Real-time deploy log streaming — logs live in GitHub Actions; link to the run URL instead
-- Rollback button — Firebase App Hosting does not support deploying a past artifact
-- Notification/alert configuration UI — Slack channel config stays in project registry
-- Type-to-confirm modal on Promote — two-step modal with specific button label is sufficient per NN/G and GitLab design guidance
+**Defer (P3 — v2.3+):**
+- White-label, in-app notification bell, per-customer Slack workspace, approval delegation, account-settings page, bulk approve, magic-link auth, file attachments
 
-**Defer to v2.1.x/v2.2+:**
-- Customer release page filter by entry type (add after linkage table has real data)
-- Per-project admin pipeline page expanded view
-- Manual bug/feature ID authoring UI
-- GitHub Actions run link surfaced from release row
-- Branch swap history audit log
+**Anti-features (DO NOT BUILD in v2.2):**
+- White-label / per-customer accent or subdomain
+- Email/password auth + signup form
+- PWA / offline / service worker
+- Real-time websocket release updates (SWR poll covers it)
+- Customer-facing marketing copy on `/`
+- Public docs / portal changelog
+- Customer billing dashboard (out of PROJECT.md scope)
+- Customer-facing roadmap board (WhatsComingCard already shows it)
+- Voting / upvoting on feature requests
+- Customer-supplied "target date" on feature requests
+- Multi-customer "switch customer" dropdown (admin's job)
+- Iframe admin in portal or vice versa (CSP `frame-ancestors 'none'`)
+- Cross-origin asset embedding in customer emails (link, never embed)
+- NextAuth v5 migration
+- Workspace tool migration (pnpm/turbo)
 
 ### Architecture Approach
 
-The architecture follows the existing RSC-first, island-based pattern established across v1.14–v2.0: server components own all data fetching; `*Client.tsx` islands handle only user interactions; `src/lib/` functions are shared across Slack and web routes. New components slot into existing page trees rather than creating parallel structures.
-
-The schema changes are minimal and isolated: one new join table (`release_log_links`), two new nullable columns on `projects` (branch preview lock state), and no changes to `release_logs`, `bug_reports`, or `feature_requests`. The `entries[]` JSONB array on `release_logs` is explicitly NOT extended — links go in the join table where they are indexable and queryable.
+Two independently-deployed Next.js apps share one CockroachDB cluster, one Google OAuth client (with two redirect URIs), and one shared npm package — and are otherwise fully isolated.
 
 **Major components:**
-1. **Admin home (`/admin`)** — MODIFIED: `getDashboardStats` extended with prod/dev version split, pending-approval count, last-deploy timestamp, tile link
-2. **Per-project pipeline page (`/admin/modules/pipeline/[slug]`)** — NEW: staff-only consolidated env state, branch RC list, what-changed view, promote button
-3. **`PromoteButton` client island** — NEW: staff-only; delegates to `promoteAndAudit()`; Slack notification included for free
-4. **`BranchSwapClient` island** — NEW: customer branch selector with DB-backed concurrency lock display; polls via SWR
-5. **`POST /api/projects/[slug]/branch/preview`** — NEW: calls Firebase App Hosting Rollouts API, sets DB lock
-6. **`release_log_links` table** — NEW join table: links release entries to bug/feature IDs; indexed FKs
-7. **`src/lib/commit-parser.ts`** — NEW: regex parser; called post-insert in ingest route
-8. **`src/lib/release-delta.ts`** — NEW: `getUnreleasedDevChanges()` shared query helper
-9. **Customer releases page (`/projects/[slug]/releases`)** — MODIFIED: branch swap UI, what-changed summary, entry type filter
+1. **`admin.triarch.dev`** (existing) — Staff console, OttoBot dispatch, Slack audit, member management, **schema migration authority**
+2. **`portal.triarch.dev`** (NEW) — Customer surface; Drizzle read+limited-write, no migrations
+3. **`@myalterlego/triarch-shared`** (NEW npm package) — Schema + `auth-context` + `sanitize-commit` + `slack-status`. Lives at `packages/triarch-shared/` in admin repo; published on tag `shared/v*`
+4. **CockroachDB `triarch_dev`** — Both apps connect directly via `pg.Pool`; portal's runtime SA gets DML-only role
+5. **Google OAuth client** — Add second redirect URI; both apps use same client ID/secret
+6. **Firebase App Hosting** — Portal gets own backends (`portal-prod`/`portal-dev`) in same `triarch-dev-website` Firebase project
 
-**Build order (dependency graph):**
-```
-[1] Schema (release_log_links + projects lock columns)
-[2] Admin home pipeline split + tile links  <- independent, no schema needed
-[3] Per-project pipeline page               <- independent
-[4] Web-UI Promote button                   <- independent, reuses promoteAndAudit
-[5] What's-changed view                     <- independent, pure query
-[6] commit-parser + ingest auto-stamp       <- blocked on [1]
-[7] Tracker linkage authoring UI            <- blocked on [1] + [6]
-[8] Bug/feature detail pages                <- blocked on [1] + [7]
-[9] Branch preview swap                     <- blocked on [1] + Firebase research spike
-[10] Customer page: filter + what-changed + branch swap UI  <- blocked on [5] + [9]
-```
+**Key patterns:** Hostname-per-cookie isolation (default NextAuth v4); shared schema + federated writes; hostname redirect for migration (90-day 301); portal-owned FAH branch swap; tag-driven shared-package publishing.
 
 ### Critical Pitfalls
 
-Research identified 11 pitfalls from direct codebase inspection. Top 5 requiring phase-level planning attention:
+Top 5 of 14 catalogued in PITFALLS.md:
 
-1. **FAH branch swap race with concurrent CI push** — DB lock flag + FAH 409 guard + in-progress banner on all RC rows. Lock and UI must ship in the same phase — never separately.
+1. **Cookie domain misconfiguration leaks portal session to admin** — DO NOT set `domain: '.triarch.dev'`. Use `__Host-` prefix in prod (browser-enforced). Vitest test on Set-Cookie. **Phase 2.**
+2. **Schema package version drift** — Two consumers diverge; portal writes fail or types compile against stale schema. Admin owns migrations; CI gate fails on >1 minor lag; portal DB role lacks DDL. **Phase 1 + Phase 3.**
+3. **CI deploys portal code into admin's Firebase project** — Add `verify-deploy-target` job to `shared-workflows` with committed lookup table; per-repo deploy SAs. **Phase 8 — hard prerequisite.**
+4. **Customer bookmarks rot at cutover** — Centralize URL construction in `src/lib/urls.ts` + ESLint rule + 90-day 301 + email blast. **Phase 4 BEFORE portal ships; Phase 9 cutover.**
+5. **Hostname guards left dangling in admin** — Inventory ALL `host ===` references in **Phase 1.5**; fail-closed middleware in both apps; delete dead branches in **Phase 10**.
 
-2. **Double-promote between web and Slack paths** — unique constraint on `(release_id, decision='approved')` must ship in the same phase as the web Promote button. No exceptions.
-
-3. **Firebase App Hosting programmatic rollout API uncertainty** — CLI documented; REST equivalent for a Next.js route handler without `child_process` is not confirmed. Research spike required before Phase 6 design.
-
-4. **Commit message parsing false positives and injection** — validate every matched ID against DB before surfacing; sanitize all commit message content before rendering or passing to Slack (strip mrkdwn control characters, zero-width/directional override chars).
-
-5. **Dashboard "latest per env per project" query correctness** — use `DISTINCT ON (project, env) ORDER BY COALESCE(deployed_at, released_at) DESC NULLS LAST`; add composite index `(project, env, deployed_at DESC)` before shipping the dashboard widget; filter `WHERE env IN ('dev', 'prod')` to exclude null-env legacy rows.
-
-Standing constraints (all phases):
-- Never extend `release_logs.status` enum without auditing all consumers; use separate metadata field for swap state
-- Never use module-level Maps for cross-request state on Firebase App Hosting (serverless multi-instance); use DB locks
-- URL params (not in-memory state) for all filter dimensions; follow `SlackAuditClient.tsx` precedent
+Other notable: OAuth `sub` divergence (use email everywhere), migration ownership confusion, NEXTAUTH_SECRET rotation breakage, Slack credential routing, cross-origin embedding, signIn user-record race, local dev workflow, apphosting.yaml env drift.
 
 ---
 
 ## Implications for Roadmap
 
-### Phase 1: Admin Home Pipeline Visibility
-**Rationale:** Zero schema changes required; delivers immediate operational value; establishes the prod/dev split data pattern all later phases depend on.
-**Delivers:** Per-project prod/dev versions, pending-approval count badge, last-deploy timestamp, clickable project tiles.
-**Addresses:** Table stakes — prod/dev side-by-side, pending-approval count, deploy status, clickable tiles.
-**Avoids:** Pitfall 8 (dashboard query correctness) — `DISTINCT ON` idiom + null handling + composite index in this phase.
-**Research flag:** Standard patterns. Skip `/gsd:research-phase`.
+### Phase 15: Operational Prework (parallel, ~half day)
+**Rationale:** Ops tasks before app code; deploy pipeline provable on a skeleton.
+**Delivers:** New repo `MyAlterLego/triarch-portal`; FAH backends in `triarch-dev-website`; GoDaddy DNS for `portal.triarch.dev`; Google OAuth second redirect URI + localhost URIs.
+**Avoids:** Pitfall 6 (per-repo SAs upfront), Pitfall 13 (OAuth localhost URIs from start).
 
-### Phase 2: Per-Project Pipeline Page and Web-UI Promote Button
-**Rationale:** Both features require zero schema changes and reuse existing lib functions; the pipeline page hosts the promote button.
-**Delivers:** `/admin/modules/pipeline/[slug]`; `PromoteButton` island; `POST /api/admin/releases/[id]/promote` route; what-changed view.
-**Addresses:** Web-UI Promote button, per-project admin pipeline page, what-changed views.
-**Avoids:** Pitfall 3 (double-promote race) — unique constraint on `(release_id, decision='approved')` ships here; Pitfall 4 (audit trail split) — `actor_source` column added to `release_approvals`.
-**Uses:** `compare-versions@^6.1.1` for version diff display.
-**Research flag:** Standard patterns. Design decision needed on `promoteAndAudit` nullable Slack context before coding — not a research spike.
+### Phase 16: Shared Package Extraction + Repo Scaffold
+**Rationale:** Schema package must publish before any portal-app work. Strips `db:push` from portal scaffold; writes `docs/local-dev.md` + `docs/schema-ownership.md`.
+**Delivers:** `packages/triarch-shared/` in admin; `@myalterlego/triarch-shared@0.1.0` published; admin shim re-exports; admin GREEN; portal repo skeleton with deploying 200-OK landing.
+**Avoids:** Pitfalls 3, 4, 13, 14.
 
-### Phase 3: Schema Gate
-**Rationale:** One isolated migration phase eliminates migration risk for all downstream phases.
-**Delivers:** `release_log_links` table (with FK indexes), `projects.preview_branch_locked` + `preview_branch_locked_at` columns, Drizzle schema + relations, migration verified on dev cluster.
-**Addresses:** Foundation for tracker linkage (Phases 4–5) and branch swap (Phase 6).
-**Avoids:** Pitfall 6 (N+1 query) — join table with indexes prevents JSONB scan; Pitfall 11 (structural mutations) — no `release_logs.status` enum changes.
-**Research flag:** Standard Drizzle migration patterns. Skip `/gsd:research-phase`.
+### Phase 17: Hostname Guard Inventory + Fail-Closed Middleware
+**Rationale:** Audit before introducing second host so cutover has a known cleanup target.
+**Delivers:** Catalog of every `host ===`/`headers().get('host')` reference in admin; admin middleware fails closed for non-admin hosts.
+**Avoids:** Pitfall 5.
 
-### Phase 4: Commit Parser and Tracker Linkage Authoring
-**Rationale:** Auto-stamp is the data producer; without it the linkage UI has nothing to show; seeds `release_log_links` for Phases 5 and 7.
-**Delivers:** `src/lib/commit-parser.ts`; ingest route modified to call parser post-insert; `getCommitMessage()` GitHub helper; manual add/remove link UI in `/admin/modules/release-logs`; `revalidatePath` on link mutations.
-**Addresses:** Bug/feature ID auto-detection, manual override authoring UI.
-**Avoids:** Pitfall 5 (false positives and injection) — ID validation against DB, Slack character sanitization, word-boundary-anchored regex; Pitfall 7 (stale detail page data) — `revalidatePath` from link-creation route.
-**Research flag:** Standard patterns. GitHub authenticated fetch already established in `github-app.ts`.
+### Phase 18: Portal Auth Scaffolding
+**Rationale:** Auth is prerequisite for any feature route + has highest concentration of catastrophic pitfalls (1, 2, 8, 12).
+**Delivers:** NextAuth v4 with `__Host-` cookies, distinct `PORTAL_NEXTAUTH_SECRET`, read-only signIn callback (rejects no-membership; staff "Switch to admin"), Vitest cookie tests + grep-test on `.sub`, login wall, post-login routing.
+**Uses:** `next-auth@^4.24.13`, shared `auth-context`, jose JWT pattern from admin Phase 13.
 
-### Phase 5: Bug and Feature Detail Pages with Release Linkage
-**Rationale:** Closes the bidirectional linkage loop; once `release_log_links` has data, the "Released in" display is a single join query per page.
-**Delivers:** `/admin/modules/bug-reports/[id]` and `/admin/modules/feature-requests/[id]` server components; "Released in vX.Y dev / vA.B prod" sidebar section; batch `inArray` lookup for list pages.
-**Addresses:** "Released in" badge, bidirectional tracker linkage.
-**Avoids:** Pitfall 6 (N+1 query) — `inArray` batch pattern per list page, not one query per row.
-**Research flag:** Standard patterns. Skip `/gsd:research-phase`.
+### Phase 19: Database Connectivity + DML-Only Role
+**Rationale:** Defense-in-depth so rogue `db:push` or compromise can't mutate schema.
+**Delivers:** Portal `src/lib/db.ts`; CRDB role with SELECT/INSERT/UPDATE/DELETE only; `ALTER TABLE` from portal returns permission denied.
 
-### Phase 6: Branch Preview Swap (Firebase Research Spike Required)
-**Rationale:** Highest-risk integration in the milestone; isolated to contain spike risk; DB lock columns (Phase 3) are the only dependency.
-**Delivers:** `POST /api/projects/[slug]/branch/preview` route; `BranchSwapClient` island; SWR polling at 5s; DB lock set/clear lifecycle; concurrency banner.
-**Addresses:** Branch preview selector, branch swap concurrency, branch swap lock with actor + timestamp.
-**Avoids:** Pitfall 1 (FAH race with CI push) — DB lock + FAH 409 guard + in-progress banner; Pitfall 2 (FAH rollout stuck in PENDING) — poll until terminal state, surface error on FAILED, 8-minute timeout.
-**Uses:** `swr@^2.4.1` for in-flight polling.
-**Research flag:** NEEDS `/gsd:research-phase` before planning. Key unknown: Firebase App Hosting programmatic rollout API callable from Next.js route handler without `child_process`. Must evaluate: (a) `googleapis` Node SDK `firebaseapphosting.v1beta.projects.locations.backends.rollouts.create`, (b) Firebase MCP (`mcp__firebase__`) rollout management, (c) GitHub Actions workflow dispatch as intermediary. Do not design the route handler until resolved.
+### Phase 20: URL Centralization (in admin repo)
+**Rationale:** Refactor admin BEFORE portal ships; otherwise every URL string in admin rots at cutover.
+**Delivers:** `src/lib/urls.ts`; all 14+ call sites refactored (Slack builders, OttoBot Block Kit, GitHub release notes); ESLint `no-restricted-syntax` blocks raw URL literals.
 
-### Phase 7: Customer Page Integration
-**Rationale:** Integrates all preceding work onto the customer-facing surface; last deliberately because it has the most dependencies and requires a discoverability/nav holistic review.
-**Delivers:** Entry type filter chips (URL params, client-side filter); "What's changed" summary card at page top; branch swap button per branch section header; navigation/discoverability audit.
-**Addresses:** Customer page filter, what-changed summary on customer page, full branch swap customer UX.
-**Avoids:** Pitfall 9 (URL state vs in-memory) — URL params via `router.replace` shallow, filter applied client-side with `useMemo`; Pitfall 10 (nav clutter) — progressive disclosure, default collapsed what's-changed, max 4 interactive controls above fold.
-**Research flag:** Standard patterns. URL params filter precedent already established by `SlackAuditClient.tsx`. Skip `/gsd:research-phase`.
+### Phase 21: Release Page Port (read paths first)
+**Rationale:** Most-used customer surface, least risk; verify rendering before exposing mutation.
+**Delivers:** Portal `/projects/[slug]/releases` with full lift-and-shift; project list `/projects`; project tiles via `getProjectPipelineSummaries()`; 404 for non-members.
+
+### Phase 22: Approve/Reject/Feedback + Slack/GitHub Integration
+**Rationale:** Customer write surface needs careful auth + audit. Slack credential ownership decision lands here.
+**Delivers:** Portal API routes for approve/reject/feedback + branch preview; portal-owned `FAH_PROMOTER_SA_KEY`; Slack/GitHub wiring per ownership decision; two-step approve / conflict badge / branch lock UX intact.
+**Avoids:** Pitfalls 8, 9.
+
+### Phase 23: Bug + Feature Surface (view + submit)
+**Rationale:** Linked from release-page lifecycle timeline; views first, then submission forms.
+**Delivers:** `/projects/[slug]/bugs/*` and `/projects/[slug]/features/*` (list, detail, new); reuses `release_log_links` + `getReleaseHistoryForBug`/`...ForFeature`; project-scope guards on POST. The two **net-new primitives**.
+
+### Phase 24: CI/CD + verify-deploy-target + Env Validation
+**Rationale:** Hard prerequisite for going live.
+**Delivers:** `verify-deploy-target` job in shared-workflows with committed lookup table; per-repo deploy SAs; portal `apphosting.yaml` + `.dev.yaml` overlay; `assertEnv()` schema; `validate-apphosting.ts` CI step.
+**Avoids:** Pitfalls 6, 14.
+
+### Phase 25: Cutover (301 + email blast + admin route deprecation)
+**Rationale:** Flip redirect AFTER portal verified in production.
+**Delivers:** Admin middleware 301 → portal; customer email blast; Slack message URL update sweep on last 30 days; `redirect_hits` telemetry; kill-switch env var; mobile-responsive QA.
+**Avoids:** Pitfall 7.
+
+### Phase 26: Sunset (T+90)
+**Rationale:** Final cleanup AFTER 30+ day grace, when telemetry shows minimal residual traffic.
+**Delivers:** Delete admin `/projects/[slug]/*` routes; delete dead hostname-guard branches; admin v-bump.
+**Avoids:** Pitfall 5 rot.
 
 ### Phase Ordering Rationale
-
-- Phases 1 and 2 ship with zero schema migrations — delivers the highest-value admin visibility improvements before any DB migration risk.
-- Phase 3 (schema gate) is positioned after the no-migration phases have shipped, so the team has working deployable software before taking migration risk.
-- Phases 4–5 (linkage) precede Phase 7 (customer page) because the entry type filter requires linkage data to be meaningful.
-- Phase 6 (branch swap) is isolated with a research spike gate because it is the only feature with an unresolved external API dependency.
-- Phase 7 (customer integration) is last because it aggregates all other phases and includes the navigation/discoverability audit that can only be done when all features exist.
+- Schema package precedes everything — type safety dependency
+- Auth before features — pitfall surface concentration
+- URL centralization in admin BEFORE cutover — prerequisite for redirect correctness
+- Read paths before write paths — verify rendering before mutation
+- Cutover two-phased (Phase 25 immediate + Phase 26 at T+90) — bookmark grace
+- Schema changes forbidden during portal build (Phases 18-23) where possible
 
 ### Research Flags
 
-Needs `/gsd:research-phase` before planning:
-- **Phase 6:** Firebase App Hosting programmatic rollout API — determine callable mechanism from Next.js route handler without `child_process`; evaluate `googleapis` SDK, Firebase MCP, and GitHub Actions dispatch as options.
+**Needs deeper research (use `/gsd:research-phase`):**
+- **Phase 22** — Slack credential ownership operational mechanics (HMAC-proxy vs direct-import) — settled at SUMMARY level but operational details TBD
+- **Phase 24** — `shared-workflows` may need v5 tag depending on backwards-compat of new `repo_name` input
 
-Standard patterns (skip `/gsd:research-phase`):
-- **Phase 1:** App Router server component extending existing `getDashboardStats`; `DISTINCT ON` is a known CockroachDB idiom.
-- **Phase 2:** `promoteAndAudit` reuse path; design decision on nullable Slack context, not research.
-- **Phase 3:** Drizzle schema addition + migration; well-understood.
-- **Phase 4:** Regex parsing utility + Drizzle upsert; GitHub authenticated fetch already established.
-- **Phase 5:** Join query server component; `inArray` batch pattern already in codebase.
-- **Phase 7:** URL params filter pattern already established by `SlackAuditClient.tsx`.
+**Standard patterns (skip research-phase):**
+- All other phases use established patterns; research summary is sufficient.
 
 ---
 
@@ -198,43 +198,47 @@ Standard patterns (skip `/gsd:research-phase`):
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Existing stack confirmed from `package.json`; new additions verified via npm registry and official docs; rejected libraries documented with specific reasons |
-| Features | HIGH | Competitor patterns verified via official docs (Vercel, Netlify, GitHub Actions, Heroku, Sentry, Linear, GitLab); scope confirmed against PROJECT.md user decisions |
-| Architecture | HIGH | Derived from direct codebase inspection of 15+ source files; component boundaries, auth model, and data flow match established v2.0 patterns |
-| Pitfalls | HIGH | Derived from direct codebase inspection + v2.0 burn log in PROJECT.md; all 11 pitfalls include specific prevention steps and verification criteria |
+| Stack | **HIGH** | Direct file read of admin `package.json`; pinned 1:1 |
+| Features | **HIGH** | Domain is "port + 2 missing primitives" |
+| Architecture | **HIGH** | In-house precedent already in production |
+| Pitfalls | **HIGH** | Codebase audit + verifiable via Vitest + grep |
 
 **Overall confidence:** HIGH
 
-### Gaps to Address
+### Resolved Gaps (autonomous decisions per Mike's directive)
 
-- **Firebase App Hosting programmatic rollout API (Phase 6):** The REST endpoint for `rollouts.create` callable from a Node.js environment without spawning a child process is not confirmed. Resolution: research spike in Phase 6 planning before committing to route handler design.
-
-- **`promoteAndAudit` signature for web context (Phase 2):** Function currently requires `channelId` and `messageTs` (Slack coordinates). The web promote path has no Slack message to thread onto. Two options: (a) make parameters nullable with fallback to new Slack message, (b) split into `dispatchPromotion` + `notifySlack` calls. Design decision during Phase 2 planning.
-
-- **Entry type classification for customer page filter (Phase 7):** The `entries[]` JSONB written by CI has no `type` field. The filter must derive type from `release_log_links` (a release with a linked bug is "bug fix") rather than a CI-written field. This requires no CI changes but means Phase 7 filter is only meaningful after Phase 4 data is populated.
+1. **Firebase project decision:** Same `triarch-dev-website` project, two new backends. Reuses existing secret IAM bindings; reversible if it bites.
+2. **Slack credential ownership:** Portal owns `PORTAL_SLACK_BOT_TOKEN` for direct customer-side posting; admin retains GitHub App key + dispatches workflows via internal HMAC-signed POST from portal. Phase 22 implements.
+3. **`auth-context.ts` placement:** In shared package (we're creating it anyway).
+4. **Shared package name:** `@myalterlego/triarch-shared` (matches scope — schema + helpers).
+5. **Customer email seeding at cutover:** Phase 25 success criterion — email blast list derived from `project_members.email WHERE role IN ('admin','viewer')`.
+6. **Truth+Treason pilot reactivation:** Out of v2.2 scope; v2.3 milestone candidate after portal cutover stabilizes.
 
 ---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Direct codebase inspection: `src/db/schema.ts`, `src/lib/github-app.ts`, `src/lib/release-promotion.ts`, `src/lib/release-actions.ts`, `src/lib/api-auth.ts`, `src/app/admin/page.tsx`, `src/app/projects/[slug]/releases/page.tsx`, `src/app/projects/[slug]/releases/ReleasesClient.tsx`, `src/app/admin/platform/slack-audit/SlackAuditClient.tsx`
-- `.planning/PROJECT.md` — milestone context, v2.0 burn log, existing decisions
-- npm registry — `swr@2.4.1` (React 19 compatible, 2002 dependents)
-- npm registry — `compare-versions@6.1.1` (zero dependencies, MIT, TypeScript 5/Node 20 compatible)
-- firebase.google.com/docs/app-hosting/product-comparison — App Hosting 5-minute request timeout confirmed
-- Vercel docs (updated 2026-02-27) — promoting deployments, managing deployments, project overview
-- GitHub docs — reviewing deployments, workflow dispatch
-- Heroku devcenter — review apps, staging-to-prod promotion model
-- Sentry docs — releases, commit tracking
-- Linear docs — releases, issue type filtering
-- GitLab design system — destructive actions pattern (two-step vs type-to-confirm)
-- Netlify docs — deploy management overview
-- NN/G — confirmation dialog UX research
+- Admin codebase audit: `package.json`, `apphosting.yaml`, `src/lib/auth.ts`, `src/lib/auth-context.ts`, `src/db/schema.ts`, `.github/workflows/ci-cd.yml` (verified 2026-05-08)
+- In-house precedent: `MyAlterLego/triarchsecurity-portal` v0.14.3 — working production split
+- Workspace baseline: `/Users/mikegeehan/claude/CLAUDE.md`
+- PROJECT.md v2.2 milestone definition
 
-### Secondary (MEDIUM confidence)
-- Firebase App Hosting Rollouts CLI (`firebase apphosting:rollouts:create --git-branch`) — CLI documented; REST equivalent for programmatic invocation not confirmed; flagged as research gap for Phase 6
+### Secondary (MEDIUM-HIGH confidence)
+- NextAuth.js v4 docs — cookie config, session options
+- NextAuth issues #2414, #8222 — cross-subdomain patterns
+- Drizzle Discussion #885, Answer Overflow — schema-sharing
+- Firebase App Hosting docs — multi-environment / multi-backend
+- CockroachDB docs — `GRANT`/`REVOKE` DDL gating
+- RFC 6265bis — `__Host-` and `__Secure-` cookie prefix semantics
+- OWASP CSP + MDN — `frame-ancestors`, cross-origin
+
+### Tertiary (MEDIUM confidence)
+- 301 redirect 90-day grace — general web migration convention
+- B2B portal feature landscape (supastarter, supportbench, baytechconsulting, techvoot, agencyhandy, asabix) — informed anti-feature list
 
 ---
-*Research completed: 2026-05-07*
+
+*Research completed: 2026-05-08*
 *Ready for roadmap: yes*
+*See detail docs: STACK.md · FEATURES.md · ARCHITECTURE.md · PITFALLS.md*
