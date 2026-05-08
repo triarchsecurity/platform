@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: planning
-stopped_at: Completed 21-release-page-port-read 21-05-PLAN.md
-last_updated: "2026-05-08T20:03:24.666Z"
+stopped_at: Completed 21-release-page-port-read 21-06-PLAN.md
+last_updated: "2026-05-08T20:08:07Z"
 progress:
   total_phases: 19
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 49
-  completed_plans: 47
+  completed_plans: 49
 ---
 
 # Triarch Dev Admin — Project State
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 21
-Plan: 02 (complete)
+Phase: 21 (complete — Phase 22 next)
+Plan: 06 (complete — Phase 21 closed)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -40,7 +40,7 @@ Plan: 02 (complete)
 | 18 — Portal Auth Scaffolding | NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff callout | AUTH-01..07 | Not started |
 | 19 — Database Connectivity | Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test | DB-01..04 | Not started |
 | 20 — URL Centralization (admin) | `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters | URL-01..03 | Not started |
-| 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Not started |
+| 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Not started |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Not started |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
@@ -136,6 +136,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 21]: ReleasesClient ported as read-only fork: 4 mutation handlers stubbed with TODO Phase 22, handleLoadMore stripped, hasMoreState=false
 - [Phase 21-release-page-port-read]: PORTAL-03: notFound() for non-members (not 403) — project existence stays hidden
 - [Phase 21-release-page-port-read]: projectKeys passed as string[] (not null) to getProjectPipelineSummaries — null is staff all-projects view; portal always scopes to membership
+- [Phase 21-06]: hidden sm:flex established as portal pattern for desktop-only mutation controls — Phase 22 should follow same pattern for new write actions
+- [Phase 21-06]: Vitest server component testing pattern: mock drizzle-orm operators as stubs + mock db builder chain; assert on Next.js navigation hooks (notFound/redirect call count)
 
 ### Pending Todos
 
@@ -153,7 +155,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T20:03:20.813Z
-Stopped at: Completed 21-release-page-port-read 21-05-PLAN.md
+Last session: 2026-05-08T20:08:07Z
+Stopped at: Completed 21-release-page-port-read 21-06-PLAN.md (Phase 21 closed)
 Resume file: None
-Next action: Execute 21-03-PLAN.md (ReleasesClient port)
+Next action: Research Phase 22 (Release Page Port — Write) via /gsd:research-phase 22 before planning; HMAC-proxy operational mechanics required

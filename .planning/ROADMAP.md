@@ -57,7 +57,7 @@
 - [x] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout (completed 2026-05-08)
 - [x] **Phase 19: Database Connectivity** — Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test (completed 2026-05-08)
 - [x] **Phase 20: URL Centralization (admin)** — `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters BEFORE cutover (completed 2026-05-08)
-- [ ] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths
+- [x] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths (completed 2026-05-08)
 - [ ] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch
 - [ ] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives)
 - [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts`
@@ -264,7 +264,8 @@
   2. Portal `/projects` renders membership-filtered project tile list using `getProjectPipelineSummaries()` from the shared package — non-members of any project see an empty state, not a leak
   3. Authenticated non-member requesting `/projects/<not-mine>/releases` (or any sub-route) receives HTTP 404, not 403 — no membership-existence leak
   4. Portal release list, bug list, feature list, and project list render correctly on mobile viewport (375px width); approve/branch-swap controls remain desktop-optimized
-**Plans**: TBD
+**Plans**: 6 plans completed (21-01 through 21-06) — portal v0.3.0 shipped
+**Status**: Complete (2026-05-08)
 
 ### Phase 22: Release Page Port (Write)
 **Goal**: Customers approve, reject, leave feedback, and trigger branch preview swap from portal end-to-end, with portal owning Slack notification posting and admin retaining GitHub App custody via HMAC-signed dispatch.
