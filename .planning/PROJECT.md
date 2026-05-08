@@ -156,5 +156,8 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
+
+**v2.2 Phase 15 (Operational Prework) shipped 2026-05-08:** New `MyAlterLego/triarch-portal` repo (private, MIT, README seeded) cloned to `~/claude/triarch/development/portal`. GoDaddy DNS A record `portal.triarch.dev → 35.219.200.0` mirroring admin's pattern. GCP secret `PORTAL_NEXTAUTH_SECRET` in `triarch-vault` with secretAccessor IAM bound to `firebase-app-hosting-compute@triarch-dev-website`. Two new FAH backends (`portal-prod` with custom domain `portal.triarch.dev` HOST/CERT/OWNERSHIP all ACTIVE; `portal-dev` with auto hosted.app URL) created via `gcloud auth print-access-token` REST fallback (firebase CLI auth expired). `dev` branch created on triarch-portal. **OPS-04 (Google OAuth redirect URIs) DEFERRED to human Console action** — gcloud has no programmatic path for OAuth 2.0 Client redirect URIs; ~30-second Console add for Mike when convenient. Phase 18 is the gate that blocks if pending; Phases 16-17 unblocked.
+
 ---
-*Last updated: 2026-05-08 — v2.2 milestone (Customer Portal Split) started*
+*Last updated: 2026-05-08 — v2.2 Phase 15 (Operational Prework) complete (4/5 reqs verified; OPS-04 deferred)*
