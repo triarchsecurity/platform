@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
 status: executing
-stopped_at: Completed 09-04-PLAN.md — per-project pipeline page /admin/modules/pipeline/[slug] with getProjectPipelineDetail helper, 17 Vitest tests, v2.1 gradient header; version pending
-last_updated: "2026-05-08T03:47:53.274Z"
+stopped_at: Completed 09-03-PLAN.md — web Promote route with atomic race guard, actor_source on approvals, Slack handler guard
+last_updated: "2026-05-08T03:55:55.908Z"
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 ## Current Position
 
 Phase: 09 (Per-Project Pipeline Page and Web-UI Promote) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -90,6 +90,9 @@ v2.1 decisions captured at roadmap creation:
 - [Phase 09-per-project-pipeline-page-and-web-ui-promote]: Option (a): nullable params in promoteAndAudit (not split functions) — unified function harder to misuse
 - [Phase 09-per-project-pipeline-page-and-web-ui-promote]: slackChannelId added to projects table (migration 0015) — web-origin Slack notification uses per-project channel; graceful no-op if null
 - [Phase 09]: RC ordering uses JS-side sort after grouping (safe against mock/test ordering); staff auth adds getCurrentUserContext + redirect at page level since admin layout only validates session; deploy history uses JS split into 10+10 then re-merge desc; type pills use v2.1 gradient accents per DESIGN-REFERENCE.md
+- [Phase 09]: Web route awaits promoteAndAudit (inline result for PROM-05); Slack route uses fire-and-forget (3-sec rule)
+- [Phase 09]: HTTP 200 with ok:false for dispatch failures — atomic UPDATE committed; client reads ok flag
+- [Phase 09]: actorSource optional with 'web' default in approveRelease/rejectRelease — existing callers unchanged
 
 ### Pending Todos
 
@@ -104,7 +107,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-08T03:47:53.272Z
-Stopped at: Completed 09-04-PLAN.md — per-project pipeline page /admin/modules/pipeline/[slug] with getProjectPipelineDetail helper, 17 Vitest tests, v2.1 gradient header; version pending
+Last session: 2026-05-08T03:55:55.906Z
+Stopped at: Completed 09-03-PLAN.md — web Promote route with atomic race guard, actor_source on approvals, Slack handler guard
 Resume file: None
 Next action: `/gsd:plan-phase 8`

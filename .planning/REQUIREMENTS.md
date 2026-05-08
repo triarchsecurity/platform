@@ -24,7 +24,7 @@
 - [ ] **PROM-02**: Promote button uses two-step confirm modal with specific label ("Promote feat/audio v1.4.2 to production")
 - [x] **PROM-03**: Web Promote dispatches `promote-branch.yml` via the same `dispatchWorkflow` path as the Slack flow; Slack notification posted on every successful dispatch (web or Slack origin)
 - [x] **PROM-04**: System prevents double-promote race between web and Slack paths via unique constraint on `release_approvals (release_id, decision='approved')`
-- [ ] **PROM-05**: After Promote click, button shows in-flight state then surfaces result (merged / conflict / ci_failed) inline; on terminal failure, error pill links to the GitHub Actions run
+- [x] **PROM-05**: After Promote click, button shows in-flight state then surfaces result (merged / conflict / ci_failed) inline; on terminal failure, error pill links to the GitHub Actions run
 
 ### What's-Changed Views (DIFF)
 
@@ -109,7 +109,7 @@ Populated by `gsd-roadmapper` 2026-05-07.
 | PROM-02 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
 | PROM-03 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | PROM-04 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
-| PROM-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | DIFF-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | LINK-01 | Phase 10 — Schema Gate | Pending |
 | PREV-01 | Phase 10 — Schema Gate | Pending |
