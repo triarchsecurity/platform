@@ -155,7 +155,13 @@ export const releaseLogs = pgTable('release_logs', {
   promotionDispatchedBy: varchar('promotion_dispatched_by', { length: 256 }),           // mapped staff email of the Slack actor who clicked Promote
   metadata: jsonb('metadata').default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  index('release_logs_project_env_deployed_idx').on(
+    table.project,
+    table.env,
+    table.deployedAt.desc(),
+  ),
+]);
 
 // ── v1.14.0: Customer Release Gating (membership + audit) ─────────
 

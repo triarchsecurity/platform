@@ -85,6 +85,20 @@
       "when": 1777932905565,
       "tag": "0011_thick_wallow",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778207975581,
+      "tag": "0012_promote_attempts",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778207977581,
+      "tag": "0013_release_logs_pipeline_idx",
+      "breakpoints": true
     }
   ]
 }
