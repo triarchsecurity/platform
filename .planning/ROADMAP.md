@@ -251,7 +251,9 @@
   1. `src/lib/urls.ts` in admin exports `customerProjectUrl`, `customerReleaseUrl`, `customerBugUrl`, `customerFeatureUrl` reading `PORTAL_BASE_URL` (default `https://portal.triarch.dev`)
   2. All admin Slack message builders, OttoBot Block Kit constructors, GitHub release-note templates, and email templates call the helpers — `grep -r 'admin.triarch.dev/projects/' src/` returns matches only inside `src/lib/urls.ts`
   3. ESLint `no-restricted-syntax` rule blocks raw `https://admin.triarch.dev/projects/` literals outside `src/lib/urls.ts`; CI fails on any new violation
-**Plans**: TBD
+**Plans**: 2 plans
+- [x] 20-01-PLAN.md — src/lib/urls.ts (4 helpers + PORTAL_BASE_URL reader) + Vitest suite (6 cases) + admin v2.9.2 bump — URL-01/URL-02
+- [ ] 20-02-PLAN.md — eslint.config.mjs no-restricted-syntax rule + apphosting.yaml PORTAL_BASE_URL binding — URL-03
 
 ### Phase 21: Release Page Port (Read)
 **Goal**: Customer release page and project list render on portal as a faithful lift-and-shift of v2.1, with non-member access returning 404 and read paths mobile-responsive.
@@ -356,7 +358,7 @@
 | 17. Hostname Guard Inventory | v2.2 | 2/2 | Complete    | 2026-05-08 |
 | 18. Portal Auth Scaffolding | v2.2 | 5/5 | Complete    | 2026-05-08 |
 | 19. Database Connectivity | v2.2 | 2/2 | Complete    | 2026-05-08 |
-| 20. URL Centralization | v2.2 | 0/0 | Not started | - |
+| 20. URL Centralization | v2.2 | 1/2 | In Progress|  |
 | 21. Release Page Port (Read) | v2.2 | 0/0 | Not started | - |
 | 22. Release Page Port (Write) | v2.2 | 0/0 | Not started | - |
 | 23. Bug + Feature Customer Surface | v2.2 | 0/0 | Not started | - |
