@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: verifying
+status: planning
 stopped_at: "Completed 18-05-PLAN.md — Vitest guards: cookies shape, no-.sub grep, signIn unit tests; portal v0.2.0 merged to main (c6f7b96)"
-last_updated: "2026-05-08T18:25:32.205Z"
+last_updated: "2026-05-08T18:29:39.473Z"
 progress:
   total_phases: 19
   completed_phases: 11
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 18 (portal-auth-scaffolding) — EXECUTING
-Plan: 5 of 5
+Phase: 19
+Plan: Not started
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -48,7 +48,7 @@ Plan: 5 of 5
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Phase complete — ready for verification
+**Status:** Ready to plan
 
 ## Performance Metrics
 
