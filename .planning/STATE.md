@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: verifying
-stopped_at: Completed 15-04-PLAN.md — portal-prod + portal-dev FAH backends created; awaiting human-verify at Task 3 checkpoint
-last_updated: "2026-05-08T15:36:58.957Z"
+status: executing
+stopped_at: Completed 15-04-PLAN.md — Task 3 human-verify approved; portal-prod + portal-dev FAH backends confirmed. Ready for 15-05.
+last_updated: "2026-05-08T15:50:00.000Z"
 progress:
   total_phases: 19
   completed_phases: 7
   total_plans: 28
-  completed_plans: 27
+  completed_plans: 28
 ---
 
 # Triarch Dev Admin — Project State
@@ -114,7 +114,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T15:36:58.955Z
-Stopped at: Completed 15-04-PLAN.md — portal-prod + portal-dev FAH backends created; awaiting human-verify at Task 3 checkpoint
+Last session: 2026-05-08T15:50:00.000Z
+Stopped at: Completed 15-04-PLAN.md — Task 3 human-verify approved; all 3 tasks done. Ready for 15-05.
 Resume file: None
-Next action: `/gsd:plan-phase 15`
+Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)

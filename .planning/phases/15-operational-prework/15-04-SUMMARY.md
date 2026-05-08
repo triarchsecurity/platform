@@ -59,7 +59,7 @@ completed: 2026-05-08
 - **Duration:** 4 min
 - **Started:** 2026-05-08T15:31:19Z
 - **Completed:** 2026-05-08T15:36:03Z
-- **Tasks:** 2 of 3 (Task 3 is human-verify checkpoint awaiting Mike confirmation)
+- **Tasks:** 3 of 3 (Task 3 human-verify checkpoint approved 2026-05-08)
 - **Files modified:** 0 (pure infrastructure)
 
 ## Accomplishments
@@ -127,6 +127,10 @@ FAH will auto-advance `ownershipState` to `OWNERSHIP_ACTIVE` once the TXT record
 ## Known Stubs
 
 None — plan delivers infrastructure resources, no app code.
+
+## Deviation Note for Phase 16+
+
+DEVIATION — firebase CLI auth expired; used gcloud REST API fallback. Same backend resource shape and Owner-level permissions; equivalent result. **Phase 16+ CLI ops note:** `firebase login:ci` should be re-run before any Phase 16 CLI work to restore interactive firebase CLI auth. REST API fallback remains available as a documented escape hatch for all FAH operations.
 
 ## Self-Check: PASSED
 

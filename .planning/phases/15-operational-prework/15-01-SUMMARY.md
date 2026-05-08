@@ -134,3 +134,10 @@ Phase 15 plan 02 (FAH backends) and Phase 15 plan 05 (OAuth secrets) will requir
 ---
 *Phase: 15-operational-prework*
 *Completed: 2026-05-08*
+
+## Self-Check: PASSED
+
+- FOUND: `.planning/phases/15-operational-prework/15-01-SUMMARY.md`
+- FOUND: `gh repo view MyAlterLego/triarch-portal` → `triarch-portal PRIVATE`
+- FOUND: local clone at `~/claude/triarch/development/portal` tracking `https://github.com/MyAlterLego/triarch-portal.git` on `main`
+- Commit `288e29f` confirmed: `docs(15-01): complete portal repo creation plan`
