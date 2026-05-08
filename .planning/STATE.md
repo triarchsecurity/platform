@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: executing
-stopped_at: Completed 14-02-PLAN.md — FilterChips + WhatsComingCard client islands + ReleasesClient URL-state filter math
-last_updated: "2026-05-08T06:59:48.135Z"
+status: verifying
+stopped_at: Completed 14-03-PLAN.md — BranchPreviewClient split + BranchSection integration + v2.8.0 — v2.1 milestone COMPLETE
+last_updated: "2026-05-08T07:08:20.458Z"
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 23
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Triarch Dev Admin — Project State
@@ -43,7 +43,7 @@ Plan: 3 of 3
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -129,6 +129,8 @@ v2.1 decisions captured at roadmap creation:
 - [Phase 14-customer-page-integration]: URL param uses 'bug' (CUST-02 spec) but internal FilterType uses 'fix' — mapping at URL boundary only in handleFilterChange
 - [Phase 14-customer-page-integration]: router.replace with {scroll:false} not router.push — prevents history stack pollution from chip toggling; quality gate requirement enforced
 - [Phase 14-customer-page-integration]: WhatsComingCard ships with expanded-view placeholder for v2.1 — full WhatChangedEntry[] table deferred to follow-up plan; oneliner + collapse toggle is the must-have
+- [Phase 14]: Back-compat shim retained as default export — BranchPreviewClient still importable; SWR dedup via shared cache key verified by Test 13
+- [Phase 14]: BranchSection header restructured to outer div + toggle button + sibling div — HTML button-in-button invalid; flex layout preserves visual identity
 
 ### Pending Todos
 
@@ -143,7 +145,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-08T06:59:48.133Z
-Stopped at: Completed 14-02-PLAN.md — FilterChips + WhatsComingCard client islands + ReleasesClient URL-state filter math
+Last session: 2026-05-08T07:08:20.456Z
+Stopped at: Completed 14-03-PLAN.md — BranchPreviewClient split + BranchSection integration + v2.8.0 — v2.1 milestone COMPLETE
 Resume file: None
 Next action: `/gsd:plan-phase 8`

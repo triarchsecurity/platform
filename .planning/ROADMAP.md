@@ -44,7 +44,7 @@
 - [x] **Phase 11: Commit Parser and Tracker Linkage Authoring** - `commit-parser.ts`, ingest auto-stamp, manual add/remove UI in release-logs (completed 2026-05-08)
 - [x] **Phase 12: Bug and Feature Detail Pages** - `/admin/modules/bug-reports/[id]`, `/admin/modules/feature-requests/[id]`, "Released in" sidebar section (completed 2026-05-08)
 - [x] **Phase 13: Branch Preview Swap** - `BranchPreviewClient`, `/api/projects/[slug]/branch/preview`, SWR polling, DB lock lifecycle (3 plans, research resolved) (completed 2026-05-08)
-- [ ] **Phase 14: Customer Page Integration** - Entry type filter chips, "What's coming to prod" summary card, branch swap UI in section headers
+- [x] **Phase 14: Customer Page Integration** - Entry type filter chips, "What's coming to prod" summary card, branch swap UI in section headers (completed 2026-05-08)
 
 ## Phase Details
 
@@ -149,7 +149,7 @@
 **Plans**: 3 plans
 - [x] 14-01-PLAN.md — Server-side entry-type counts + WhatsComing summary lib + page.tsx wiring (CUST-01/02, DIFF-02 data layer)
 - [x] 14-02-PLAN.md — FilterChips + WhatsComingCard client islands + ReleasesClient URL-state filter math (CUST-01, CUST-02, DIFF-02)
-- [ ] 14-03-PLAN.md — BranchPreviewClient split (banner singleton + per-section buttons) + BranchSection header integration + human-verify checkpoint + v2.8.0 (CUST-03)
+- [x] 14-03-PLAN.md — BranchPreviewClient split (banner singleton + per-section buttons) + BranchSection header integration + human-verify checkpoint + v2.8.0 (CUST-03)
 
 ## Progress
 
@@ -178,4 +178,4 @@
 | 11. Commit Parser and Tracker Linkage Authoring | v2.1 | 5/5 | Complete    | 2026-05-08 |
 | 12. Bug and Feature Detail Pages | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 13. Branch Preview Swap | v2.1 | 3/3 | Complete    | 2026-05-08 |
-| 14. Customer Page Integration | v2.1 | 2/3 | In Progress|  |
+| 14. Customer Page Integration | v2.1 | 3/3 | Complete   | 2026-05-08 |

@@ -54,7 +54,7 @@
 
 - [x] **CUST-01**: Customer admin can filter `/projects/<slug>/releases` by entry type (chips: Bug fixes / Features / Other) with URL-mirrored state
 - [x] **CUST-02**: Filter chips show counts ("Bug fixes (4)", "Features (2)") and follow the established `SlackAuditClient.tsx` URL-params pattern
-- [ ] **CUST-03**: Branch swap UI from PREV-02 is integrated into branch section headers on the customer release page
+- [x] **CUST-03**: Branch swap UI from PREV-02 is integrated into branch section headers on the customer release page
 
 ---
 
@@ -126,7 +126,7 @@ Populated by `gsd-roadmapper` 2026-05-07.
 | PREV-06 | Phase 13 — Branch Preview Swap | Pending |
 | CUST-01 | Phase 14 — Customer Page Integration | Complete |
 | CUST-02 | Phase 14 — Customer Page Integration | Complete |
-| CUST-03 | Phase 14 — Customer Page Integration | Pending |
+| CUST-03 | Phase 14 — Customer Page Integration | Complete |
 | DIFF-02 | Phase 14 — Customer Page Integration | Complete |
 
 **Coverage:**
