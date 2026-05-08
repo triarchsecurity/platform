@@ -144,9 +144,12 @@ describe('BranchPreviewClient', () => {
     );
 
     // Banner should mention the branch name, the locker email, and a relative time
-    expect(screen.getByText(/feat\/audio currently previewing/i)).toBeInTheDocument();
-    expect(screen.getByText(/mike@x\.com/i)).toBeInTheDocument();
-    expect(screen.getByText(/2 min ago/i)).toBeInTheDocument();
+    // Text is split across child spans, so we check the containing element via getByRole or findByText with custom matcher
+    const bannerEl = screen.getByRole('status');
+    expect(bannerEl.textContent).toMatch(/feat\/audio/i);
+    expect(bannerEl.textContent).toMatch(/currently previewing/i);
+    expect(bannerEl.textContent).toMatch(/mike@x\.com/i);
+    expect(bannerEl.textContent).toMatch(/2 min ago/i);
 
     // ALL Preview buttons must be disabled
     const buttons = screen.getAllByRole('button', { name: /preview this branch/i });
@@ -169,8 +172,10 @@ describe('BranchPreviewClient', () => {
       />,
     );
 
-    expect(screen.getByText(/preview ready/i)).toBeInTheDocument();
-    expect(screen.getByText(/feat\/audio/i)).toBeInTheDocument();
+    const pill = screen.getByText(/preview ready/i).closest('div')!;
+    expect(pill).toBeTruthy();
+    // Pill text should contain branch name
+    expect(pill.textContent).toMatch(/feat\/audio/i);
 
     // Buttons re-enabled (terminal state)
     const buttons = screen.getAllByRole('button', { name: /preview this branch/i });
@@ -315,7 +320,9 @@ describe('BranchPreviewClient', () => {
     );
 
     // Banner still renders (informational for viewer)
-    expect(screen.getByText(/feat\/audio currently previewing/i)).toBeInTheDocument();
+    const bannerEl = screen.getByRole('status');
+    expect(bannerEl.textContent).toMatch(/feat\/audio/i);
+    expect(bannerEl.textContent).toMatch(/currently previewing/i);
     // But NO action buttons
     expect(screen.queryAllByRole('button', { name: /preview this branch/i })).toHaveLength(0);
   });
