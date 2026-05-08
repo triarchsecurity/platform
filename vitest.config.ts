@@ -30,6 +30,7 @@ const packageTestRedirectPlugin = {
       './release-history': path.resolve(__dirname, 'src/lib/release-history.ts'),
       './pipeline-summary': path.resolve(__dirname, 'src/lib/pipeline-summary.ts'),
       './group-sections': path.resolve(__dirname, 'src/app/projects/[slug]/releases/group-sections.ts'),
+      './internal-hmac': path.resolve(__dirname, 'packages/triarch-shared/src/internal-hmac.ts'),
     };
     if (source in shimMap) {
       return shimMap[source];

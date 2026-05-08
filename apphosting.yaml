@@ -86,3 +86,8 @@ env:
   # JSON keyfile for release-promoter@triarch-vault.iam.gserviceaccount.com
   - variable: FAH_PROMOTER_SA_KEY
     secret: FAH_PROMOTER_SA_KEY
+
+  # Internal HMAC dispatch secret (Phase 22 — portal→admin HMAC-signed dispatch)
+  # Shared between admin and portal runtimes via same GCP secret in triarch-vault.
+  - variable: INTERNAL_HMAC_SECRET
+    secret: INTERNAL_HMAC_SECRET

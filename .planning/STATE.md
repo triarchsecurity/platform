@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: planning
-stopped_at: Completed 21-release-page-port-read 21-01-PLAN.md
-last_updated: "2026-05-08T19:45:42.652Z"
+status: executing
+stopped_at: Completed 21-release-page-port-read 21-06-PLAN.md (Phase 21 closed)
+last_updated: "2026-05-08T20:36:51.028Z"
 progress:
   total_phases: 19
   completed_phases: 13
-  total_plans: 49
-  completed_plans: 44
+  total_plans: 54
+  completed_plans: 48
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 20 — url-centralization-admin
+**Current focus:** Phase 22 — release-page-port-write
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
+Phase: 22 (release-page-port-write) — EXECUTING
+Plan: 1 of 5
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -40,7 +40,7 @@ Plan: Not started
 | 18 — Portal Auth Scaffolding | NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff callout | AUTH-01..07 | Not started |
 | 19 — Database Connectivity | Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test | DB-01..04 | Not started |
 | 20 — URL Centralization (admin) | `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters | URL-01..03 | Not started |
-| 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Not started |
+| 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Not started |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Not started |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
@@ -48,7 +48,7 @@ Plan: Not started
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to plan
+**Status:** Executing Phase 22
 
 ## Performance Metrics
 
@@ -131,6 +131,13 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 20-url-centralization-admin]: PORTAL_BASE_URL bound as plain value (not secret) in apphosting.yaml, RUNTIME-only availability
 - [Phase 21-release-page-port-read]: vitest.config.ts shimMap must include every new module added to packages/triarch-shared/src/ for vi.mock interception to work through re-export shim chain
 - [Phase 21-release-page-port-read]: Inline structural types in shared package group-sections.ts (ReleaseRow/ConflictState/BranchSection) — zero admin-relative imports; TypeScript structural typing preserves assignability
+- [Phase 21-02]: Portal types.ts re-exports EntryTypeCounts/WhatsComingSummary from @myalterlego/triarch-shared/release-entry-summary (not @/lib shim); all other leaf UI files copied verbatim
+- [Phase 21-02]: Portal vitest.setup.ts lacked afterEach(cleanup) — added to match admin pattern; required for RTL multi-render correctness in vitest
+- [Phase 21]: ReleasesClient ported as read-only fork: 4 mutation handlers stubbed with TODO Phase 22, handleLoadMore stripped, hasMoreState=false
+- [Phase 21-release-page-port-read]: PORTAL-03: notFound() for non-members (not 403) — project existence stays hidden
+- [Phase 21-release-page-port-read]: projectKeys passed as string[] (not null) to getProjectPipelineSummaries — null is staff all-projects view; portal always scopes to membership
+- [Phase 21-06]: hidden sm:flex established as portal pattern for desktop-only mutation controls — Phase 22 should follow same pattern for new write actions
+- [Phase 21-06]: Vitest server component testing pattern: mock drizzle-orm operators as stubs + mock db builder chain; assert on Next.js navigation hooks (notFound/redirect call count)
 
 ### Pending Todos
 
@@ -148,7 +155,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T19:45:42.650Z
-Stopped at: Completed 21-release-page-port-read 21-01-PLAN.md
+Last session: 2026-05-08T20:08:07Z
+Stopped at: Completed 21-release-page-port-read 21-06-PLAN.md (Phase 21 closed)
 Resume file: None
-Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)
+Next action: Research Phase 22 (Release Page Port — Write) via /gsd:research-phase 22 before planning; HMAC-proxy operational mechanics required

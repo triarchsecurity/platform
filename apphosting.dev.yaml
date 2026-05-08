@@ -18,3 +18,8 @@ env:
 
   - variable: DATABASE_URL
     secret: DATABASE_URL_DEV
+
+  # Internal HMAC dispatch secret (Phase 22 — portal→admin HMAC-signed dispatch)
+  # Dev environment uses the same INTERNAL_HMAC_SECRET from triarch-vault.
+  - variable: INTERNAL_HMAC_SECRET
+    secret: INTERNAL_HMAC_SECRET

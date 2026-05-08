@@ -57,7 +57,7 @@
 - [x] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout (completed 2026-05-08)
 - [x] **Phase 19: Database Connectivity** — Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test (completed 2026-05-08)
 - [x] **Phase 20: URL Centralization (admin)** — `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters BEFORE cutover (completed 2026-05-08)
-- [ ] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths
+- [x] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths (completed 2026-05-08)
 - [ ] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch
 - [ ] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives)
 - [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts`
@@ -264,7 +264,8 @@
   2. Portal `/projects` renders membership-filtered project tile list using `getProjectPipelineSummaries()` from the shared package — non-members of any project see an empty state, not a leak
   3. Authenticated non-member requesting `/projects/<not-mine>/releases` (or any sub-route) receives HTTP 404, not 403 — no membership-existence leak
   4. Portal release list, bug list, feature list, and project list render correctly on mobile viewport (375px width); approve/branch-swap controls remain desktop-optimized
-**Plans**: TBD
+**Plans**: 6 plans completed (21-01 through 21-06) — portal v0.3.0 shipped
+**Status**: Complete (2026-05-08)
 
 ### Phase 22: Release Page Port (Write)
 **Goal**: Customers approve, reject, leave feedback, and trigger branch preview swap from portal end-to-end, with portal owning Slack notification posting and admin retaining GitHub App custody via HMAC-signed dispatch.
@@ -277,7 +278,12 @@
   2. Customer admin clicking "Preview this branch" on portal swaps the FAH dev backend successfully via portal-owned `FAH_PROMOTER_SA_KEY`, with atomic lock acquisition, branch regex guard, 8-min timeout, and branch-guarded auto-clear all preserved from v2.1
   3. Slack notification of customer approval posts via `PORTAL_SLACK_BOT_TOKEN` (portal-owned credential) — admin's GitHub App key is never exposed to portal runtime
   4. Two-step approve UX, conflict badge with hidden approve button, and branch lock disable propagation behave identically to v2.1 admin behavior on the portal surface
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 22-01-PLAN.md — Shared internal-hmac module + admin /api/internal/dispatch endpoint + INTERNAL_HMAC_SECRET secret + admin v2.10.0 (WRITE-04 foundation)
+- [ ] 22-02-PLAN.md — Portal approve/reject/feedback (POST + DELETE) handlers with HMAC dispatch to admin + portal v0.3.1 (WRITE-01, WRITE-04)
+- [ ] 22-03-PLAN.md — Portal branch preview swap (POST + GET status) with portal-owned FAH_PROMOTER_SA_KEY + portal v0.3.2 (WRITE-02, WRITE-03)
+- [ ] 22-04-PLAN.md — Portal Slack notifications (PORTAL_SLACK_BOT_TOKEN) + un-stub ReleasesClient + BranchPreviewClient handlers + portal v0.3.3 (WRITE-04, WRITE-05)
+- [ ] 22-05-PLAN.md — WRITE-05 dedicated tests + mobile viewport + shared@0.3.0 publish + portal v0.4.0 phase close (WRITE-05)
 
 ### Phase 23: Bug + Feature Customer Surface
 **Goal**: Customers view and submit bugs and features on portal — list, detail, and new-submission forms — closing the two primitives that don't yet exist anywhere in the codebase.
@@ -359,7 +365,7 @@
 | 18. Portal Auth Scaffolding | v2.2 | 5/5 | Complete    | 2026-05-08 |
 | 19. Database Connectivity | v2.2 | 2/2 | Complete    | 2026-05-08 |
 | 20. URL Centralization | v2.2 | 2/2 | Complete    | 2026-05-08 |
-| 21. Release Page Port (Read) | v2.2 | 1/6 | In Progress|  |
+| 21. Release Page Port (Read) | v2.2 | 4/6 | Complete    | 2026-05-08 |
 | 22. Release Page Port (Write) | v2.2 | 0/0 | Not started | - |
 | 23. Bug + Feature Customer Surface | v2.2 | 0/0 | Not started | - |
 | 24. CI/CD Deploy Safety | v2.2 | 0/0 | Not started | - |
