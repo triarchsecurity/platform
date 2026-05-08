@@ -22,10 +22,10 @@ Repository, DNS, OAuth, and FAH backend prerequisites that must exist before app
 
 The Drizzle schema + select helpers extracted into a private GitHub Packages npm module that both apps consume.
 
-- [ ] **PKG-01**: `packages/triarch-shared/` directory in admin repo containing schema.ts, auth-context.ts, sanitize-commit.ts, slack-status.ts with publish workflow on tag `shared/v*`
-- [ ] **PKG-02**: `@myalterlego/triarch-shared@0.1.0` published to GitHub Packages and verified installable via `npm install`
+- [x] **PKG-01**: `packages/triarch-shared/` directory in admin repo containing schema.ts, auth-context.ts, sanitize-commit.ts, slack-status.ts with publish workflow on tag `shared/v*`
+- [x] **PKG-02**: `@myalterlego/triarch-shared@0.1.0` published to GitHub Packages and verified installable via `npm install`
 - [ ] **PKG-03**: Admin repo refactored to re-export schema + helpers from `@myalterlego/triarch-shared` (bumps admin to v2.9.0, no functional change, all 324+ tests still GREEN)
-- [ ] **PKG-04**: CI gate prevents merging admin PRs that introduce schema changes without bumping the shared package version
+- [x] **PKG-04**: CI gate prevents merging admin PRs that introduce schema changes without bumping the shared package version
 
 ### Hostname Guard Inventory
 
@@ -172,10 +172,10 @@ Updated by roadmapper during phase mapping.
 | OPS-03 | Phase 15 | Complete |
 | OPS-04 | Phase 15 | Pending |
 | OPS-05 | Phase 15 | Complete |
-| PKG-01 | Phase 16 | Pending |
-| PKG-02 | Phase 16 | Pending |
+| PKG-01 | Phase 16 | Complete |
+| PKG-02 | Phase 16 | Complete |
 | PKG-03 | Phase 16 | Pending |
-| PKG-04 | Phase 16 | Pending |
+| PKG-04 | Phase 16 | Complete |
 | HOST-01 | Phase 17 | Pending |
 | HOST-02 | Phase 17 | Pending |
 | AUTH-01 | Phase 18 | Pending |

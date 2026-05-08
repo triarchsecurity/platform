@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: executing
-stopped_at: Completed 16-02-PLAN.md — both CI workflows added (publish-shared.yml + check-shared-version.yml). Ready for 16-03.
-last_updated: "2026-05-08T16:53:19.065Z"
+stopped_at: Completed 16-01-PLAN.md — scaffold packages/triarch-shared/ skeleton done
+last_updated: "2026-05-08T16:53:30.309Z"
 progress:
   total_phases: 19
   completed_phases: 8
@@ -99,6 +99,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 15-operational-prework]: gitRepositoryLink for triarch-portal created in existing apphosting-github-conn-kh7m03f connection; no new GitHub App install needed
 - [Phase 16-shared-package-extraction]: npm install (not npm ci) in publish workflow — packages/triarch-shared has no committed lockfile yet; switch to npm ci when lockfile is committed
 - [Phase 16-shared-package-extraction]: Drift gate diffs against latest shared/v* tag (not PR base branch) — catches multi-PR accumulation of unbumped changes
+- [Phase 16-shared-package-extraction]: Package targets ES2022+ESNext module (library not Next runtime); peerDeps+devDeps for drizzle-orm/pg; private:false+publishConfig.access:restricted for GitHub Packages
 
 ### Pending Todos
 
@@ -116,7 +117,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T16:53:08.143Z
-Stopped at: Completed 16-02-PLAN.md — both CI workflows added (publish-shared.yml + check-shared-version.yml). Ready for 16-03.
+Last session: 2026-05-08T16:53:30.307Z
+Stopped at: Completed 16-01-PLAN.md — scaffold packages/triarch-shared/ skeleton done
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)
