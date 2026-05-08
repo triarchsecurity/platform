@@ -15,20 +15,20 @@
 - [x] **PIPE-02**: Admin user sees pending-approval count badge per project tile (count of RCs with `status='pending_approval'`)
 - [x] **PIPE-03**: Admin user sees last-deploy timestamp per project per environment ("dev: 12 min ago / prod: 3 days ago")
 - [x] **PIPE-04**: Admin user can click any project tile to navigate directly to `/projects/<slug>/releases`
-- [ ] **PIPE-05**: Staff user can open a per-project pipeline page at `/admin/modules/pipeline/<slug>` showing consolidated env state, branch RC list, deploy history, and embedded what-changed view
+- [x] **PIPE-05**: Staff user can open a per-project pipeline page at `/admin/modules/pipeline/<slug>` showing consolidated env state, branch RC list, deploy history, and embedded what-changed view
 - [x] **PIPE-06**: Admin home tile shows compact one-liner what-changed summary ("4 entries since prod: 2 bug fixes, 1 feature, 1 other")
 
 ### Web-UI Promote (PROM)
 
 - [ ] **PROM-01**: Staff user sees a Promote button next to any approved RC on the per-project pipeline page
 - [ ] **PROM-02**: Promote button uses two-step confirm modal with specific label ("Promote feat/audio v1.4.2 to production")
-- [ ] **PROM-03**: Web Promote dispatches `promote-branch.yml` via the same `dispatchWorkflow` path as the Slack flow; Slack notification posted on every successful dispatch (web or Slack origin)
+- [x] **PROM-03**: Web Promote dispatches `promote-branch.yml` via the same `dispatchWorkflow` path as the Slack flow; Slack notification posted on every successful dispatch (web or Slack origin)
 - [x] **PROM-04**: System prevents double-promote race between web and Slack paths via unique constraint on `release_approvals (release_id, decision='approved')`
 - [ ] **PROM-05**: After Promote click, button shows in-flight state then surfaces result (merged / conflict / ci_failed) inline; on terminal failure, error pill links to the GitHub Actions run
 
 ### What's-Changed Views (DIFF)
 
-- [ ] **DIFF-01**: Admin user sees expanded "What's changed" entry-by-entry view on per-project pipeline page (typed table: Type pill, Title, Author, Date, bug/feature link)
+- [x] **DIFF-01**: Admin user sees expanded "What's changed" entry-by-entry view on per-project pipeline page (typed table: Type pill, Title, Author, Date, bug/feature link)
 - [ ] **DIFF-02**: Customer admin sees "What's coming to prod" summary card at top of `/projects/<slug>/releases` (collapsed by default; counts visible in collapsed state)
 
 ### Tracker ↔ Release Linkage (LINK)
@@ -104,13 +104,13 @@ Populated by `gsd-roadmapper` 2026-05-07.
 | PIPE-03 | Phase 8 — Admin Home Pipeline Visibility | Complete |
 | PIPE-04 | Phase 8 — Admin Home Pipeline Visibility | Complete |
 | PIPE-06 | Phase 8 — Admin Home Pipeline Visibility | Complete |
-| PIPE-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PIPE-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | PROM-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
 | PROM-02 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
-| PROM-03 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-03 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | PROM-04 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | PROM-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
-| DIFF-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| DIFF-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Complete |
 | LINK-01 | Phase 10 — Schema Gate | Pending |
 | PREV-01 | Phase 10 — Schema Gate | Pending |
 | LINK-02 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |

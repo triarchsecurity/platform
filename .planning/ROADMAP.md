@@ -78,7 +78,7 @@
 - [x] 09-01-PLAN.md — Schema migration 0014: actor_source column + partial unique index on release_approvals (PROM-04 schema)
 - [x] 09-02-PLAN.md — promoteAndAudit nullable Slack params + fresh-channel-message fallback (PROM-03)
 - [ ] 09-03-PLAN.md — POST /api/admin/releases/[id]/promote with atomic dispatch race-guard + Slack handler parity (PROM-03/04/05)
-- [ ] 09-04-PLAN.md — getProjectPipelineDetail helper + /admin/modules/pipeline/[slug] server component with what-changed table (PIPE-05, DIFF-01)
+- [x] 09-04-PLAN.md — getProjectPipelineDetail helper + /admin/modules/pipeline/[slug] server component with what-changed table (PIPE-05, DIFF-01)
 - [ ] 09-05-PLAN.md — PromoteButton client island (two-step inline confirm + result pills) + admin home tile retarget + v2.5.0 (PROM-01/02/05)
 
 ### Phase 10: Schema Gate
@@ -159,7 +159,7 @@
 | 7. OttoBot Dispatcher Hardening | v2.0 | 6/6 | Complete | 2026-05-05 |
 | 7.5. Dev Cluster + Admin Dev Backend | v2.0 | 5/5 | Complete | 2026-05-05 |
 | 8. Admin Home Pipeline Visibility | v2.1 | 3/3 | Complete   | 2026-05-08 |
-| 9. Per-Project Pipeline Page and Web-UI Promote | v2.1 | 2/5 | In Progress|  |
+| 9. Per-Project Pipeline Page and Web-UI Promote | v2.1 | 3/5 | In Progress|  |
 | 10. Schema Gate | v2.1 | 0/TBD | Not started | - |
 | 11. Commit Parser and Tracker Linkage Authoring | v2.1 | 0/TBD | Not started | - |
 | 12. Bug and Feature Detail Pages | v2.1 | 0/TBD | Not started | - |
