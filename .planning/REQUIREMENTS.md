@@ -13,7 +13,7 @@ Requirements for the milestone. Each maps to exactly one phase via the Traceabil
 Repository, DNS, OAuth, and FAH backend prerequisites that must exist before app code ships.
 
 - [x] **OPS-01**: New repository `MyAlterLego/triarch-portal` exists with admin-equivalent CI/CD scaffolding (`.github/workflows/ci-cd.yml` calling shared-workflows@v4)
-- [ ] **OPS-02**: Two new Firebase App Hosting backends in project `triarch-dev-website`: `portal-prod` (custom domain `portal.triarch.dev`) and `portal-dev` (auto domain `portal-dev.triarch.dev`)
+- [x] **OPS-02**: Two new Firebase App Hosting backends in project `triarch-dev-website`: `portal-prod` (custom domain `portal.triarch.dev`) and `portal-dev` (auto domain `portal-dev.triarch.dev`)
 - [x] **OPS-03**: GoDaddy DNS records for `portal.triarch.dev` (A/CNAME pointing at FAH backend) verified resolving + 200-OK landing page
 - [ ] **OPS-04**: Google OAuth client `Triarch Dev` updated with second authorized redirect URI `https://portal.triarch.dev/api/auth/callback/google` and localhost dev URI `http://localhost:3002/api/auth/callback/google`
 - [x] **OPS-05**: GCP secrets `PORTAL_NEXTAUTH_SECRET` (random 32-byte) created in `triarch-vault` with secretAccessor binding for both `portal-prod` and `portal-dev` runtime SAs
@@ -168,7 +168,7 @@ Updated by roadmapper during phase mapping.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | OPS-01 | Phase 15 | Complete |
-| OPS-02 | Phase 15 | Pending |
+| OPS-02 | Phase 15 | Complete |
 | OPS-03 | Phase 15 | Complete |
 | OPS-04 | Phase 15 | Pending |
 | OPS-05 | Phase 15 | Complete |

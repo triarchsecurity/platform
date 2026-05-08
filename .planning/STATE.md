@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: Completed 15-02-PLAN.md — portal.triarch.dev DNS A record created and human-verify approved
-last_updated: "2026-05-08T15:29:53.416Z"
+status: verifying
+stopped_at: Completed 15-04-PLAN.md — portal-prod + portal-dev FAH backends created; awaiting human-verify at Task 3 checkpoint
+last_updated: "2026-05-08T15:36:58.957Z"
 progress:
   total_phases: 19
   completed_phases: 7
   total_plans: 28
-  completed_plans: 26
+  completed_plans: 27
 ---
 
 # Triarch Dev Admin — Project State
@@ -48,7 +48,7 @@ Plan: 5 of 5
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -95,6 +95,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 15-operational-prework]: PORTAL_NEXTAUTH_SECRET: distinct from admin NEXTAUTH_SECRET; secretAccessor to FAH compute SA only (mirrors admin pattern)
 - [Phase 15-02]: portal.triarch.dev A record mirrors admin pattern (35.219.200.0, TTL=600) as placeholder until FAH portal-prod publishes its target in Plan 15-04
 - [Phase 15-02]: portal.triarch.dev A record mirrors admin.triarch.dev (35.219.200.0, TTL=600) as placeholder until FAH portal-prod publishes its target in Plan 15-04
+- [Phase 15-operational-prework]: firebase CLI auth expired; used gcloud REST API for all FAH backend operations (Owner-level access, equivalent result)
+- [Phase 15-operational-prework]: gitRepositoryLink for triarch-portal created in existing apphosting-github-conn-kh7m03f connection; no new GitHub App install needed
 
 ### Pending Todos
 
@@ -112,7 +114,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T15:29:53.414Z
-Stopped at: Completed 15-02-PLAN.md — portal.triarch.dev DNS A record created and human-verify approved
+Last session: 2026-05-08T15:36:58.955Z
+Stopped at: Completed 15-04-PLAN.md — portal-prod + portal-dev FAH backends created; awaiting human-verify at Task 3 checkpoint
 Resume file: None
 Next action: `/gsd:plan-phase 15`
