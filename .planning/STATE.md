@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: Completed 16-03-PLAN.md — source extraction to triarch-shared package done, 324 tests GREEN, next build clean
-last_updated: "2026-05-08T17:08:58.261Z"
+status: verifying
+stopped_at: Completed 16-04-PLAN.md — shared/v0.1.0 tagged and published to GitHub Packages; Phase 16 complete
+last_updated: "2026-05-08T17:15:47.448Z"
 progress:
   total_phases: 19
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 32
-  completed_plans: 31
+  completed_plans: 32
 ---
 
 # Triarch Dev Admin — Project State
@@ -48,7 +48,7 @@ Plan: 4 of 4
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 
 ## Performance Metrics
 
@@ -102,6 +102,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 16-shared-package-extraction]: Package targets ES2022+ESNext module (library not Next runtime); peerDeps+devDeps for drizzle-orm/pg; private:false+publishConfig.access:restricted for GitHub Packages
 - [Phase 16]: vitest plugin (resolveId, enforce:pre) to redirect package dist imports through admin shims so vi.mock patches work for package-internal db access
 - [Phase 16]: file: dep for @myalterlego/triarch-shared until 16-04 publishes 0.1.0 to GitHub Packages
+- [Phase 16-shared-package-extraction]: Workflow conclusion:failure was cosmetic-only (Summary step quoting bug); npm publish succeeded; fix committed in 164a7cd
+- [Phase 16-shared-package-extraction]: Package ESM dist targets bundler consumers (Next.js transpilePackages); bare Node.js require of cross-subpath imports is not a supported consumption pattern
 
 ### Pending Todos
 
@@ -119,7 +121,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T17:08:58.259Z
-Stopped at: Completed 16-03-PLAN.md — source extraction to triarch-shared package done, 324 tests GREEN, next build clean
+Last session: 2026-05-08T17:15:47.446Z
+Stopped at: Completed 16-04-PLAN.md — shared/v0.1.0 tagged and published to GitHub Packages; Phase 16 complete
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)

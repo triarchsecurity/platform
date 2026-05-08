@@ -52,7 +52,7 @@
 ### v2.2 Customer Portal Split (Phases 15–26) — ACTIVE
 
 - [x] **Phase 15: Operational Prework** — Repo, FAH backends, DNS, OAuth, secrets exist before app code ships (completed 2026-05-08)
-- [ ] **Phase 16: Shared Package Extraction** — `@myalterlego/triarch-shared@0.1.0` published; admin re-exports; CI gate prevents schema drift
+- [x] **Phase 16: Shared Package Extraction** — `@myalterlego/triarch-shared@0.1.0` published; admin re-exports; CI gate prevents schema drift (completed 2026-05-08)
 - [ ] **Phase 17: Hostname Guard Inventory** — Catalog admin's hostname checks; fail-closed middleware before second valid host appears
 - [ ] **Phase 18: Portal Auth Scaffolding** — NextAuth v4 with `__Host-` cookies, distinct secret, customer-membership signIn, staff "Switch to admin" callout
 - [ ] **Phase 19: Database Connectivity** — Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test
@@ -200,7 +200,7 @@
 - [x] 16-01-PLAN.md — Scaffold packages/triarch-shared/ skeleton (package.json with subpath exports, tsconfig.json, .gitignore, README.md, src/index.ts stub) — PKG-01 partial
 - [x] 16-02-PLAN.md — Add publish-shared.yml (tag-driven npm publish) + check-shared-version.yml (PR gate against version drift) workflows — PKG-02 infra + PKG-04
 - [x] 16-03-PLAN.md — MOVE schema + 4 helpers + db.ts into packages/triarch-shared/src/; admin source becomes 1-line re-export shims; bump 2.8.1 → 2.9.0; vitest + next build GREEN — PKG-01 + PKG-03
-- [ ] 16-04-PLAN.md — Tag shared/v0.1.0, push, watch publish workflow, verify package installable from GitHub Packages — PKG-02
+- [x] 16-04-PLAN.md — Tag shared/v0.1.0, push, watch publish workflow, verify package installable from GitHub Packages — PKG-02
 
 ### Phase 17: Hostname Guard Inventory
 **Goal**: Audit every host-check in admin and harden the v2.1 hostname-aware routing so cutover has a known cleanup target and admin fails closed for unknown hosts.
@@ -343,7 +343,7 @@
 | 13. Branch Preview Swap | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 14. Customer Page Integration | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 15. Operational Prework | v2.2 | 5/5 | Complete    | 2026-05-08 |
-| 16. Shared Package Extraction | v2.2 | 3/4 | In Progress|  |
+| 16. Shared Package Extraction | v2.2 | 4/4 | Complete   | 2026-05-08 |
 | 17. Hostname Guard Inventory | v2.2 | 0/0 | Not started | - |
 | 18. Portal Auth Scaffolding | v2.2 | 0/0 | Not started | - |
 | 19. Database Connectivity | v2.2 | 0/0 | Not started | - |
