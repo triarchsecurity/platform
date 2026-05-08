@@ -239,7 +239,9 @@
   2. CRDB role `portal_runtime` exists with SELECT/INSERT/UPDATE/DELETE on v2.2 tables and zero DDL grants; portal connects with this role
   3. Portal `package.json` contains no `db:push` or `db:generate` script — `grep -r "db:push" portal/package.json` returns no matches
   4. From portal runtime, executing `ALTER TABLE projects ADD COLUMN test text` returns CockroachDB permission denied (DB-04 smoke test)
-**Plans**: TBD
+**Plans**: 2 plans
+- [x] 19-01-PLAN.md — Provision CRDB portal_runtime role (DML-only) + GCP secret DATABASE_URL_PORTAL + secretAccessor IAM (DB-02, DB-04)
+- [ ] 19-02-PLAN.md — Portal src/lib/db.ts re-export + db.test.ts smoke test + apphosting.yaml DATABASE_URL_PORTAL bind + portal v0.2.1 (DB-01, DB-03)
 
 ### Phase 20: URL Centralization (admin)
 **Goal**: Admin emits all customer-facing URLs through a single helper before portal ships, so the cutover redirect doesn't strand bookmarks in Slack messages or release notes.
@@ -353,7 +355,7 @@
 | 16. Shared Package Extraction | v2.2 | 4/4 | Complete    | 2026-05-08 |
 | 17. Hostname Guard Inventory | v2.2 | 2/2 | Complete    | 2026-05-08 |
 | 18. Portal Auth Scaffolding | v2.2 | 5/5 | Complete    | 2026-05-08 |
-| 19. Database Connectivity | v2.2 | 0/0 | Not started | - |
+| 19. Database Connectivity | v2.2 | 1/2 | In Progress|  |
 | 20. URL Centralization | v2.2 | 0/0 | Not started | - |
 | 21. Release Page Port (Read) | v2.2 | 0/0 | Not started | - |
 | 22. Release Page Port (Write) | v2.2 | 0/0 | Not started | - |

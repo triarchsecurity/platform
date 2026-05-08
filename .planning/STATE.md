@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: planning
-stopped_at: "Completed 18-05-PLAN.md — Vitest guards: cookies shape, no-.sub grep, signIn unit tests; portal v0.2.0 merged to main (c6f7b96)"
-last_updated: "2026-05-08T18:29:39.473Z"
+status: executing
+stopped_at: Completed 19-01-PLAN.md — portal_runtime CRDB role + DATABASE_URL_PORTAL GCP secret; DB-02 + DB-04 satisfied
+last_updated: "2026-05-08T18:51:32.918Z"
 progress:
   total_phases: 19
   completed_phases: 11
-  total_plans: 39
-  completed_plans: 39
+  total_plans: 41
+  completed_plans: 40
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 18 — portal-auth-scaffolding
+**Current focus:** Phase 19 — database-connectivity
 
 ## Current Position
 
-Phase: 19
-Plan: Not started
+Phase: 19 (database-connectivity) — EXECUTING
+Plan: 2 of 2
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -48,7 +48,7 @@ Plan: Not started
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -120,6 +120,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 18-portal-auth-scaffolding]: /projects/[slug]/releases intentionally absent — Phase 21 ships it; 1-membership users see 404 confirming routing fired
 - [Phase 18-portal-auth-scaffolding]: Source-text assertions (readFileSync) used for __Host- prefix test — more stable than dynamic import + ENV patch in Vitest jsdom
 - [Phase 18-portal-auth-scaffolding]: no-sub-claim.test.ts filters JSDoc comment lines to prevent false positives from auth.ts documentation
+- [Phase 19-database-connectivity]: portal_runtime provisioned on prod cluster (triarchdev-24092/triarch_dev) — admin's DATABASE_URL points to prod; portal shares same cluster
+- [Phase 19-database-connectivity]: DATABASE_URL_PORTAL in triarch-vault (mirrors PORTAL_NEXTAUTH_SECRET pattern); secretAccessor to firebase-app-hosting-compute SA + secretVersionManager to FAH service agent
 
 ### Pending Todos
 
@@ -137,7 +139,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T18:25:32.202Z
-Stopped at: Completed 18-05-PLAN.md — Vitest guards: cookies shape, no-.sub grep, signIn unit tests; portal v0.2.0 merged to main (c6f7b96)
+Last session: 2026-05-08T18:51:32.916Z
+Stopped at: Completed 19-01-PLAN.md — portal_runtime CRDB role + DATABASE_URL_PORTAL GCP secret; DB-02 + DB-04 satisfied
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)
