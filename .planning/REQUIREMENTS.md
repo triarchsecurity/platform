@@ -39,7 +39,7 @@ Catalog and harden the v2.1 hostname-aware routing before introducing a second v
 NextAuth v4 setup with brand isolation, customer-only authorization, and staff "switch to admin" callout.
 
 - [x] **AUTH-01**: Portal NextAuth v4 config with `__Host-` cookie prefix in production, NO `domain` attribute set (host-only scope)
-- [ ] **AUTH-02**: Portal uses `PORTAL_NEXTAUTH_SECRET` (distinct from admin's `NEXTAUTH_SECRET`) so JWTs cannot be cross-replayed
+- [x] **AUTH-02**: Portal uses `PORTAL_NEXTAUTH_SECRET` (distinct from admin's `NEXTAUTH_SECRET`) so JWTs cannot be cross-replayed
 - [ ] **AUTH-03**: Portal `signIn` callback enforces customer-membership rule — rejects users with no `project_members` row; staff users are allowed in but flagged for the callout in AUTH-04
 - [ ] **AUTH-04**: Authenticated staff users see a persistent "Switch to admin.triarch.dev" callout banner; viewer/admin customer users do not see it
 - [ ] **AUTH-05**: Vitest assertion that the portal `Set-Cookie` header for the session token contains `__Host-` prefix and lacks any `Domain=` attribute
@@ -179,7 +179,7 @@ Updated by roadmapper during phase mapping.
 | HOST-01 | Phase 17 | Complete |
 | HOST-02 | Phase 17 | Complete |
 | AUTH-01 | Phase 18 | Complete |
-| AUTH-02 | Phase 18 | Pending |
+| AUTH-02 | Phase 18 | Complete |
 | AUTH-03 | Phase 18 | Pending |
 | AUTH-04 | Phase 18 | Pending |
 | AUTH-05 | Phase 18 | Pending |

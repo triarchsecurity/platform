@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: executing
-stopped_at: Completed 18-01-PLAN.md — portal scaffold committed fcd6b2b, merged to main cd2f550, CI run 25571081224 queued
-last_updated: "2026-05-08T17:59:44.676Z"
+stopped_at: "Completed 18-02-PLAN.md — NextAuth core wired in portal (PR #2 merged a184e21)"
+last_updated: "2026-05-08T18:14:02.702Z"
 progress:
   total_phases: 19
   completed_phases: 10
   total_plans: 39
-  completed_plans: 35
+  completed_plans: 36
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 ## Current Position
 
 Phase: 18 (portal-auth-scaffolding) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -112,6 +112,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 18]: feat/portal-scaffold branch + squash-merge PR strategy to land first commit on main (satisfies workspace no-direct-to-main rule)
 - [Phase 18]: passWithNoTests: true in vitest.config.ts so zero-test portal scaffold exits 0
 - [Phase 18]: Portal vitest.config.ts omits packageTestRedirectPlugin — uses published triarch-shared from GitHub Packages, not file: dep
+- [Phase 18-portal-auth-scaffolding]: signIn callback STUBbed as Boolean(email) — full membership enforcement deferred to 18-03 by plan design
+- [Phase 18-portal-auth-scaffolding]: __Host- cookie prefix in production with NO domain attribute (host-only, Pitfall 1 guard) — AUTH-01 satisfied in code, live OAuth verification gated on OPS-04
 
 ### Pending Todos
 
@@ -129,7 +131,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T17:59:44.674Z
-Stopped at: Completed 18-01-PLAN.md — portal scaffold committed fcd6b2b, merged to main cd2f550, CI run 25571081224 queued
+Last session: 2026-05-08T18:14:02.700Z
+Stopped at: Completed 18-02-PLAN.md — NextAuth core wired in portal (PR #2 merged a184e21)
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)
