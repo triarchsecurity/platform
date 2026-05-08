@@ -95,17 +95,47 @@
 
 ## Traceability
 
-Empty initially — populated by `gsd-roadmapper` during ROADMAP creation.
+Populated by `gsd-roadmapper` 2026-05-07.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (to be populated) | | |
+| PIPE-01 | Phase 8 — Admin Home Pipeline Visibility | Pending |
+| PIPE-02 | Phase 8 — Admin Home Pipeline Visibility | Pending |
+| PIPE-03 | Phase 8 — Admin Home Pipeline Visibility | Pending |
+| PIPE-04 | Phase 8 — Admin Home Pipeline Visibility | Pending |
+| PIPE-06 | Phase 8 — Admin Home Pipeline Visibility | Pending |
+| PIPE-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-02 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-03 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-04 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| PROM-05 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| DIFF-01 | Phase 9 — Per-Project Pipeline Page and Web-UI Promote | Pending |
+| LINK-01 | Phase 10 — Schema Gate | Pending |
+| PREV-01 | Phase 10 — Schema Gate | Pending |
+| LINK-02 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
+| LINK-03 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
+| LINK-04 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
+| LINK-07 | Phase 11 — Commit Parser and Tracker Linkage Authoring | Pending |
+| LINK-05 | Phase 12 — Bug and Feature Detail Pages | Pending |
+| LINK-06 | Phase 12 — Bug and Feature Detail Pages | Pending |
+| PREV-02 | Phase 13 — Branch Preview Swap | Pending |
+| PREV-03 | Phase 13 — Branch Preview Swap | Pending |
+| PREV-04 | Phase 13 — Branch Preview Swap | Pending |
+| PREV-05 | Phase 13 — Branch Preview Swap | Pending |
+| PREV-06 | Phase 13 — Branch Preview Swap | Pending |
+| CUST-01 | Phase 14 — Customer Page Integration | Pending |
+| CUST-02 | Phase 14 — Customer Page Integration | Pending |
+| CUST-03 | Phase 14 — Customer Page Integration | Pending |
+| DIFF-02 | Phase 14 — Customer Page Integration | Pending |
 
 **Coverage:**
-- v2.1 requirements: 27 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 27
+- v2.1 requirements: 29 total (enumerated: PIPE×6, PROM×5, DIFF×2, LINK×7, PREV×6, CUST×3)
+- Note: REQUIREMENTS.md header originally stated 27; enumeration yields 29. All 29 are mapped.
+- Mapped to phases: 29/29
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-07*
-*Last updated: 2026-05-07 — initial definition for v2.1*
+*Traceability populated: 2026-05-07 — v2.1 roadmap created (gsd-roadmapper)*
+*Last updated: 2026-05-07 — traceability section completed*
