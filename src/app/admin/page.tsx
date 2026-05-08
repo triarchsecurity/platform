@@ -17,14 +17,23 @@ import {
   Columns3,
 } from 'lucide-react';
 import Link from 'next/link';
+import { getProjectPipelineSummaries, type PipelineSummary } from '@/lib/pipeline-summary';
 
 interface ProjectHealth {
   key: string;
   name: string;
-  version: string | null;
+  version: string | null;          // legacy currentVersion column — kept per CONTEXT.md specifics
   openBugs: number;
   pendingFeatures: number;
   status: string;
+  // ── Phase 8 v2.1 additions ──
+  prodVersion: string | null;
+  prodDeployedAt: string | null;
+  devVersion: string | null;
+  devDeployedAt: string | null;
+  pendingApprovalCount: number;
+  pipelineState: 'parity' | 'dev-ahead' | 'inverted';
+  whatChangedOneliner: string | null;
 }
 
 async function getDashboardStats(projectKeys: string[] | null) {
@@ -54,6 +63,7 @@ async function getDashboardStats(projectKeys: string[] | null) {
     projectList,
     bugsByProject,
     featuresByProject,
+    pipelineSummaries,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(projects).where(projectFilter),
     db.select({ count: sql<number>`count(*)` }).from(releaseLogs).where(releasesFilter),
@@ -69,19 +79,35 @@ async function getDashboardStats(projectKeys: string[] | null) {
     db.select({ project: featureRequests.project, count: sql<number>`count(*)` }).from(featureRequests)
       .where(featuresFilter ? and(featuresFilter, pendingFeaturesCondition) : pendingFeaturesCondition)
       .groupBy(featureRequests.project),
+    getProjectPipelineSummaries(projectKeys),
   ]);
 
   const bugMap = Object.fromEntries(bugsByProject.map(r => [r.project, Number(r.count)]));
   const featMap = Object.fromEntries(featuresByProject.map(r => [r.project, Number(r.count)]));
 
-  const projectHealth: ProjectHealth[] = projectList.map(p => ({
-    key: p.key,
-    name: p.name,
-    version: p.currentVersion,
-    openBugs: bugMap[p.key] || 0,
-    pendingFeatures: featMap[p.key] || 0,
-    status: p.status,
-  }));
+  const pipelineMap = Object.fromEntries(
+    pipelineSummaries.map((s: PipelineSummary) => [s.projectKey, s]),
+  );
+
+  const projectHealth: ProjectHealth[] = projectList.map(p => {
+    const pipeline = pipelineMap[p.key];
+    return {
+      key: p.key,
+      name: p.name,
+      version: p.currentVersion,
+      openBugs: bugMap[p.key] || 0,
+      pendingFeatures: featMap[p.key] || 0,
+      status: p.status,
+      // ── Phase 8 ──
+      prodVersion: pipeline?.prodVersion ?? null,
+      prodDeployedAt: pipeline?.prodDeployedAt ?? null,
+      devVersion: pipeline?.devVersion ?? null,
+      devDeployedAt: pipeline?.devDeployedAt ?? null,
+      pendingApprovalCount: pipeline?.pendingApprovalCount ?? 0,
+      pipelineState: pipeline?.pipelineState ?? 'parity',
+      whatChangedOneliner: pipeline?.whatChangedOneliner ?? null,
+    };
+  });
 
   return {
     projects: Number(projectCount[0].count),
