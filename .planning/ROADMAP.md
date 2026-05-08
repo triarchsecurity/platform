@@ -174,5 +174,5 @@
 | 10. Schema Gate | v2.1 | 1/1 | Complete    | 2026-05-08 |
 | 11. Commit Parser and Tracker Linkage Authoring | v2.1 | 5/5 | Complete    | 2026-05-08 |
 | 12. Bug and Feature Detail Pages | v2.1 | 3/3 | Complete    | 2026-05-08 |
-| 13. Branch Preview Swap | v2.1 | 3/3 | Complete   | 2026-05-08 |
+| 13. Branch Preview Swap | v2.1 | 3/3 | Complete    | 2026-05-08 |
 | 14. Customer Page Integration | v2.1 | 0/TBD | Not started | - |

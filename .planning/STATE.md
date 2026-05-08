@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: executing
+status: planning
 stopped_at: Completed 13-03-PLAN.md — BranchPreviewClient + ReleasesClient integration + v2.7.0
-last_updated: "2026-05-08T06:31:26.552Z"
+last_updated: "2026-05-08T06:35:51.430Z"
 progress:
   total_phases: 7
   completed_phases: 6
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 ## Current Position
 
-Phase: 13 (Branch Preview Swap) — EXECUTING
-Plan: 3 of 3
+Phase: 14
+Plan: Not started
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -43,7 +43,7 @@ Plan: 3 of 3
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Ready to execute
+**Status:** Ready to plan
 
 ## Performance Metrics
 
