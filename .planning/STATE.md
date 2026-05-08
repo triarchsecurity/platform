@@ -1,37 +1,39 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Multi-Branch RC + Central Vault + OttoBot Brain
+milestone: v2.1
+milestone_name: Pipeline UI
 status: planning
-stopped_at: Completed 07.5-05-PLAN.md — Phase 4 UAT closure runbook + HUMAN-UAT mirror (ENV-05)
-last_updated: "2026-05-05T19:43:07.861Z"
+stopped_at: Defining requirements
+last_updated: "2026-05-07T00:00:00.000Z"
 progress:
-  total_phases: 9
-  completed_phases: 7
-  total_plans: 37
-  completed_plans: 36
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Triarch Dev Admin — Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (last updated 2026-05-04 — v2.0 milestone started)
+See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 07.5 — Dev Cluster + Admin Dev Backend
+**Current focus:** v2.1 — Pipeline UI (defining requirements)
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-07 — Milestone v2.1 started
 
-## Active Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
+## Active Milestone: v2.1 — Pipeline UI
 
-**Goal:** Three intertwined initiatives — multi-branch parallel RCs with auto-rebase-and-merge promotion, central credential vault on GCP Secret Manager, OttoBot dispatcher hardening with expanded Slack scopes.
-**Phases:** 8 (reset to Phase 1 for v2.0)
-**Requirements:** 31 mapped (VAULT ×7, SCHEMA ×3, WORKFLOW ×5, RC ×8, OTTOBOT ×6, PILOT ×2)
-**Status:** Ready to plan
+**Goal:** Make the dev→prod CI/CD pipeline that v2.0 built legible and operable from the admin/customer web surfaces — per-project prod-vs-dev at a glance, on-demand branch previews, web-UI promotion, bidirectional bug/feature ↔ release linkage with filterable views, and what-changed views surfaced on both admin and customer pages.
+**Phases:** TBD (roadmap not yet created)
+**Requirements:** TBD (defining now)
+**Status:** Defining requirements
 
 ## Performance Metrics
 

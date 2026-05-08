@@ -28,30 +28,33 @@ Already operational at v1.14.6: foundation, DB-backed staff/membership roles, pr
 - Headline: customer-gated parallel release candidates with auto-rebase-and-merge promotion, unified credential storage, and OttoBot as the canonical Slack control plane.
 - Phases 01, 02, 03, 04, 05, 06, 07, 7.5 (code) complete — Phase 8 (Truth+Treason pilot) gated on Mike completing the 7.5 runbook.
 
-## Current Milestone: v2.0 — Multi-Branch RC + Central Vault + OttoBot Brain
+## Current Milestone: v2.1 — Pipeline UI
 
-**Goal:** Three architectural initiatives that unblock the deferred v1.14 cross-repo work and add the parallel-RC pattern for customer-driven release management:
-1. Multi-branch parallel RCs — customer reviews each feature branch independently, approval triggers auto-rebase-and-merge so prior work isn't reverted
-2. Central credential vault (GCP Secret Manager) — single source of truth for shared creds (Slack, GitHub Apps), end the OttoBot-token-in-2-places drift
-3. OttoBot dispatcher hardening — finish the shared-workflows changes v1.14 deferred (deploy-prod.yml, ci-cd notify steps), expand OttoBot scopes (slash commands, app mentions), add audit table for Slack actions
+**Goal:** Make the dev→prod CI/CD pipeline that v2.0 built **legible and operable from the admin/customer web surfaces**. Today the cluster, dev backends, customer release-gating page, GitHub App, OttoBot dispatcher, and promote-branch workflow all work — but the visualization and control loop runs through Slack and tribal knowledge. v2.1 closes that loop: per-project prod-vs-dev at a glance, on-demand branch previews customers can drive themselves, web-UI promotion (Slack alongside, not replaced), bidirectional bug/feature ↔ release linkage with filterable views, and "what's changed between dev and prod" surfaced on both admin and customer pages.
 
 **Target features:**
-- `release_logs.branch` column + branch-keyed RC tracking
-- Branch preview deploys via FAH `--git-branch <branch>`
-- Customer page groups RCs by branch with per-RC Approve buttons
-- New `promote-branch.yml` workflow: rebase → CI → merge → conflict-detect
-- Slack conflict notification path
-- `triarch-vault` GCP project as canonical Secret Manager
-- `@myalterlego/secrets` npm package wrapping GCP Secret Manager
-- `slack_action_audit` table for OttoBot click compliance trail
-- Slack slash commands (`/triarch deploy ...`) + app mentions (`@OttoBot status ...`)
-- Truth+Treason E2E pilot of multi-branch flow with parallel font + audio RCs
+- Admin home: per-project prod/dev versions side-by-side, pending-approval count, last-deploy timestamp, link straight to release page
+- Per-project admin pipeline page (consolidated view: env state, branch RCs, deploy history)
+- Customer release page: branch selector — customer admin clicks "Preview this branch" on any RC to swap dev backend's deploy
+- Branch swap concurrency: while one swap is in flight, other RCs disabled with "branch X currently previewing"
+- Web-UI **Promote to prod** button on approved RCs (admin role); calls same `dispatchWorkflow` as Slack — both paths post Slack notifications
+- Bug/feature ↔ release linkage: release entries link to bug/feature IDs (clickable); bug/feature detail pages show "Released in vX.Y dev / vA.B prod"
+- Auto-detect bug/feature IDs from commit messages (parses `#BUG-123`, `closes FEAT-45`, `fixes #99`); authoring UI shows detected IDs with manual add/remove
+- Customer page filterable by entry type: bug fixes, feature releases, other
+- "What's changed between dev and prod" view: compact on admin pipeline-at-a-glance + expanded on per-project page + summary section atop customer release page
+- Discoverability fixes: every admin project tile links to `/projects/<slug>/releases`; hosted dev URLs surfaced from the customer page
+
+**v2.0 status:** Multi-Branch RC + Central Vault + OttoBot Brain. Phase 7.5 (dev cluster + 5 dev backends + admin overlay architecture + Slack scope upgrade + Phase 7 schema migrations + hostname routing + custom-domain DNS for triarch.dev apex / tmiengine.com tmi-dev / triarch.dev darksouls-dev) shipped 2026-05-06. Phase 8 (Truth+Treason pilot of multi-branch flow) deferred — folded into v2.1 since the parallel-RC UX it would have validated is what v2.1 actually builds.
 
 ## Requirements
 
-### v2.0 (Active)
+### v2.1 (Active)
 
-To be defined via `/gsd:new-milestone` — see source draft at `.planning/v1.15-MILESTONE-DRAFT.md`.
+See `REQUIREMENTS.md` — defined 2026-05-07.
+
+### v2.0 (Shipped 2026-05-06, pending milestone-close audit)
+
+Multi-Branch RC + Central Vault + OttoBot Brain. 8 phases (01–07.5). See MILESTONES.md once `/gsd:complete-milestone` runs.
 
 ### Already Shipped (v1.14.6 → v1.13.1)
 
@@ -121,5 +124,22 @@ These are characteristics of the existing codebase that this milestone respects 
 - **Shell**: AdminSidebar + admin layout, dark theme, golden accent (post-v1.7.0 rebrand)
 - **URL pattern**: existing admin pages live under `/admin/*`; gating UI introduces customer-facing `/projects/{slug}/*`
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-05-05 — Phase 7.5 (Dev Cluster) code complete, HUMAN runbook pending*
+*Last updated: 2026-05-07 — v2.1 (Pipeline UI) milestone started*
