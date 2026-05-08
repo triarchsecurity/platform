@@ -74,7 +74,12 @@
   4. After confirming, the button shows an in-flight spinner; on success the row reflects the dispatch; on failure an error pill appears linking to the GitHub Actions run
   5. Simultaneously clicking web Promote and the Slack OttoBot approve button for the same RC results in exactly one GitHub Actions dispatch and one Slack notification — not two
   6. An expanded "What's changed" table on the pipeline page shows each unreleased dev entry with Type pill, title, branch, author, and date; entries with bug/feature links are clickable
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 09-01-PLAN.md — Schema migration 0014: actor_source column + partial unique index on release_approvals (PROM-04 schema)
+- [ ] 09-02-PLAN.md — promoteAndAudit nullable Slack params + fresh-channel-message fallback (PROM-03)
+- [ ] 09-03-PLAN.md — POST /api/admin/releases/[id]/promote with atomic dispatch race-guard + Slack handler parity (PROM-03/04/05)
+- [ ] 09-04-PLAN.md — getProjectPipelineDetail helper + /admin/modules/pipeline/[slug] server component with what-changed table (PIPE-05, DIFF-01)
+- [ ] 09-05-PLAN.md — PromoteButton client island (two-step inline confirm + result pills) + admin home tile retarget + v2.5.0 (PROM-01/02/05)
 
 ### Phase 10: Schema Gate
 **Goal**: All schema changes required by Phases 11–13 land in one isolated migration — `release_log_links` join table and branch-preview lock columns — leaving downstream phases free to build without migration risk
@@ -154,7 +159,7 @@
 | 7. OttoBot Dispatcher Hardening | v2.0 | 6/6 | Complete | 2026-05-05 |
 | 7.5. Dev Cluster + Admin Dev Backend | v2.0 | 5/5 | Complete | 2026-05-05 |
 | 8. Admin Home Pipeline Visibility | v2.1 | 3/3 | Complete   | 2026-05-08 |
-| 9. Per-Project Pipeline Page and Web-UI Promote | v2.1 | 0/TBD | Not started | - |
+| 9. Per-Project Pipeline Page and Web-UI Promote | v2.1 | 1/5 | In Progress|  |
 | 10. Schema Gate | v2.1 | 0/TBD | Not started | - |
 | 11. Commit Parser and Tracker Linkage Authoring | v2.1 | 0/TBD | Not started | - |
 | 12. Bug and Feature Detail Pages | v2.1 | 0/TBD | Not started | - |

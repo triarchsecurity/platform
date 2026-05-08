@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: planning
-stopped_at: Completed 08-03-PLAN.md — pipeline-aware admin home tiles with prod/dev rows, amber pill, and what-changed one-liner; version 2.4.0
-last_updated: "2026-05-08T02:54:16.528Z"
+status: executing
+stopped_at: Completed 09-01-PLAN.md — actor_source column + partial unique index on release_approvals; migration 0014 ready for deploy
+last_updated: "2026-05-08T03:43:21.194Z"
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 8
+  completed_plans: 4
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 08 — Admin Home Pipeline Visibility
+**Current focus:** Phase 09 — Per-Project Pipeline Page and Web-UI Promote
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
+Phase: 09 (Per-Project Pipeline Page and Web-UI Promote) — EXECUTING
+Plan: 2 of 5
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -43,7 +43,7 @@ Plan: Not started
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -84,6 +84,9 @@ v2.1 decisions captured at roadmap creation:
 - [Phase 08]: formatRelativeTime reused from @/app/projects/[slug]/releases/format — no new utility file needed
 - [Phase 08]: Legacy ProjectHealth.version field kept on interface per CONTEXT.md — not rendered on tile but preserved for other potential consumers
 - [Phase 08]: Pipeline tile hover border zinc-800 to zinc-600 (two-step lift) — one-step zinc-707 too subtle on dark background
+- [Phase 09]: actor_source is nullable — legacy rows have NULL; web path sets 'web', Slack path sets 'slack'
+- [Phase 09]: Partial unique index on (release_id) WHERE decision='approved' enforces one-approved-per-release at DB level (PROM-04)
+- [Phase 09]: Migration rename pattern: drizzle-kit generate → rename SQL file → update journal tag → drizzle-kit check
 
 ### Pending Todos
 
@@ -98,7 +101,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-08T02:49:59.297Z
-Stopped at: Completed 08-03-PLAN.md — pipeline-aware admin home tiles with prod/dev rows, amber pill, and what-changed one-liner; version 2.4.0
+Last session: 2026-05-08T03:43:21.192Z
+Stopped at: Completed 09-01-PLAN.md — actor_source column + partial unique index on release_approvals; migration 0014 ready for deploy
 Resume file: None
 Next action: `/gsd:plan-phase 8`
