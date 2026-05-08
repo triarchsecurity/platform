@@ -46,6 +46,8 @@ Already operational at v1.14.6: foundation, DB-backed staff/membership roles, pr
 
 **v2.0 status:** Multi-Branch RC + Central Vault + OttoBot Brain. Phase 7.5 (dev cluster + 5 dev backends + admin overlay architecture + Slack scope upgrade + Phase 7 schema migrations + hostname routing + custom-domain DNS for triarch.dev apex / tmiengine.com tmi-dev / triarch.dev darksouls-dev) shipped 2026-05-06. Phase 8 (Truth+Treason pilot of multi-branch flow) deferred — folded into v2.1 since the parallel-RC UX it would have validated is what v2.1 actually builds.
 
+**v2.1 Phase 8 (Admin Home Pipeline Visibility) shipped 2026-05-08:** `/admin` Project Health tile redesigned end-to-end. New `src/lib/pipeline-summary.ts` exports `getProjectPipelineSummaries()` — DISTINCT ON query with composite index `release_logs_project_env_deployed_idx` (Pitfall 8 guard, migration 0013), COALESCE(deployed_at, released_at) ordering, null-env exclusion, JS-side what-changed bucketing. Tile is now a Next.js Link to `/projects/<slug>/releases` with stacked prod/dev rows (mono version + relative timestamps), top-right amber pending-approval pill (absent when 0), and a what-changed one-liner ("4 entries since prod: 2 fixes, 1 feature, 1 other") that hides on parity and shows "dev behind prod" on inversion. Existing bug count, feature count, and status pill all preserved. 10-test Vitest TDD suite for pipeline-summary covers parity / dev-ahead / inversion / null-env / what-changed bucketing. 136/136 tests GREEN. `next build` passes. Version 2.4.0.
+
 ## Requirements
 
 ### v2.1 (Active)
@@ -142,4 +144,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-07 — v2.1 (Pipeline UI) milestone started*
+*Last updated: 2026-05-08 — v2.1 Phase 8 complete*
