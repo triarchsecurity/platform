@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: planning
-stopped_at: Completed 15-04-PLAN.md — Task 3 human-verify approved; all 3 tasks done. Ready for 15-05.
-last_updated: "2026-05-08T15:45:24.172Z"
+status: executing
+stopped_at: Completed 16-02-PLAN.md — both CI workflows added (publish-shared.yml + check-shared-version.yml). Ready for 16-03.
+last_updated: "2026-05-08T16:53:19.065Z"
 progress:
   total_phases: 19
   completed_phases: 8
-  total_plans: 28
-  completed_plans: 28
+  total_plans: 32
+  completed_plans: 30
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 15 — operational-prework
+**Current focus:** Phase 16 — shared-package-extraction
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
+Phase: 16 (shared-package-extraction) — EXECUTING
+Plan: 3 of 4
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -48,7 +48,7 @@ Plan: Not started
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to plan
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -97,6 +97,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 15-02]: portal.triarch.dev A record mirrors admin.triarch.dev (35.219.200.0, TTL=600) as placeholder until FAH portal-prod publishes its target in Plan 15-04
 - [Phase 15-operational-prework]: firebase CLI auth expired; used gcloud REST API for all FAH backend operations (Owner-level access, equivalent result)
 - [Phase 15-operational-prework]: gitRepositoryLink for triarch-portal created in existing apphosting-github-conn-kh7m03f connection; no new GitHub App install needed
+- [Phase 16-shared-package-extraction]: npm install (not npm ci) in publish workflow — packages/triarch-shared has no committed lockfile yet; switch to npm ci when lockfile is committed
+- [Phase 16-shared-package-extraction]: Drift gate diffs against latest shared/v* tag (not PR base branch) — catches multi-PR accumulation of unbumped changes
 
 ### Pending Todos
 
@@ -114,7 +116,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T15:50:00.000Z
-Stopped at: Completed 15-04-PLAN.md — Task 3 human-verify approved; all 3 tasks done. Ready for 15-05.
+Last session: 2026-05-08T16:53:08.143Z
+Stopped at: Completed 16-02-PLAN.md — both CI workflows added (publish-shared.yml + check-shared-version.yml). Ready for 16-03.
 Resume file: None
 Next action: `/gsd:execute-phase 15-05` (Google OAuth redirect URIs)
