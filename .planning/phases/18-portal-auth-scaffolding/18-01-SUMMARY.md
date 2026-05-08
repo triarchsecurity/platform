@@ -103,6 +103,10 @@ All tasks were committed together in a single scaffold commit (plan called for o
 
 **Merged to main:** `cd2f550` (squash merge via PR #1)
 
+**CI fix commits (post-merge to main):**
+- `486e5d4` — v0.1.1: add `workflow_dispatch` to ci-cd.yml + set NODE_AUTH_TOKEN secret
+- `c695e0e` — v0.1.2: (empty commit) set GH_PAT secret; quality-gate now passes
+
 ## Files Created
 
 - `package.json` — triarch-portal v0.1.0, no db:push/db:generate, @myalterlego/triarch-shared@^0.1.0
@@ -150,6 +154,8 @@ All tasks were committed together in a single scaffold commit (plan called for o
 
 - `NODE_AUTH_TOKEN` not set in agent environment — fetched from GCP secret `GITHUB_PACKAGES_TOKEN` via `gcloud secrets versions access latest --project=triarch-dev-website`. npm install succeeded.
 - Vitest default exit code 1 on no test files (see deviation above).
+- First two CI runs failed on "Install dependencies" with `E403` on `@myalterlego/shared-ui@1.4.0` — shared-workflows quality-gate@v1 uses `secrets.GH_PAT` (not `secrets.NODE_AUTH_TOKEN`) as the npm auth token. Portal repo had no Actions secrets set. Fixed by setting `GH_PAT` and `NODE_AUTH_TOKEN` via `gh secret set` using the GCP-stored `GITHUB_PACKAGES_TOKEN` value. Third run (25571416108) shows quality-gate PASSED.
+- Deploy job fails with "Secret FIREBASE_SA_KEY is required" — `FIREBASE_SA_KEY` is a GitHub secret set manually in triarch-dev repo; cannot be read programmatically. Mike must copy it to triarch-portal repo (see User Setup Required above). Same for `ADMIN_API_TOKEN`.
 
 ## Known Stubs
 
@@ -160,7 +166,16 @@ Both stubs are intentional scaffolding placeholders, not data-wiring gaps. The p
 
 ## User Setup Required
 
-None at this stage. HUMAN-UAT item: once CI run 25571081224 completes and FAH deploys, visit https://portal.triarch.dev and confirm 200-OK response.
+**Mike must set 2 secrets in the `MyAlterLego/triarch-portal` Actions secrets** before the deploy job can run:
+
+1. `FIREBASE_SA_KEY` — same service account JSON as in `MyAlterLego/triarch-dev` (firebase-adminsdk or deploy SA with apphosting permissions on `triarch-dev-website` project)
+2. `ADMIN_API_TOKEN` — required by `deploy-firebase.yml@v4` (for admin callback; can be any valid token or the same ADMIN_API_TOKEN from triarch-dev repo)
+
+**Current CI status (as of 18-01 completion):**
+- Run 25571416108 on main: quality-gate PASSED (npm ci + next build + audit all green), deploy FAILED (missing FIREBASE_SA_KEY + ADMIN_API_TOKEN), notify ran
+- GitHub Actions run URL: https://github.com/MyAlterLego/triarch-portal/actions/runs/25571416108
+
+HUMAN-UAT: after Mike sets the 2 secrets above and merges any commit, the full pipeline should pass and portal.triarch.dev will serve the scaffold.
 
 ## Next Phase Readiness
 
