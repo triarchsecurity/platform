@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: Pipeline UI
-status: completed
-stopped_at: Completed 14-03-PLAN.md — BranchPreviewClient split + BranchSection integration + v2.8.0 — v2.1 milestone COMPLETE
-last_updated: "2026-05-08T07:12:28.096Z"
+milestone: (none)
+milestone_name: (between milestones)
+status: milestone_shipped
+stopped_at: v2.1 milestone shipped 2026-05-08
+last_updated: "2026-05-08T03:00:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -43,7 +43,7 @@ Plan: Not started
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Milestone complete
+**Status:** v2.1 milestone complete
 
 ## Performance Metrics
 
