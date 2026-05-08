@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Pipeline UI
-status: roadmap_complete
-stopped_at: Roadmap created — Phase 8 ready to plan
-last_updated: "2026-05-07T00:00:00.000Z"
+status: executing
+stopped_at: Completed 08-01-PLAN.md — composite index release_logs_project_env_deployed_idx
+last_updated: "2026-05-08T02:42:03.913Z"
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,14 +19,12 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** v2.1 — Pipeline UI (roadmap complete; Phase 8 ready to plan)
+**Current focus:** Phase 08 — Admin Home Pipeline Visibility
 
 ## Current Position
 
-Phase: Phase 8 — Admin Home Pipeline Visibility (not started)
-Plan: —
-Status: Roadmap complete; awaiting `/gsd:plan-phase 8`
-Last activity: 2026-05-07 — v2.1 roadmap created (7 phases, 29 requirements mapped)
+Phase: 08 (Admin Home Pipeline Visibility) — EXECUTING
+Plan: 2 of 3
 
 ## Active Milestone: v2.1 — Pipeline UI
 
@@ -45,7 +43,7 @@ Last activity: 2026-05-07 — v2.1 roadmap created (7 phases, 29 requirements ma
 | 14 — Customer Page Integration | Filter chips, what's-changed card, branch swap in section headers | CUST-01..03, DIFF-02 | Not started |
 
 **Requirements:** 29 total, all mapped
-**Status:** Roadmap complete
+**Status:** Ready to execute
 
 ## Performance Metrics
 
@@ -79,6 +77,7 @@ v2.1 decisions captured at roadmap creation:
 - [Roadmap-2026-05-07]: PROM-04 (double-promote unique constraint) ships in same phase as the Promote button (Phase 9) — never build the button without the constraint
 - [Roadmap-2026-05-07]: LINK-07 (commit message sanitization) ships with commit parser (Phase 11) — parser and sanitizer are one unit, never separated
 - [Roadmap-2026-05-07]: Requirements count discrepancy: REQUIREMENTS.md header says 27, actual count by enumeration is 29 (6+5+2+7+6+3). All 29 enumerated requirements are mapped.
+- [Phase 08]: Composite index on release_logs uses index() non-unique with deployedAt.desc() — separate from uniqueIndex; journal backfilled to resolve pre-existing 0012_promote_attempts inconsistency
 
 ### Pending Todos
 
@@ -93,7 +92,7 @@ v2.1 decisions captured at roadmap creation:
 
 ## Session Continuity
 
-Last session: 2026-05-07T00:00:00.000Z
-Stopped at: Roadmap created for v2.1 — 7 phases (8–14), 29 requirements mapped
+Last session: 2026-05-08T02:42:03.911Z
+Stopped at: Completed 08-01-PLAN.md — composite index release_logs_project_env_deployed_idx
 Resume file: None
 Next action: `/gsd:plan-phase 8`
