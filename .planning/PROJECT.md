@@ -28,21 +28,22 @@ Already operational at v1.14.6: foundation, DB-backed staff/membership roles, pr
 - Headline: customer-gated parallel release candidates with auto-rebase-and-merge promotion, unified credential storage, and OttoBot as the canonical Slack control plane.
 - Phases 01, 02, 03, 04, 05, 06, 07, 7.5 (code) complete — Phase 8 (Truth+Treason pilot) gated on Mike completing the 7.5 runbook.
 
-## Current Milestone: v2.1 — Pipeline UI
+## Current Milestone: v2.2 — Customer Portal Split
 
-**Goal:** Make the dev→prod CI/CD pipeline that v2.0 built **legible and operable from the admin/customer web surfaces**. Today the cluster, dev backends, customer release-gating page, GitHub App, OttoBot dispatcher, and promote-branch workflow all work — but the visualization and control loop runs through Slack and tribal knowledge. v2.1 closes that loop: per-project prod-vs-dev at a glance, on-demand branch previews customers can drive themselves, web-UI promotion (Slack alongside, not replaced), bidirectional bug/feature ↔ release linkage with filterable views, and "what's changed between dev and prod" surfaced on both admin and customer pages.
+**Goal:** Fork the customer-facing surface out of `admin.triarch.dev` into its own Next.js app at `portal.triarch.dev`. Mirror the existing `triarchsecurity-admin` (staff) / `triarchsecurity-portal` (customer) precedent. After v2.2: customers log into a brand-correct portal app for their projects' release pages, branch swap, bug/feature tracking, and notifications; staff log into `admin.triarch.dev` for project management, pipeline orchestration, and platform tooling. v2.1 hostname-aware guards exposed the seam (customers and staff currently share the admin host with role-gated routes); v2.2 closes it.
 
 **Target features:**
-- Admin home: per-project prod/dev versions side-by-side, pending-approval count, last-deploy timestamp, link straight to release page
-- Per-project admin pipeline page (consolidated view: env state, branch RCs, deploy history)
-- Customer release page: branch selector — customer admin clicks "Preview this branch" on any RC to swap dev backend's deploy
-- Branch swap concurrency: while one swap is in flight, other RCs disabled with "branch X currently previewing"
-- Web-UI **Promote to prod** button on approved RCs (admin role); calls same `dispatchWorkflow` as Slack — both paths post Slack notifications
-- Bug/feature ↔ release linkage: release entries link to bug/feature IDs (clickable); bug/feature detail pages show "Released in vX.Y dev / vA.B prod"
-- Auto-detect bug/feature IDs from commit messages (parses `#BUG-123`, `closes FEAT-45`, `fixes #99`); authoring UI shows detected IDs with manual add/remove
-- Customer page filterable by entry type: bug fixes, feature releases, other
-- "What's changed between dev and prod" view: compact on admin pipeline-at-a-glance + expanded on per-project page + summary section atop customer release page
-- Discoverability fixes: every admin project tile links to `/projects/<slug>/releases`; hosted dev URLs surfaced from the customer page
+- New Next.js app at `~/claude/triarch/development/portal` (separate Firebase App Hosting backend, separate ci-cd.yml, separate version line)
+- DNS: `portal.triarch.dev` (GoDaddy A/CNAME records pointing at Firebase backend)
+- Customer-only auth flow on portal: NextAuth Google OAuth, customer-friendly post-login routing (lands on their project list, not a dead-end)
+- Shared CockroachDB schema (same `triarchdev-dev-15666` cluster + `triarch_dev` database) — single source of truth for projects/release_logs/bug_reports/feature_requests/release_log_links/etc.
+- Shared `@myalterlego/shared-ui` for design parity; brand differentiation through layout/copy/header
+- Migrated routes: `/projects/[slug]/releases` (release page + filter chips + WhatsComingCard + branch swap), bug/feature detail pages (read-only customer view), customer-side bug/feature submission, lifecycle timeline
+- Staff bypass: staff users authenticated on portal see a "Switch to admin.triarch.dev" callout; never get the full admin surface on portal
+- Deprecation/redirect: customer routes on `admin.triarch.dev` (`/projects/[slug]/*`) 301 to `portal.triarch.dev/projects/[slug]/*` for grace period
+- Independent secrets: portal has its own NextAuth secret, its own CookieDomain, its own session lifetime — no cookie sharing across the brand boundary
+- Independent version line + ci-cd: portal versions independently of admin (e.g., portal v0.1.0 → v1.0.0 over time); admin stays on its v2.x line
+- Operational seam: shared DATABASE_URL secret in portal's Firebase project, shared FAH_PROMOTER_SA_KEY for branch swap, shared Slack credentials for customer-side Slack notifications
 
 **v2.0 status:** Multi-Branch RC + Central Vault + OttoBot Brain. Phase 7.5 (dev cluster + 5 dev backends + admin overlay architecture + Slack scope upgrade + Phase 7 schema migrations + hostname routing + custom-domain DNS for triarch.dev apex / tmiengine.com tmi-dev / triarch.dev darksouls-dev) shipped 2026-05-06. Phase 8 (Truth+Treason pilot of multi-branch flow) deferred — folded into v2.1 since the parallel-RC UX it would have validated is what v2.1 actually builds.
 
@@ -96,7 +97,7 @@ See `BACKLOG.md`. Notable punts: project detail page (PROJ-03), bug Kanban (BUG-
 
 ### Out of Scope
 
-- Customer-facing portal (that's triarchsecurity-portal) — separate concern
+- triarchsecurity-portal customer flow (that's the Triarch Security CRM portal) — separate concern; v2.2 builds the triarch.dev ecosystem's parallel
 - CRM/sales features (that's triarch-security CRM) — separate concern
 - Game-specific features (that's darksouls-rpg) — projects are consumers, not built here
 - CI/CD execution (handled by shared-workflows) — this console triggers and monitors, doesn't run pipelines
@@ -156,4 +157,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-08 — v2.1 milestone (Pipeline UI) complete; all 7 phases shipped*
+*Last updated: 2026-05-08 — v2.2 milestone (Customer Portal Split) started*

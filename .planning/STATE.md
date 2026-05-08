@@ -1,30 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: (none)
-milestone_name: (between milestones)
-status: milestone_shipped
-stopped_at: v2.1 milestone shipped 2026-05-08
-last_updated: "2026-05-08T03:00:00.000Z"
+milestone: v2.2
+milestone_name: Customer Portal Split
+status: defining_requirements
+stopped_at: null
+last_updated: "2026-05-08T13:50:00.000Z"
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 23
-  completed_plans: 23
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Triarch Dev Admin — Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (last updated 2026-05-07 — v2.1 milestone started)
+See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 14 — Customer Page Integration
+**Current focus:** v2.2 milestone definition — defining requirements
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-08 — Milestone v2.2 (Customer Portal Split) started
 
 ## Active Milestone: v2.1 — Pipeline UI
 
