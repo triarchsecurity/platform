@@ -311,7 +311,11 @@
   2. Portal deploys via `portal-deployer@triarch-vault.iam.gserviceaccount.com` and admin deploys via its own distinct deploy SA — neither SA has IAM on the other app's backend
   3. Booting portal with a missing required env var (e.g. unset `PORTAL_NEXTAUTH_SECRET`) fails container start with a clear error message; container does not serve a partially-broken surface
   4. CI step `validate-apphosting.ts` reads `apphosting.yaml` and `apphosting.dev.yaml` against an env-name TypeScript schema and fails the build on a missing or typo'd binding (proven by a deliberately broken test branch)
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 24-01-PLAN.md — Per-repo verify-deploy-target job + .github/deploy-targets.yml lookup table in BOTH admin and portal (CI-01)
+- [ ] 24-02-PLAN.md — instrumentation.ts + assertEnv.ts + env-schema.ts + Vitest in BOTH repos (CI-03)
+- [ ] 24-03-PLAN.md — scripts/validate-apphosting.ts + new CI step + Vitest in BOTH repos (CI-04)
+- [ ] 24-04-PLAN.md — HUMAN-VERIFY runbook for portal-deployer SA + IAM + missing portal Actions secrets + live CI-01/CI-04 acceptance tests (CI-02)
 
 ### Phase 25: Cutover
 **Goal**: Customers are routed from admin to portal — 301 redirect, email blast, Slack message URL refresh, telemetry on residual traffic, and a kill-switch in case portal regresses.
