@@ -130,8 +130,11 @@ export async function getProjectPipelineSummaries(
 
   // Query A: DISTINCT ON for latest dev/prod row per project
   // Raw SQL required — Drizzle doesn't support DISTINCT ON natively.
+  // Use IN with sql.join (parameter-binds each element) instead of ANY(${arr}),
+  // because ANY(${arr}) routes a single-element array as a scalar string and
+  // CockroachDB rejects it with "could not parse ... as type varchar[]".
   const projectFilter = projectKeys && projectKeys.length > 0
-    ? sql`AND project = ANY(${projectKeys})`
+    ? sql`AND project IN (${sql.join(projectKeys.map((k) => sql`${k}`), sql`, `)})`
     : sql``;
 
   const latestResult = await db.execute(sql`

@@ -1,4 +1,4 @@
-name: Publish @myalterlego/triarch-shared
+name: Publish @triarchsecurity/triarch-shared
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@myalterlego'
+          scope: '@triarchsecurity'
 
       - name: Verify tag matches package.json version
         run: |
@@ -53,6 +53,6 @@ jobs:
       - name: Summary
         run: |
           PKG_VER=$(node -p "require('./package.json').version")
-          echo "## Published @myalterlego/triarch-shared@${PKG_VER}" >> $GITHUB_STEP_SUMMARY
+          echo "## Published @triarchsecurity/triarch-shared@${PKG_VER}" >> $GITHUB_STEP_SUMMARY
           echo "Tag: ${GITHUB_REF#refs/tags/}" >> $GITHUB_STEP_SUMMARY
           echo "Registry: https://npm.pkg.github.com" >> $GITHUB_STEP_SUMMARY
