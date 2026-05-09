@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: executing
-stopped_at: "Completed 23-03-PLAN.md (FEAT-01 + FEAT-02 ship; portal v0.3.7; portal PR #18 open; admin docs PR pending; awaiting Mike's review + merge)"
-last_updated: "2026-05-09T13:48:55.784Z"
+stopped_at: "Completed 23-04-PLAN.md (BUG-03 + FEAT-03 ship; portal v0.4.0 phase-close; portal PR #19 open; admin docs PR pending; Phase 23 COMPLETE — all 6 requirements shipped across 23-01..04)"
+last_updated: "2026-05-09T10:00:00.000Z"
 progress:
   total_phases: 19
-  completed_phases: 14
+  completed_phases: 15
   total_plans: 58
-  completed_plans: 56
+  completed_plans: 57
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,13 +19,13 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 23 — bug-feature-customer-surface (Phase 22 closed)
+**Current focus:** Phase 24 — CI/CD Deploy Safety (Phase 23 closed; pending research before plan)
 
 ## Current Position
 
-Phase: 23
-Plan: 3 of 04 complete (Wave 2 — bugs read surface 23-02 + features read surface 23-03 both shipped; Wave 3 23-04 submission write paths pending)
-Last completed: Phase 23 bug-feature-customer-surface 23-03-PLAN.md (2026-05-09)
+Phase: 24 (next)
+Plan: Phase 23 COMPLETE — all 4 plans shipped (23-01 foundations, 23-02 bugs read, 23-03 features read, 23-04 bug+feature write surface). All 6 phase requirements (BUG-01..03 + FEAT-01..03) satisfied.
+Last completed: Phase 23 bug-feature-customer-surface 23-04-PLAN.md (2026-05-09)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -43,7 +43,7 @@ Last completed: Phase 23 bug-feature-customer-surface 23-03-PLAN.md (2026-05-09)
 | 20 — URL Centralization (admin) | `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters | URL-01..03 | Not started |
 | 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Complete (5/5 plans) |
-| 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | In Progress (3/4 plans: 23-01 foundations + 23-02 bugs read + 23-03 features read shipped; 23-04 submit pending) |
+| 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Complete (4/4 plans — 23-01 foundations + 23-02 bugs read + 23-03 features read + 23-04 bug+feature write surface; portal v0.4.0; all 6 reqs shipped) |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
 | 25 — Cutover | Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch | CUT-01..05 | Not started |
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
@@ -163,6 +163,13 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 23-features-read-surface]: ReleasedInSidebar populated via getReleaseHistoryForFeature (Phase 11 release_log_links join), NOT freeform feature.shippedVersion — advisory A-3 honored across 23-01/23-02/23-03
 - [Phase 23-features-read-surface]: Staff-only fields HIDDEN for 4 fields (vs bug's 2): triarchNotes, buildPlan, buildPlanStatus, estimatedEffort. Tests use unique-sentinel mocking + renderToStaticMarkup-level assertion. Comment-block grep barrier preempted from 23-02 lessons (first-time correct phrasing)
 - [Phase 23-features-read-surface]: Lessons-applied-first-time from 23-02: closure-state mock hoisting + comment-block grep barriers written correctly on initial implementation; zero in-flight Rule-3 deviations
+- [Phase 23-04-bug-feature-write-surface]: BUG-03 + FEAT-03 — Phase 22-04 envelope ported verbatim (auth → INSERT → Slack-before-response → best-effort slack_message_ts UPDATE → 201). Slack post fires BEFORE response (3-sec customer feedback budget); fire-and-forget (failure logged not propagated; INSERT not rolled back).
+- [Phase 23-04-bug-feature-write-surface]: RESEARCH OQ-2 implementation — slack_message_ts + slack_channel_id captured from chat.postMessage response and persisted on the just-INSERTed row via best-effort UPDATE inside its own try/catch. Sets up admin v2.3+ Slack-thread foundation.
+- [Phase 23-04-bug-feature-write-surface]: Pitfall 8 (workflow_transitions on submission) intentionally SKIPPED to match admin parity — admin's existing customer-origin submission paths don't INSERT either. Residual risk accepted: workflow_transitions is observability not authoritative state.
+- [Phase 23-04-bug-feature-write-surface]: Pitfall 9 anchored TWO WAYS — source comments use indirect phrasing for admin-only Block Kit action button IDs; tests EXT-4 + EXT-8 + grep guard returns 0 in source. Defense in depth — even comments don't enumerate the literal strings.
+- [Phase 23-04-bug-feature-write-surface]: Cross-project POST defense via the same membership 404 code path as non-member 404 — Tests 6 + FEAT-6 verify member-of-A POSTing to project-B returns 404 with no row INSERTed and no Slack post.
+- [Phase 23-04-bug-feature-write-surface]: Channel env vars (PORTAL_BUG_REPORTS_CHANNEL, PORTAL_FEATURE_REQUESTS_CHANNEL) read at CALL TIME inside helper bodies — mirrors Phase 22-04 SLACK_RELEASE_APPROVAL_CHANNEL pattern; allows test override + apphosting.dev.yaml runtime overlay both win without module-cache poisoning.
+- [Phase 23-04-bug-feature-write-surface]: Phase-close MINOR bump 0.3.7 → 0.4.0 — Phase 23 ships entire bug + feature primitive customer surface (read in 23-02/23-03; write in 23-04). The 0.3.5/0.3.6/0.3.7 patch progression in 23-01..03 reserved the minor for the close.
 
 ### Pending Todos
 
@@ -180,7 +187,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-09T13:48:55.781Z
-Stopped at: Completed 23-03-PLAN.md (FEAT-01 + FEAT-02 ship; portal v0.3.7; portal PR #18 open; admin docs PR pending; awaiting Mike's review + merge)
+Last session: 2026-05-09T10:00:00.000Z
+Stopped at: Completed 23-04-PLAN.md (BUG-03 + FEAT-03 ship; portal v0.4.0 phase-close; portal PR #19 open; admin docs PR pending; Phase 23 COMPLETE — 4/4 plans, 6/6 requirements shipped). Awaiting Mike's review + merge of portal PR #19 then admin docs PR.
 Resume file: None
-Next action: After portal PR #18 + admin docs PR merge, proceed to 23-04 (BUG-03 + FEAT-03 submission write paths). Both read surfaces are now shipped; Wave 3 (write) is unblocked.
+Next action: After portal PR #19 + admin docs PR merge, run `/gsd:research-phase 24` to resolve `MyAlterLego/shared-workflows` v5 immutability question before planning Phase 24 (CI/CD Deploy Safety). Phase 23 is closed; Wave 4 of v2.2 milestone (CI safety prerequisite for cutover) is the next blocker on critical path.
