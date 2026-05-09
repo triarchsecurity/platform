@@ -294,7 +294,11 @@
   2. Portal `/projects/[slug]/bugs/[id]` and `/features/[id]` render detail pages with `ReleasedInSidebar` showing "Released in vX.Y dev / vA.B prod" — read-only customer view with no staff edit controls
   3. Portal `/projects/[slug]/bugs/new` and `/features/new` accept customer submissions; POST creates `bug_reports`/`feature_requests` row with `reporter_email = session email` and `project_key` derived from URL slug
   4. Cross-project POST attempt (e.g. submitting a bug to a project the user isn't a member of) returns 404, not 403, and creates no row
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 23-01-PLAN.md — ReleasedInSidebar fork + StatusPill foundation (BUG-01/02 + FEAT-01/02 components)
+- [ ] 23-02-PLAN.md — Bug list + detail customer surface (BUG-01, BUG-02)
+- [ ] 23-03-PLAN.md — Feature list + detail customer surface (FEAT-01, FEAT-02)
+- [ ] 23-04-PLAN.md — Bug + feature submission write surface + portal v0.4.0 phase close (BUG-03, FEAT-03)
 
 ### Phase 24: CI/CD Deploy Safety
 **Goal**: Cross-app deploy disasters are impossible — wrong-repo-to-wrong-Firebase-project deploys fail at CI, missing env vars fail container start, and per-repo deploy SAs limit blast radius.
@@ -367,7 +371,7 @@
 | 20. URL Centralization | v2.2 | 2/2 | Complete    | 2026-05-08 |
 | 21. Release Page Port (Read) | v2.2 | 4/6 | Complete    | 2026-05-08 |
 | 22. Release Page Port (Write) | v2.2 | 4/5 | Complete    | 2026-05-09 |
-| 23. Bug + Feature Customer Surface | v2.2 | 0/0 | Not started | - |
+| 23. Bug + Feature Customer Surface | v2.2 | 0/4 | Planned     | - |
 | 24. CI/CD Deploy Safety | v2.2 | 0/0 | Not started | - |
 | 25. Cutover | v2.2 | 0/0 | Not started | - |
 | 26. Sunset (T+90) | v2.2 | 0/0 | Not started | - |
