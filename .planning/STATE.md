@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: executing
-stopped_at: Completed 22-release-page-port-write 22-04-PLAN.md (PRs to be opened, awaiting Mike's review + GCP secret provisioning for PORTAL_SLACK_BOT_TOKEN)
-last_updated: "2026-05-08T23:30:36.752Z"
+stopped_at: Completed 22-release-page-port-write 22-05-PLAN.md (Phase 22 closed; portal PR https://github.com/MyAlterLego/triarch-portal/pull/15 open + admin docs PR pending)
+last_updated: "2026-05-09T00:05:00.000Z"
 progress:
   total_phases: 19
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 54
-  completed_plans: 52
+  completed_plans: 53
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,12 +19,13 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 22 — release-page-port-write
+**Current focus:** Phase 23 — bug-feature-customer-surface (Phase 22 closed)
 
 ## Current Position
 
-Phase: 22 (release-page-port-write) — EXECUTING
-Plan: 5 of 5
+Phase: 23 (bug-feature-customer-surface) — NOT STARTED
+Plan: Not started
+Last completed: Phase 22 release-page-port-write 22-05-PLAN.md (2026-05-08)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -41,7 +42,7 @@ Plan: 5 of 5
 | 19 — Database Connectivity | Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test | DB-01..04 | Not started |
 | 20 — URL Centralization (admin) | `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters | URL-01..03 | Not started |
 | 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
-| 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Not started |
+| 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Complete (5/5 plans) |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Not started |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
 | 25 — Cutover | Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch | CUT-01..05 | Not started |
@@ -150,6 +151,11 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 22-04]: Portal Block Kit posts plain section blocks only — no slack_promote/slack_reject action_ids (those use SLACK_PAYLOAD_SECRET admin-only). 'via portal' headline marker so #release-approvals distinguishes origin.
 - [Phase 22-04]: WRITE-05 preserved verbatim: two-step approve UX, conflict badge propagation (helper text in BOTH BranchSection action cell AND ExpandedPanel), branch lock disable propagation (singleton-by-cache-key SWR across all BranchPreviewButton mounts)
 - [Phase 22-04]: handleLoadMore stays stubbed in ReleasesClient — portal lacks GET releases list endpoint. Deferred to 22-05 or beyond. hasMoreState=false hides the button.
+- [Phase 22-05]: Phase-close patch bump 0.3.3 → 0.3.4 (test-only). Plan originally targeted v0.4.0 minor + tag-and-publish shared@0.3.0; orchestrator collapsed to patch since shared@0.3.0 was already published in 22-01 and pinned in 22-02 (verified 0.3.0 in portal package.json + lockfile resolves to npm.pkg.github.com), and only test files changed in 22-05.
+- [Phase 22-05]: WRITE-05 explicit traceability: dedicated `describe('WRITE-05: ...')` blocks added across ReleasesClient.test.tsx (W5-1 two-step approve, W5-2 conflict badge), BranchPreviewClient.test.tsx (W5-3 site-wide disable, W5-4 terminal re-enable, W5-5 SWR singleton dedupe), and new MobileApproveSpec.test.tsx (M-1 375px viewport, M-2 conflict on mobile). Portal vitest 167/168 GREEN (was 160; +7 new).
+- [Phase 22-05]: Modal label phrasing locked at portal source: aria-label='Confirm promotion of {branch} {version}' + visible 'Click to confirm — promote {branch} {version} (Ns)' — different phrasing from admin's 'Promote X to production' but functionally equivalent (two-step + branch+version in label).
+- [Phase 22-05]: Mobile pattern: PORTAL-04 desktop-only Approve/Reject preserved via `hidden sm:flex` Tailwind wrapper; complementary `sm:hidden` mobile hint 'View on desktop to approve / reject' shown to mobile customers. Conflict helper text NOT wrapped in `hidden sm:flex` (visible on mobile so customers see resolution guidance regardless of viewport).
+- [Phase 22-05]: handleLoadMore deferral carried forward to v2.3 polish — portal still lacks GET releases list endpoint; pageSize=20 covers near-term customer use (no project ships > 20 active releases). Tracked as a v2.3 candidate POLISH item.
 
 ### Pending Todos
 
@@ -167,7 +173,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-08T23:30:18.668Z
-Stopped at: Completed 22-release-page-port-write 22-04-PLAN.md (PRs to be opened, awaiting Mike's review + GCP secret provisioning for PORTAL_SLACK_BOT_TOKEN)
+Last session: 2026-05-09T00:05:00.000Z
+Stopped at: Completed 22-release-page-port-write 22-05-PLAN.md (Phase 22 closed; portal PR https://github.com/MyAlterLego/triarch-portal/pull/15 open; admin docs PR pending; awaiting Mike's review + merge)
 Resume file: None
-Next action: Execute 22-04 (Portal Slack notifications + un-stub ReleasesClient + BranchPreviewClient handlers) once 22-03 PRs merged and portal-dev redeploys
+Next action: After portal PR + admin docs PR merge, run `/gsd:verify-phase 22` for the verifier pass, then begin Phase 23 (Bug + Feature customer surface) planning
