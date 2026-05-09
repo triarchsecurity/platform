@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/group-sections';
+export * from '@triarchsecurity/triarch-shared/group-sections';

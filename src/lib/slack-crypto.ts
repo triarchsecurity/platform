@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 
 /**
  * Converts a Buffer to base64url encoding (RFC 4648 §5, no padding).
@@ -40,7 +40,7 @@ function safeEqB64url(a: string, b: string): boolean {
  * Packed format: `${releaseId}.${nonce}.${sig}`
  * where sig = base64url(HMAC-SHA256(SLACK_PAYLOAD_SECRET, `${releaseId}:${action}:${nonce}`))
  *
- * Reads SLACK_PAYLOAD_SECRET from the central vault (@myalterlego/secrets) on each
+ * Reads SLACK_PAYLOAD_SECRET from the central vault (@triarchsecurity/secrets) on each
  * call. The vault client caches for 300s; falls back to process.env on vault failure.
  */
 export async function signPayload(releaseId: string, action: string, nonce?: string): Promise<string> {

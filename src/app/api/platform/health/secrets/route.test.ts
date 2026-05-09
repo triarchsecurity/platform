@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextResponse } from 'next/server';
 
-vi.mock('@myalterlego/secrets', () => ({ getSecret: vi.fn() }));
+vi.mock('@triarchsecurity/secrets', () => ({ getSecret: vi.fn() }));
 vi.mock('@/lib/api-auth', () => ({ requireStaff: vi.fn() }));
 
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 import { requireStaff } from '@/lib/api-auth';
 import { GET, VAULT_KEYS } from './route';
 

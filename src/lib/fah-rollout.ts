@@ -12,7 +12,7 @@
 //   resetTokenCacheForTests()       — resets module-level cache + in-flight latch (test-only)
 
 import { SignJWT, importPKCS8 } from 'jose';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 
 // ---------------------------------------------------------------------------
 // Constants

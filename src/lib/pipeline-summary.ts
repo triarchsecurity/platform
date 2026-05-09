@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/pipeline-summary';
+export * from '@triarchsecurity/triarch-shared/pipeline-summary';

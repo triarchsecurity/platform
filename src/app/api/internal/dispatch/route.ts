@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequest, createMemoryNonceStore } from '@myalterlego/triarch-shared/internal-hmac';
-import { getSecret } from '@myalterlego/secrets';
+import { verifyRequest, createMemoryNonceStore } from '@triarchsecurity/triarch-shared/internal-hmac';
+import { getSecret } from '@triarchsecurity/secrets';
 import { db } from '@/lib/db';
 import { projects, releaseLogs } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';

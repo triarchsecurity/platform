@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/auth';
+export * from '@triarchsecurity/triarch-shared/auth';

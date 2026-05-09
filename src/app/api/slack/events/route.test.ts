@@ -19,7 +19,7 @@ beforeEach(() => {
   process.env.SLACK_SIGNING_SECRET = 'test_signing_secret';
 });
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: async (name: string) => process.env[name] ?? '',
 }));
 

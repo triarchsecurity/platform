@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: vi.fn(),
 }));
 
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 import { resolveSlackUserEmail } from '../slack-identity';
 
 const mockedGetSecret = vi.mocked(getSecret);

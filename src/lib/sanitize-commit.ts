@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/sanitize-commit';
+export * from '@triarchsecurity/triarch-shared/sanitize-commit';

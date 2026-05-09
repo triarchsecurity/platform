@@ -26,7 +26,7 @@ beforeEach(() => {
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: async (name: string) => process.env[name] ?? '',
 }));
 

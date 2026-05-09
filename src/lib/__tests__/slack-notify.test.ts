@@ -4,12 +4,12 @@
  * Asserts the rendered Slack message header includes the branch name,
  * and falls back to 'main' when branch is null.
  *
- * Mocks: @myalterlego/secrets (so getSecret('SLACK_BOT_TOKEN') resolves)
+ * Mocks: @triarchsecurity/secrets (so getSecret('SLACK_BOT_TOKEN') resolves)
  *        and global fetch (to capture the chat.postMessage body).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: vi.fn(async (name: string) => {
     if (name === 'SLACK_BOT_TOKEN') return 'xoxb-test-token';
     if (name === 'SLACK_PAYLOAD_SECRET') return 'test-payload-secret';

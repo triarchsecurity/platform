@@ -9,7 +9,7 @@
 // RS256 signing uses Node built-in `crypto` — no new dependency.
 
 import crypto from 'node:crypto';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 
 type CachedToken = { token: string; expiresAt: number };
 

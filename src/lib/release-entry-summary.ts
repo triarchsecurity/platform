@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/release-entry-summary';
+export * from '@triarchsecurity/triarch-shared/release-entry-summary';

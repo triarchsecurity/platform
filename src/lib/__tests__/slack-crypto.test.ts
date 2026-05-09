@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: vi.fn(),
 }));
 
 import { signPayload, verifyPayload, verifySlackSignature } from '../slack-crypto';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 import { createHmac } from 'node:crypto';
 
 const mockedGetSecret = vi.mocked(getSecret);

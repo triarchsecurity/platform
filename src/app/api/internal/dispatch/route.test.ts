@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server';
 // Hoist mocks BEFORE module-under-test imports (Vitest hoisting)
 // ---------------------------------------------------------------------------
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: vi.fn(),
 }));
 
@@ -34,9 +34,9 @@ vi.mock('@/lib/db', () => ({
 // ---------------------------------------------------------------------------
 
 import { POST } from './route';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 import { promoteAndAudit } from '@/lib/release-promotion';
-import { signRequest } from '@myalterlego/triarch-shared/internal-hmac';
+import { signRequest } from '@triarchsecurity/triarch-shared/internal-hmac';
 
 // ---------------------------------------------------------------------------
 // Test constants

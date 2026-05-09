@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import crypto from 'node:crypto';
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: vi.fn(),
 }));
 
@@ -11,7 +11,7 @@ import {
   dispatchWorkflow,
   resetTokenCacheForTests,
 } from '@/lib/github-app';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 
 const mockedGetSecret = vi.mocked(getSecret);
 

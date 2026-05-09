@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/db';
+export * from '@triarchsecurity/triarch-shared/db';

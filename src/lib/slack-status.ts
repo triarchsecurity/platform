@@ -1,1 +1,1 @@
-export * from '@myalterlego/triarch-shared/slack';
+export * from '@triarchsecurity/triarch-shared/slack';

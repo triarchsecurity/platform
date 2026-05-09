@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import crypto from 'node:crypto';
 
-vi.mock('@myalterlego/secrets', () => ({
+vi.mock('@triarchsecurity/secrets', () => ({
   getSecret: vi.fn(),
 }));
 
@@ -13,7 +13,7 @@ import {
   getFahRolloutState,
   resetTokenCacheForTests,
 } from '@/lib/fah-rollout';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 
 const mockedGetSecret = vi.mocked(getSecret);
 

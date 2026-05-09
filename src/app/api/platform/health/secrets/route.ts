@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireStaff } from '@/lib/api-auth';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 
 /**
  * The 7 shared secrets migrated to triarch-vault in v2.0 Phase 01 (VAULT-02).

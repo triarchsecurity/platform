@@ -4,11 +4,11 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut } from 'lucide-react';
-import { DynamicSidebar } from '@myalterlego/shared-ui';
+import { DynamicSidebar } from '@triarchsecurity/shared-ui';
 import { APP_VERSION } from '@/lib/version';
 
 /**
- * AdminSidebar — thin wrapper around DynamicSidebar from @myalterlego/shared-ui (DEV-04)
+ * AdminSidebar — thin wrapper around DynamicSidebar from @triarchsecurity/shared-ui (DEV-04)
  * Navigation data fetched from /api/platform/navigation
  * Preserves named export so admin/layout.tsx needs no changes.
  */

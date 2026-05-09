@@ -1,5 +1,5 @@
 import { signPayload } from '@/lib/slack-crypto';
-import { getSecret } from '@myalterlego/secrets';
+import { getSecret } from '@triarchsecurity/secrets';
 import { sanitizeForSlack } from '@/lib/sanitize-commit';
 
 // Channel envs are NOT secrets — keep as process.env (apphosting.yaml plain values).
