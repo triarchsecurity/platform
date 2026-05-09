@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: Completed 22-release-page-port-write 22-05-PLAN.md (Phase 22 closed; portal PR https://github.com/MyAlterLego/triarch-portal/pull/15 open + admin docs PR pending)
-last_updated: "2026-05-09T00:05:00.000Z"
+status: planning
+stopped_at: "Completed 22-release-page-port-write 22-05-PLAN.md (Phase 22 closed; portal PR https://github.com/MyAlterLego/triarch-portal/pull/15 open; admin docs PR pending; awaiting Mike's review + merge)"
+last_updated: "2026-05-09T00:14:10.792Z"
 progress:
   total_phases: 19
   completed_phases: 14
@@ -23,7 +23,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 23 (bug-feature-customer-surface) — NOT STARTED
+Phase: 23
 Plan: Not started
 Last completed: Phase 22 release-page-port-write 22-05-PLAN.md (2026-05-08)
 
@@ -49,7 +49,7 @@ Last completed: Phase 22 release-page-port-write 22-05-PLAN.md (2026-05-08)
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Ready to plan
 
 ## Performance Metrics
 
