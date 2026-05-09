@@ -50,6 +50,76 @@
       "when": 1775756350306,
       "tag": "0006_little_ser_duncan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777831109113,
+      "tag": "0007_flashy_madelyne_pryor",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777859695129,
+      "tag": "0008_yielding_hellcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777906687512,
+      "tag": "0009_promotion_dispatch_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777932602492,
+      "tag": "0010_naive_havok",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777932905565,
+      "tag": "0011_thick_wallow",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778207975581,
+      "tag": "0012_promote_attempts",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778207977581,
+      "tag": "0013_release_logs_pipeline_idx",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1778211576492,
+      "tag": "0014_release_approvals_unique_approved",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1778211774000,
+      "tag": "0015_projects_slack_channel_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1778213865370,
+      "tag": "0016_release_log_links_and_preview_lock",
+      "breakpoints": true
     }
   ]
 }

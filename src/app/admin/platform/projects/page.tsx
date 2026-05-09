@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Briefcase, Plus, ChevronDown, ChevronRight, Globe, Database,
-  GitBranch, Server, ExternalLink, Trash2, X, Loader2,
+  GitBranch, Server, ExternalLink, Trash2, X, Loader2, Users,
 } from 'lucide-react';
 
 interface Project {
@@ -281,6 +281,12 @@ export default function ProjectsPage() {
                           <Globe size={12} /> Add Subdomain
                         </button>
                       )}
+                      <button
+                        onClick={() => appRouter.push(`/admin/platform/projects/${project.key}/members`)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-zinc-700/30 text-zinc-400 border border-zinc-600/30 rounded-md hover:bg-zinc-700/50"
+                      >
+                        <Users size={12} /> Manage Members
+                      </button>
                       <button
                         onClick={() => deleteProject(project.id)}
                         className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-zinc-600 hover:text-red-400 ml-auto"
