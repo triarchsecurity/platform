@@ -1,6 +1,6 @@
 {
   "name": "triarch-dev",
-  "version": "2.10.6",
+  "version": "2.10.7",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -20,11 +20,11 @@
     "drizzle-orm": "^0.45.2",
     "jose": "^5",
     "lucide-react": "^1.7.0",
-    "next": "^16.2.6",
+    "next": "16.2.6",
     "next-auth": "^4.24.14",
     "pg": "^8.20.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
     "swr": "^2.4.1"
   },
   "devDependencies": {
@@ -39,7 +39,7 @@
     "@vitest/ui": "^4.1.5",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "^16.2.6",
+    "eslint-config-next": "16.2.6",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
