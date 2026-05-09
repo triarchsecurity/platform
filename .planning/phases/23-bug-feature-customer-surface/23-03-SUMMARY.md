@@ -160,7 +160,7 @@ None — no external service configuration, no env binding additions, no apphost
 ## Cross-Repo State
 
 - **Portal repo (`MyAlterLego/triarch-portal`):** branch `feat/23-03-features-read-surface` pushed; PR #18 open against `main`. NOT MERGED — STOP point. Commits: `1b023d9` (Task 1) + `1ef8587` (Task 2 / v0.3.7).
-- **Admin repo (`MyAlterLego/triarch-dev`):** SUMMARY.md (this file) + STATE/ROADMAP/REQUIREMENTS updates land on admin's `feat/23-03-features-read-surface` branch as a docs-only commit. No admin code changes in this plan. Admin docs PR opens after this SUMMARY commit lands.
+- **Admin repo (`MyAlterLego/triarch-dev`):** SUMMARY.md (this file) + STATE/ROADMAP/REQUIREMENTS updates landed on admin's `feat/23-03-features-read-surface` branch in commit `acbcc0c` (docs-only). No admin code changes in this plan. Admin docs PR #35 open: https://github.com/MyAlterLego/triarch-dev/pull/35
 
 ## Self-Check: PASSED
 
