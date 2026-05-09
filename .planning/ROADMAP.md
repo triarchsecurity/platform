@@ -58,7 +58,7 @@
 - [x] **Phase 19: Database Connectivity** — Portal `pg.Pool` + `portal_runtime` DML-only role + DDL permission-denied smoke test (completed 2026-05-08)
 - [x] **Phase 20: URL Centralization (admin)** — `src/lib/urls.ts` + ESLint guard; refactor admin Slack/email/release-note URL emitters BEFORE cutover (completed 2026-05-08)
 - [x] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths (completed 2026-05-08)
-- [ ] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch
+- [x] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch (completed 2026-05-08)
 - [ ] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives)
 - [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts`
 - [ ] **Phase 25: Cutover** — Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch
@@ -283,7 +283,7 @@
 - [x] 22-02-PLAN.md — Portal approve/reject/feedback (POST + DELETE) handlers with HMAC dispatch to admin + portal v0.3.1 (WRITE-01, WRITE-04)
 - [x] 22-03-PLAN.md — Portal branch preview swap (POST + GET status) with portal-owned FAH_PROMOTER_SA_KEY + portal v0.3.2 (WRITE-02, WRITE-03)
 - [x] 22-04-PLAN.md — Portal Slack notifications (PORTAL_SLACK_BOT_TOKEN) + un-stub ReleasesClient + BranchPreviewClient handlers + portal v0.3.3 (WRITE-04, WRITE-05)
-- [ ] 22-05-PLAN.md — WRITE-05 dedicated tests + mobile viewport + shared@0.3.0 publish + portal v0.4.0 phase close (WRITE-05)
+- [x] 22-05-PLAN.md — WRITE-05 dedicated tests + mobile viewport + portal v0.3.4 phase-close hardening (WRITE-05)
 
 ### Phase 23: Bug + Feature Customer Surface
 **Goal**: Customers view and submit bugs and features on portal — list, detail, and new-submission forms — closing the two primitives that don't yet exist anywhere in the codebase.
