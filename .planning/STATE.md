@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: planning
-stopped_at: "Completed 23.1-01-PLAN.md (UX-01 sub-nav ship; portal v0.4.7; ProjectSubNav 8/8 GREEN; portal suite 290 → 298). Awaiting Mike's review + merge of portal PR (feat/23.1-01-sub-nav) and admin docs PR (same branch name)."
-last_updated: "2026-05-09T23:25:00.000Z"
+stopped_at: "Completed 23.1-02-PLAN.md (UX-02 status column rewrite; portal v0.4.8; ReleaseStatusPill +10 cases, ReleasesClient/BranchSection +9 cases; portal suite 298 → 317; promoted color drift amber-400→emerald-500 fixed). Awaiting Mike's review + merge of portal PR (feat/23.1-02-status-column) and admin docs PR (same branch name)."
+last_updated: "2026-05-09T23:43:29.000Z"
 progress:
   total_phases: 19
   completed_phases: 15
   total_plans: 62
-  completed_plans: 58
+  completed_plans: 59
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 ## Current Position
 
 Phase: 23.1
-Plan: 02 (Status column rewrite — UX-02)
-Last completed: Phase 23.1 portal-ui-polish 23.1-01-PLAN.md (2026-05-09)
+Plan: 03 (Empty-state copy — UX-03)
+Last completed: Phase 23.1 portal-ui-polish 23.1-02-PLAN.md (2026-05-09)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -44,7 +44,7 @@ Last completed: Phase 23.1 portal-ui-polish 23.1-01-PLAN.md (2026-05-09)
 | 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Complete (5/5 plans) |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Complete (4/4 plans — 23-01 foundations + 23-02 bugs read + 23-03 features read + 23-04 bug+feature write surface; portal v0.4.0; all 6 reqs shipped) |
-| 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | In progress (1/4 plans — 23.1-01 sub-nav shipped portal v0.4.7) |
+| 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | In progress (2/4 plans — 23.1-01 sub-nav v0.4.7; 23.1-02 status column rewrite v0.4.8) |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
 | 25 — Cutover | Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch | CUT-01..05 | Not started |
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
@@ -177,6 +177,14 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 23.1-01-portal-ui-polish]: usePathname startsWith active matcher (not exact equality) — so `/bugs/[id]` and `/features/new` light up parent tab. Critical correctness for sub-routes; covered by tests T1.3 + T1.4.
 - [Phase 23.1-01-portal-ui-polish]: Mobile horizontal-scroll affordance via outer div `overflow-x-auto` + ul `whitespace-nowrap` — preferred over flex-wrap or hamburger. Covered by test T1.6.
 - [Phase 23.1-01-portal-ui-polish]: Pre-existing portal TS test errors (7 files, baseline from commit 9dae716 v0.4.3 import migration) logged to `.planning/phases/23.1-portal-ui-polish/deferred-items.md` per scope-boundary rule. `npx vitest run` GREEN; `next build` clean (build excludes test files from compile).
+- [Phase 23.1-02-portal-ui-polish]: ReleaseStatusPill is the row-level single source of truth for release lifecycle pills. Legacy STATUS_BADGE_COLORS in ReleasesClient.tsx deleted; the duplicate in BranchSection.tsx remains only for section-header aggregate badges. Drift class for the per-row pill eliminated permanently — there is literally one component now.
+- [Phase 23.1-02-portal-ui-polish]: Promoted color drift fix applied + announced — was amber-400/20 in legacy ReleasesClient inline map; UX-02 D-03 specifies emerald-500/20 for "in prod" saturated. Lands in BOTH the per-row ReleaseStatusPill AND the section-header `{N} promoted` aggregate badge so the visual story is consistent. Revert points: `RELEASE_STATUS_COLORS.promoted` in StatusPill.tsx + `STATUS_BADGE_COLORS.promoted` in BranchSection.tsx.
+- [Phase 23.1-02-portal-ui-polish]: Pending-review section header badge derives count from `section.releases.filter(r => r.status === 'pending_approval').length` NOT `section.aggregate.pending` — server snapshot goes stale after Phase 22-04 client-side mutation handlers flip a row's status. Derived count stays accurate after every mutation.
+- [Phase 23.1-02-portal-ui-polish]: Pending-only filter chip (?pending=1) composes pendingOnly FIRST (most aggressive), THEN entry-type filter; empty sections pruned after each pass. Default OFF per CONTEXT UX-02 D-05. URL-mirrored — back-button + deep-linking work.
+- [Phase 23.1-02-portal-ui-polish]: Pending-approval row highlight via additive className `bg-amber-500/5 border-l-2 border-l-amber-500` — no new wrapper element, no Tailwind conflict with hover:bg-zinc-800/30 (hover wins via cascade).
+- [Phase 23.1-02-portal-ui-polish]: ReleaseStatusPill renders WITH a border (deliberately diverges from BugStatusPill / FeatureStatusPill which are borderless) — preserves visual continuity with the existing release-table pill presentation, where pills already used borders. Documented in StatusPill.tsx comment block.
+- [Phase 23.1-02-portal-ui-polish]: ExpandedPanel in ReleasesClient.tsx now renders ReleaseStatusPill at the top ("Status: [pill]") — bonus: customer reading the panel sees the same pill as the row, no hunting back up; also gives the ReleaseClient `import` a real consumer rather than a transitive grep marker.
+- [Phase 23.1-02-portal-ui-polish]: Vitest test pattern for URL-toggle in both directions requires explicit `unmount()` between OFF→ON simulation phases inside a single `it` block — afterEach(cleanup) only runs between describe/it blocks. Documented inline in T2.5 so future devs don't re-introduce the duplicate-mount footgun.
 
 ### Pending Todos
 
@@ -194,7 +202,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-09T23:25:00.000Z
-Stopped at: Completed 23.1-01-PLAN.md (UX-01 sub-nav ship; portal v0.4.7; ProjectSubNav 8/8 GREEN; portal suite 290 → 298). Portal PR open against `triarchsecurity/dev-portal` main; admin docs PR open against `triarchsecurity/platform` main. Awaiting Mike's review + merge of both PRs.
+Last session: 2026-05-09T23:43:29.000Z
+Stopped at: Completed 23.1-02-PLAN.md (UX-02 status column rewrite; portal v0.4.8; ReleaseStatusPill 10/10 GREEN; ReleasesClient/BranchSection +9 cases GREEN; portal suite 298 → 317; promoted color drift amber-400→emerald-500 fixed across pill + aggregate). Portal PR open against `triarchsecurity/dev-portal` main; admin docs PR open against `triarchsecurity/platform` main. Awaiting Mike's review + merge of both PRs.
 Resume file: None
-Next action: After both PRs merge, branch from main and execute 23.1-02-PLAN.md (UX-02 status column rewrite — ReleaseStatusPill, ENV column split, pending-approval row highlight, section badge, "Pending review only" filter chip; portal v0.4.8). Phase 23.1 has 4 plans total; 1/4 shipped.
+Next action: After both PRs merge, branch from main and execute 23.1-03-PLAN.md (UX-03 empty-state "Not yet released" copy on project tile cards; UI-only patch). Phase 23.1 has 4 plans total; 2/4 shipped.
