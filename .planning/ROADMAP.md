@@ -60,6 +60,7 @@
 - [x] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths (completed 2026-05-08)
 - [x] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch (completed 2026-05-08)
 - [x] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives) (completed 2026-05-09; portal v0.4.0)
+- [ ] **Phase 23.1: Portal UI Polish** — Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle (decimal phase inserted between 23 and 24; UX-01..04)
 - [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts`
 - [ ] **Phase 25: Cutover** — Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch
 - [ ] **Phase 26: Sunset (T+90)** — Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred 90 days)
@@ -300,6 +301,21 @@
 - [x] 23-03-PLAN.md — Feature list + detail customer surface (FEAT-01, FEAT-02)
 - [x] 23-04-PLAN.md — Bug + feature submission write surface + portal v0.4.0 phase close (BUG-03, FEAT-03)
 
+### Phase 23.1: Portal UI Polish
+**Goal**: Close the navigability + status-clarity gaps reported on portal v0.4.6 first sign-in. Customers gain a sub-nav linking Releases/Bugs/Features, a fixed status column rendering real release lifecycle status, human-readable empty-state copy on project tiles, and a staff preview-as-customer toggle for end-to-end testing.
+**Depends on**: Phase 23
+**Requirements**: UX-01, UX-02, UX-03, UX-04
+**Success Criteria** (what must be TRUE):
+  1. Sub-nav (Releases / Bugs / Features) renders on every `/projects/[slug]/*` surface via Next.js nested layout — active tab visible, mobile horizontal-scroll affordance for <=320px viewports
+  2. Releases table renders real `releaseLogs.status` (pending_approval, approved, rejected, promoted, superseded, dev) with saturated accent palette per CONTEXT.md UX-02; ENV column is separate; pending-approval rows visually highlighted; section headers show pending count badge; "Pending review only" filter chip narrows table
+  3. Project tiles with no prod/dev release row render `Prod: Not yet released` / `Dev: Not yet released` (no `--`); timestamps hidden when no row to time-relate; tile style remains standard (no greyed inactive treatment)
+  4. Staff "preview as customer" toggle in StaffCallout sets a 1-hour cookie (`__Host-portal-preview-as-customer` in prod, HttpOnly+SameSite=Lax+Secure-in-prod, no Domain) that suppresses staff banner + flips userRole derivation to skip staff bypass; PreviewModeBanner shows the eye-emoji "Preview mode active (Xm remaining) — Exit preview" affordance; non-staff users with cookie set see ZERO change (security boundary)
+**Plans**: 4 plans
+- [ ] 23.1-01-PLAN.md — Sub-nav layout component + Next.js nested layout + portal v0.4.7 (UX-01)
+- [ ] 23.1-02-PLAN.md — ReleaseStatusPill + ENV column split + pending-approval row highlight + section badge + Pending-only filter chip + portal v0.4.8 (UX-02)
+- [ ] 23.1-03-PLAN.md — Empty-state "Not yet released" copy + hidden timestamps on project tiles (UX-03)
+- [ ] 23.1-04-PLAN.md — Staff preview-as-customer toggle (cookie helper + API route + PreviewModeBanner + StaffCallout mod + cookie-aware userRole across pages) + portal v0.5.0 phase close (UX-04)
+
 ### Phase 24: CI/CD Deploy Safety
 **Goal**: Cross-app deploy disasters are impossible — wrong-repo-to-wrong-Firebase-project deploys fail at CI, missing env vars fail container start, and per-repo deploy SAs limit blast radius.
 **Depends on**: Phase 15, Phase 23
@@ -376,6 +392,7 @@
 | 21. Release Page Port (Read) | v2.2 | 4/6 | Complete    | 2026-05-08 |
 | 22. Release Page Port (Write) | v2.2 | 4/5 | Complete    | 2026-05-09 |
 | 23. Bug + Feature Customer Surface | v2.2 | 3/4 | Complete    | 2026-05-09 |
+| 23.1. Portal UI Polish | v2.2 | 0/4 | Not started | - |
 | 24. CI/CD Deploy Safety | v2.2 | 0/0 | Not started | - |
 | 25. Cutover | v2.2 | 0/0 | Not started | - |
 | 26. Sunset (T+90) | v2.2 | 0/0 | Not started | - |
