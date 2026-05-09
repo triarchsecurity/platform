@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
-status: executing
-stopped_at: "Completed 23-04-PLAN.md (BUG-03 + FEAT-03 ship; portal v0.4.0 phase-close; portal PR #19 open; admin docs PR pending; Phase 23 COMPLETE — all 6 requirements shipped across 23-01..04)"
-last_updated: "2026-05-09T10:00:00.000Z"
+status: planning
+stopped_at: "Completed 23-04-PLAN.md (BUG-03 + FEAT-03 ship; portal v0.4.0 phase-close; portal PR #19 open; admin docs PR pending; Phase 23 COMPLETE — 4/4 plans, 6/6 requirements shipped). Awaiting Mike's review + merge of portal PR #19 then admin docs PR."
+last_updated: "2026-05-09T15:22:18.322Z"
 progress:
   total_phases: 19
   completed_phases: 15
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 24 (next)
-Plan: Phase 23 COMPLETE — all 4 plans shipped (23-01 foundations, 23-02 bugs read, 23-03 features read, 23-04 bug+feature write surface). All 6 phase requirements (BUG-01..03 + FEAT-01..03) satisfied.
+Phase: 24
+Plan: Not started
 Last completed: Phase 23 bug-feature-customer-surface 23-04-PLAN.md (2026-05-09)
 
 ## Active Milestone: v2.2 — Customer Portal Split
@@ -49,7 +49,7 @@ Last completed: Phase 23 bug-feature-customer-surface 23-04-PLAN.md (2026-05-09)
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Ready to execute
+**Status:** Ready to plan
 
 ## Performance Metrics
 
