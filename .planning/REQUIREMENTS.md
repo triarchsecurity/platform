@@ -86,8 +86,8 @@ Customer write paths: approve, reject, feedback, branch preview swap, plus Slack
 
 Customer-readable views + customer-facing submission forms (the two net-new primitives).
 
-- [ ] **BUG-01**: Portal route `/projects/[slug]/bugs` renders membership-scoped bug list (each project's bugs only); supports the existing status pills + filter UI
-- [ ] **BUG-02**: Portal route `/projects/[slug]/bugs/[id]` renders bug detail with `ReleasedInSidebar` reused from admin (read-only customer view; NO staff edit controls)
+- [x] **BUG-01**: Portal route `/projects/[slug]/bugs` renders membership-scoped bug list (each project's bugs only); supports the existing status pills + filter UI
+- [x] **BUG-02**: Portal route `/projects/[slug]/bugs/[id]` renders bug detail with `ReleasedInSidebar` reused from admin (read-only customer view; NO staff edit controls)
 - [ ] **BUG-03**: Portal route `/projects/[slug]/bugs/new` provides customer submission form (title, description, severity, reproduction steps); POST creates bug_reports row with reporter_email = session email + project_key from URL
 - [ ] **FEAT-01**: Portal route `/projects/[slug]/features` renders membership-scoped feature list with status pills
 - [ ] **FEAT-02**: Portal route `/projects/[slug]/features/[id]` renders feature detail with `ReleasedInSidebar` (read-only customer view)
@@ -201,8 +201,8 @@ Updated by roadmapper during phase mapping.
 | WRITE-03 | Phase 22 | Complete |
 | WRITE-04 | Phase 22 | Complete |
 | WRITE-05 | Phase 22 | Complete |
-| BUG-01 | Phase 23 | Pending |
-| BUG-02 | Phase 23 | Pending |
+| BUG-01 | Phase 23 | Complete |
+| BUG-02 | Phase 23 | Complete |
 | BUG-03 | Phase 23 | Pending |
 | FEAT-01 | Phase 23 | Pending |
 | FEAT-02 | Phase 23 | Pending |
