@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: planning
-stopped_at: "Completed 23.1-02-PLAN.md (UX-02 status column rewrite; portal v0.4.8; ReleaseStatusPill +10 cases, ReleasesClient/BranchSection +9 cases; portal suite 298 → 317; promoted color drift amber-400→emerald-500 fixed). Awaiting Mike's review + merge of portal PR (feat/23.1-02-status-column) and admin docs PR (same branch name)."
-last_updated: "2026-05-09T23:43:29.000Z"
+stopped_at: "Completed 23.1-03-PLAN.md (UX-03 empty-state copy on project tiles; portal v0.4.9; +7 Vitest cases page.test.tsx; portal suite 317 → 324). Awaiting Mike's review + merge of portal PR #24 (feat/23.1-03-empty-state) and admin docs PR (same branch name)."
+last_updated: "2026-05-09T22:58:00.000Z"
 progress:
   total_phases: 19
   completed_phases: 15
   total_plans: 62
-  completed_plans: 59
+  completed_plans: 60
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,13 +19,13 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 23.1 — Portal UI Polish (Plan 01 complete; Plans 02–04 next)
+**Current focus:** Phase 23.1 — Portal UI Polish (Plans 01–03 complete; Plan 04 next)
 
 ## Current Position
 
 Phase: 23.1
-Plan: 03 (Empty-state copy — UX-03)
-Last completed: Phase 23.1 portal-ui-polish 23.1-02-PLAN.md (2026-05-09)
+Plan: 04 (Staff preview-as-customer toggle — UX-04)
+Last completed: Phase 23.1 portal-ui-polish 23.1-03-PLAN.md (2026-05-09)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -44,7 +44,7 @@ Last completed: Phase 23.1 portal-ui-polish 23.1-02-PLAN.md (2026-05-09)
 | 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Complete (5/5 plans) |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Complete (4/4 plans — 23-01 foundations + 23-02 bugs read + 23-03 features read + 23-04 bug+feature write surface; portal v0.4.0; all 6 reqs shipped) |
-| 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | In progress (2/4 plans — 23.1-01 sub-nav v0.4.7; 23.1-02 status column rewrite v0.4.8) |
+| 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | In progress (3/4 plans — 23.1-01 sub-nav v0.4.7; 23.1-02 status column rewrite v0.4.8; 23.1-03 empty-state copy v0.4.9) |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
 | 25 — Cutover | Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch | CUT-01..05 | Not started |
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
@@ -185,6 +185,11 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 23.1-02-portal-ui-polish]: ReleaseStatusPill renders WITH a border (deliberately diverges from BugStatusPill / FeatureStatusPill which are borderless) — preserves visual continuity with the existing release-table pill presentation, where pills already used borders. Documented in StatusPill.tsx comment block.
 - [Phase 23.1-02-portal-ui-polish]: ExpandedPanel in ReleasesClient.tsx now renders ReleaseStatusPill at the top ("Status: [pill]") — bonus: customer reading the panel sees the same pill as the row, no hunting back up; also gives the ReleaseClient `import` a real consumer rather than a transitive grep marker.
 - [Phase 23.1-02-portal-ui-polish]: Vitest test pattern for URL-toggle in both directions requires explicit `unmount()` between OFF→ON simulation phases inside a single `it` block — afterEach(cleanup) only runs between describe/it blocks. Documented inline in T2.5 so future devs don't re-introduce the duplicate-mount footgun.
+- [Phase 23.1-03-portal-ui-polish]: Empty-state row uses `flex items-baseline gap-2` (no `justify-between`) — populated rows keep 3-span justify-between layout (label / version / timestamp); empty rows collapse to 2-span gap-2 layout (label / "Not yet released"). Visually distinct enough to register "different state" while keeping row-height parity (no layout jump).
+- [Phase 23.1-03-portal-ui-polish]: Source text is `Prod:` / `Dev:` (capitalized + colon); rendered surface is `PROD:` / `DEV:` via existing `text-xs uppercase tracking-wide` CSS — DOM text matches `Prod:` (CSS doesn't transform DOM strings) so tests assert on source text while user sees CONTEXT.md UX-03 D-01's `PROD: Not yet released` literal.
+- [Phase 23.1-03-portal-ui-polish]: Timestamp HIDDEN entirely (not rendered) when corresponding deployedAt is null — per CONTEXT.md UX-03 D-03. NOT "—", NOT "never". Test T1.5 confirms by counting `(\d+\s+(min|hr|day|days)\s+ago|just now)` matches in serialised HTML.
+- [Phase 23.1-03-portal-ui-polish]: Brand-new project tile uses standard card classes (`bg-zinc-900 border-zinc-800`) — NO opacity/grayscale override per CONTEXT.md UX-03 D-04. Projects can go live at any time; greying might confuse customers.
+- [Phase 23.1-03-portal-ui-polish]: Server-component test pattern reuses Phase 21's approach — `renderToStaticMarkup(await ProjectsPage())` produces an HTML string for substring assertions. Mocks: `getPortalSession` + `getCurrentUserContext` for auth, `getProjectPipelineSummaries` as the unit-under-test boundary, `db.select` chain returns project rows. No jsdom dependency.
 
 ### Pending Todos
 
@@ -202,7 +207,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-09T23:43:29.000Z
-Stopped at: Completed 23.1-02-PLAN.md (UX-02 status column rewrite; portal v0.4.8; ReleaseStatusPill 10/10 GREEN; ReleasesClient/BranchSection +9 cases GREEN; portal suite 298 → 317; promoted color drift amber-400→emerald-500 fixed across pill + aggregate). Portal PR open against `triarchsecurity/dev-portal` main; admin docs PR open against `triarchsecurity/platform` main. Awaiting Mike's review + merge of both PRs.
+Last session: 2026-05-09T22:58:00.000Z
+Stopped at: Completed 23.1-03-PLAN.md (UX-03 empty-state copy; portal v0.4.9; +7 Vitest cases page.test.tsx; portal suite 317 → 324). Portal PR #24 open against `triarchsecurity/dev-portal` main; admin docs PR open against `triarchsecurity/platform` main. Awaiting Mike's review + merge of both PRs.
 Resume file: None
-Next action: After both PRs merge, branch from main and execute 23.1-03-PLAN.md (UX-03 empty-state "Not yet released" copy on project tile cards; UI-only patch). Phase 23.1 has 4 plans total; 2/4 shipped.
+Next action: After both PRs merge, branch from main and execute 23.1-04-PLAN.md (UX-04 staff preview-as-customer toggle; cookie helpers + API route + PreviewModeBanner + StaffCallout mod + cookie-aware userRole across pages; portal v0.5.0 phase close). Phase 23.1 has 4 plans total; 3/4 shipped.
