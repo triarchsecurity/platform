@@ -43,8 +43,28 @@ jobs:
         run: npx tsx scripts/triarch-ingest.ts flush-changelog
         continue-on-error: true
 
-  deploy:
+  validate-apphosting:
+    # Phase 24 / CI-04 — pre-deploy lint of apphosting.yaml + apphosting.dev.yaml
+    # against REQUIRED_ENV (src/lib/env-schema.ts). Fails the build on any missing
+    # binding so env-name typos can't slip into a deploy and surface as a failed
+    # rollout at FAH boot. Runs in parallel with quality-gate's other gates.
     needs: quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+      - name: Install deps for validate script
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_PACKAGES_TOKEN }}
+      - name: Validate apphosting.yaml against env schema
+        run: npx tsx scripts/validate-apphosting.ts
+
+  deploy:
+    needs: [quality-gate, validate-apphosting]
     if: github.event_name == 'push'
     uses: triarchsecurity/shared-workflows/.github/workflows/deploy-firebase.yml@v4
     with:
