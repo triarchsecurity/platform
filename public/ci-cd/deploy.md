@@ -76,7 +76,26 @@ gh api repos/$ORG/$REPO/code-scanning/default-setup 2>&1 | head -3
 # Public repos always pass this even on Free.
 ```
 
-If `plan=free` AND `visibility=private`: surface to the user that **R-4, C-1, C-4, C-5, C-8 cannot be enforced** on this repo. Recommend Team upgrade or making the repo public; otherwise mark these items blocked-by-plan and continue with the file-based remediations only (CODEOWNERS, Dependabot, threat model, ci.yml, pre-commit). Do NOT attempt `gh api -X PUT .../branches/main/protection` or `gh api -X POST .../rulesets` — both return HTTP 403 "Upgrade to GitHub Pro" and waste an iteration.
+**Plan-tier branching (3 tiers, NOT 2):**
+- `plan=enterprise` — **architecture's full vision**. Adds environment-level required reviewers + wait timers on private repos (Enterprise-only). Apply the full deploy flow with 3 protected envs WITH reviewers/wait-timers per the architecture diagram (`env: dev — auto`, `env: staging — 1 reviewer / 5min`, `env: prod — 2 reviewers / 30min`).
+- `plan=team` — the framework's **assumed baseline**. All pipeline gates available EXCEPT env-level reviewers/wait-timers (Enterprise-only on private). Apply: ruleset (signed commits, linear history, required reviews, required status checks) + 3 environments (basic) + `deployment_branch_policy: protected_branches: true` on staging/prod (so only the protected `main` branch can deploy). The reviewer gate happens at the PR level via the ruleset, not at the env level.
+- `plan=free` AND `visibility=private` — **degraded fallback**. R-4, C-1, C-4, C-5, C-8 cannot be enforced (org-Free locks branch protection, rulesets, environments on private repos; the 2020 "branch protection became free" change applies to **personal** Free, not org Free). Apply file-based remediations only (CODEOWNERS, Dependabot, threat model, ci-lite.yml, pre-commit) and recommend Team upgrade. Do NOT attempt `gh api -X PUT .../branches/main/protection` or `gh api -X POST .../rulesets` on private repos — both return 403 "Upgrade to GitHub Pro".
+- `plan=free` AND `visibility=public` — full features (Free's pipeline gates work on public repos). Apply Team-equivalent flow.
+
+**Reviewer-gate matrix:**
+
+| Plan | PR-level review (via ruleset) | Env-level reviewer (per env) | Env-level wait timer |
+|---|---|---|---|
+| Free + private | ✗ | ✗ | ✗ |
+| Free + public | ✓ | ✓ | ✓ |
+| **Team (current Triarch baseline)** | **✓** | **✗ Enterprise-only on private** | **✗ Enterprise-only on private** |
+| Enterprise | ✓ | ✓ | ✓ |
+
+For Team customers wanting per-env approval gates without paying Enterprise: use `deployment_branch_policy: protected_branches: true` on prod env (gates by branch, not by reviewer) + repo ruleset's `pull_request: required_approving_review_count: 1` for the merge gate.
+
+**GHAS branching (orthogonal to plan):**
+- `code-scanning/default-setup` returns 200 → GHAS available (any plan + public repo, OR Team/Enterprise + paid GHAS). Ship `ci-full.yml` if the repo also has IaC/Dockerfile/threat-model.
+- 403 "Advanced Security must be enabled" → GHAS unavailable. Ship `ci-lite.yml` (no SARIF, scanner findings in workflow logs only).
 
 If a check fails, print the matching login command and stop until the user confirms they've run it:
 
@@ -258,21 +277,40 @@ Each entry maps a gap-analysis ID to the action you take. Use `github-cicd-scaff
 - **Action:** Out of scope for this prompt — point the user at `cicd-walkthrough.html` Stage 1 if they haven't picked / provisioned a cloud yet.
 
 ### C-1 — Create 3 protected environments
-- **Action:** Run the scaffold's `bootstrap.sh` (preferred). Or, if the user only wants the environments and not the rest:
+- **Team-tier action (private repos):** Create the environments + apply `deployment_branch_policy: protected_branches: true` on staging/prod. **Do NOT pass `reviewers` or `wait_timer` fields on Team** — they 422 with "Failed to create the environment protection rule. Please ensure the billing plan supports..." (env-level reviewers + wait-timers are Enterprise-only on private repos).
   ```bash
-  # Get team IDs first
-  ENG_ID=$(gh api orgs/ORG/teams/engineering --jq .id)
-  RM_ID=$(gh api orgs/ORG/teams/release-managers --jq .id)
-  # Create environments
-  gh api -X PUT repos/ORG/REPO/environments/dev
-  gh api -X PUT repos/ORG/REPO/environments/staging \
-    --field reviewers="[{\"type\":\"Team\",\"id\":$ENG_ID}]" \
-    --field wait_timer=5 --field prevent_self_review=true
-  gh api -X PUT repos/ORG/REPO/environments/prod \
-    --field reviewers="[{\"type\":\"Team\",\"id\":$RM_ID},{\"type\":\"Team\",\"id\":$ENG_ID}]" \
-    --field wait_timer=30 --field prevent_self_review=true
+  # Get user/team IDs (use teams when they exist; users as fallback)
+  USER_ID=$(gh api users/$DEPLOYER_LOGIN --jq .id)
+
+  # dev: free-form, no protection
+  gh api -X PUT repos/$ORG/$REPO/environments/dev
+
+  # staging: only the protected default branch (main) can deploy
+  cat > /tmp/env-staging.json <<EOF
+  {
+    "deployment_branch_policy": {"protected_branches": true, "custom_branch_policies": false}
+  }
+  EOF
+  gh api -X PUT repos/$ORG/$REPO/environments/staging --input /tmp/env-staging.json
+
+  # prod: same — only main can deploy
+  gh api -X PUT repos/$ORG/$REPO/environments/prod --input /tmp/env-staging.json
   ```
-- **Verify:** `gh api repos/ORG/REPO/environments --jq '.environments[].name'`
+  **PR-level review gate** (Team-equivalent of env reviewers): the repo's ruleset (R-4) handles `required_approving_review_count: 1`. Combined with `protected_branches: true` on prod env, only reviewed merges to main can promote to prod.
+
+- **Enterprise-tier action (full architecture):** add `reviewers` + `wait_timer` to staging/prod (works on Enterprise private; works on any plan public).
+  ```bash
+  cat > /tmp/env-staging-ent.json <<EOF
+  {
+    "wait_timer": 5,
+    "reviewers": [{"type":"User","id":$USER_ID}],
+    "deployment_branch_policy": {"protected_branches": true, "custom_branch_policies": false}
+  }
+  EOF
+  gh api -X PUT repos/$ORG/$REPO/environments/staging --input /tmp/env-staging-ent.json
+  ```
+
+- **Verify:** `gh api repos/$ORG/$REPO/environments --jq '.environments[] | {name, deployment_branch_policy, protection_rules:[.protection_rules[]?.type]}'`
 
 ### C-2 — Migrate from static cloud keys to OIDC
 - **Action:** Same as R-5 (apply OIDC IaC). Then explicitly delete the static keys:
@@ -428,7 +466,8 @@ Validation:
 | User pastes a credential value despite the rule | Stop. Tell them to rotate that credential immediately. Don't proceed until they confirm rotation. |
 | Findings file unreadable / corrupt | Ask user to re-run gap-analysis or to list items inline. |
 | Repo doesn't exist or no access | Stop. Confirm the org/repo and that `gh auth status` shows the right user. |
-| User on **org Free** plan with private repo | **R-4, C-1, C-4, C-5, C-8 all fail** — org Free locks branch protection, rulesets, AND environments-with-reviewers on private repos. (The 2020 "branch protection became free" change applies to **personal** Free, not org Free.) Mark these blocked-by-plan, recommend Team upgrade, do NOT attempt the `gh api -X PUT .../protection` or `-X POST .../rulesets` calls (they 403 with "Upgrade to GitHub Pro"). Continue with file-based remediations only. Public repos under Free have full features and pass all of these. |
+| User on **org Team** (or higher) plan | The framework's **assumed baseline**. R-4, C-1, C-4, C-5, C-8 are all enforceable. Apply the full deploy flow per R-2/R-4/C-1: ship `ci-lite.yml` or `ci-full.yml`, apply main-protection ruleset, create dev/staging/prod environments with reviewers per §5/C-1. |
+| User on **org Free** plan with private repo (degraded fallback) | **R-4, C-1, C-4, C-5, C-8 all fail** — org Free locks branch protection, rulesets, AND environments-with-reviewers on private repos. (The 2020 "branch protection became free" change applies to **personal** Free, not org Free.) Mark these blocked-by-plan, recommend Team upgrade, do NOT attempt the `gh api -X PUT .../protection` or `-X POST .../rulesets` calls (they 403). Ship `ci-lite.yml` + CODEOWNERS + Dependabot + threat model only — these provide value without ruleset enforcement. Public repos under Free have full features and pass all of these. |
 | User's repo lacks **GitHub Advanced Security** | Ship `ci-lite.yml` (R-2 default). It declares no `security-events: write` and uploads no SARIF, so it works without GHAS. If you must ship `ci-full.yml`, leave its GHAS comments closed (`security-events: write` commented out, `upload-sarif` `continue-on-error: true`). Verify GHAS state in advance via `gh api .../code-scanning/default-setup` (§1). |
 | User's repo has none of `iac/`, `Dockerfile`, `.threatmodel/` | Ship `ci-lite.yml` unconditionally. **Never ship `ci-full.yml` on such a repo** — the gated jobs (checkov, tfsec, threat-model-drift) are not the issue (the new `detect`-job pattern handles missing files cleanly), but they're noise. Lite is the right shape. |
 | `ci.yml` was applied but `gh run list --workflow ci.yml --json conclusion` shows zero successful runs | Workflow file was likely rejected at scheduling. Most common cause: shipping `ci-full.yml` (or an old single-`ci.yml` from pre-redesign framework) on a repo without GHAS / without IaC. Replace with `ci-lite.yml` and verify. |

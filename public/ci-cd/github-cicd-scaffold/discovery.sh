@@ -118,22 +118,26 @@ if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
     fi
 
     # Plan-tier capability inference (read-only — no state change).
-    # Org Free locks branch protection, rulesets, AND environments-with-reviewers
-    # on PRIVATE repos. The 2020 "branch protection became free" change applies
-    # to PERSONAL Free accounts, NOT org Free. Public repos under org Free have
-    # full features.
+    # The framework assumes Team (or higher) as the baseline. Free + private is
+    # the degraded-fallback path: branch protection, rulesets, AND
+    # environments-with-reviewers are all blocked there. The 2020 "branch
+    # protection became free" change applies to PERSONAL Free accounts, NOT
+    # org Free. Public repos under any plan have full pipeline-gate features.
     section "GitHub: $ORG/$REPO plan-tier capability inference"
     PLAN_TIER=$(gh api "orgs/$ORG" --jq '.plan.name' 2>/dev/null)
     VIS=$(gh api "repos/$ORG/$REPO" --jq '.visibility' 2>/dev/null)
     echo "plan=$PLAN_TIER visibility=$VIS" | tee -a "$OUT"
     if [ "$PLAN_TIER" = "free" ] && [ "$VIS" = "private" ]; then
-      echo "capability: BRANCH PROTECTION + RULESETS + PROTECTED ENVIRONMENTS = BLOCKED" | tee -a "$OUT"
-      echo "(org Free + private repo cannot enforce R-4, C-1, C-4, C-5, C-8, etc." | tee -a "$OUT"
-      echo " upgrade to Team or make repo public to unlock; deploy.md will surface this)" | tee -a "$OUT"
+      echo "capability: BRANCH PROTECTION + RULESETS + PROTECTED ENVIRONMENTS = BLOCKED (degraded-fallback path)" | tee -a "$OUT"
+      echo "(R-4, C-1, C-4, C-5, C-8 cannot be enforced on this repo without plan upgrade)" | tee -a "$OUT"
+      echo "(deploy.md routes this to file-only remediations: CODEOWNERS, Dependabot, threat-model, ci-lite.yml)" | tee -a "$OUT"
     elif [ "$PLAN_TIER" = "free" ] && [ "$VIS" = "public" ]; then
       echo "capability: ALL FEATURES AVAILABLE (public repo on Free has full GitHub feature set)" | tee -a "$OUT"
+    elif [ "$PLAN_TIER" = "team" ] || [ "$PLAN_TIER" = "business" ] || [ "$PLAN_TIER" = "enterprise" ]; then
+      echo "capability: ALL FEATURES AVAILABLE (Team/Business/Enterprise — framework's baseline path)" | tee -a "$OUT"
+      echo "(branch protection, rulesets, environments-with-reviewers, signed commits, linear history all enforceable)" | tee -a "$OUT"
     else
-      echo "capability: branch protection + rulesets + environments AVAILABLE on this plan" | tee -a "$OUT"
+      echo "capability: plan tier '$PLAN_TIER' — assuming all features available (verify before applying ruleset)" | tee -a "$OUT"
     fi
 
     section "GitHub: $ORG/$REPO environments (names only)"
