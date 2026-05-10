@@ -59,7 +59,7 @@ jobs:
       - name: Install deps for validate script
         run: npm ci
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_PACKAGES_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - name: Validate apphosting.yaml against env schema
         run: npx tsx scripts/validate-apphosting.ts
 
