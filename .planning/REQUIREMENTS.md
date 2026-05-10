@@ -120,6 +120,15 @@ Final cleanup at T+90 — delete deprecated routes and dead hostname-guard branc
 - [ ] **SUN-02**: v2.1 hostname-aware route guards in admin (`page.tsx`, `admin/layout.tsx`, `projects/layout.tsx`, `login/layout.tsx`) deleted — admin only serves admin host now
 - [ ] **SUN-03**: Admin v3.0.0 bump to mark major surface change
 
+### Portal UI Polish (Phase 23.1)
+
+Decimal phase inserted between Phase 23 and 24 to address customer UX gaps observed on portal v0.4.6 first sign-in.
+
+- [x] **UX-01**: Customer on `/projects/[slug]/<any>` sees a sub-nav linking Releases / Bugs / Features with active surface visually distinguished; mobile-responsive (completed 2026-05-10; portal v0.4.7)
+- [x] **UX-02**: Release log table renders `releaseLogs.status` (pending_approval | approved | rejected | promoted | superseded | dev) with color-coded badges; ENV in own column; "needs your review" rows visually distinct (completed 2026-05-10; portal v0.4.8)
+- [x] **UX-03**: Project home cards replace cryptic `PROD --` with "Not yet released" copy when no prod rows exist (completed 2026-05-10; portal v0.4.9)
+- [x] **UX-04**: Staff users with admin role can toggle "preview as customer" mode; cookie-based 1h TTL; cookie NEVER grants permissions (completed 2026-05-10; portal v0.5.0)
+
 ## v2.3+ Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
