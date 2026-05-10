@@ -60,7 +60,7 @@
 - [x] **Phase 21: Release Page Port (Read)** — Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 (not 403) for non-members; mobile-responsive read paths (completed 2026-05-08)
 - [x] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch (completed 2026-05-08)
 - [x] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives) (completed 2026-05-09; portal v0.4.0)
-- [ ] **Phase 23.1: Portal UI Polish** — Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle (decimal phase inserted between 23 and 24; UX-01..04)
+- [x] **Phase 23.1: Portal UI Polish** — Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle (decimal phase inserted between 23 and 24; UX-01..04) — completed 2026-05-10
 - [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts`
 - [ ] **Phase 25: Cutover** — Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch
 - [ ] **Phase 26: Sunset (T+90)** — Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred 90 days)
@@ -314,7 +314,7 @@
 - [x] 23.1-01-PLAN.md — Sub-nav layout component + Next.js nested layout + portal v0.4.7 (UX-01) (completed 2026-05-09)
 - [x] 23.1-02-PLAN.md — ReleaseStatusPill + ENV column split + pending-approval row highlight + section badge + Pending-only filter chip + portal v0.4.8 (UX-02) (completed 2026-05-09)
 - [x] 23.1-03-PLAN.md — Empty-state "Not yet released" copy + hidden timestamps on project tiles + portal v0.4.9 (UX-03) (completed 2026-05-09)
-- [ ] 23.1-04-PLAN.md — Staff preview-as-customer toggle (cookie helper + API route + PreviewModeBanner + StaffCallout mod + cookie-aware userRole across pages) + portal v0.5.0 phase close (UX-04)
+- [x] 23.1-04-PLAN.md — Staff preview-as-customer toggle (cookie helper + API route + PreviewModeBanner + StaffCallout mod + cookie-aware userRole across pages) + portal v0.5.0 phase close (UX-04) (completed 2026-05-10)
 
 ### Phase 24: CI/CD Deploy Safety
 **Goal**: Cross-app deploy disasters are impossible — wrong-repo-to-wrong-Firebase-project deploys fail at CI, missing env vars fail container start, and per-repo deploy SAs limit blast radius.
@@ -392,7 +392,7 @@
 | 21. Release Page Port (Read) | v2.2 | 4/6 | Complete    | 2026-05-08 |
 | 22. Release Page Port (Write) | v2.2 | 4/5 | Complete    | 2026-05-09 |
 | 23. Bug + Feature Customer Surface | v2.2 | 3/4 | Complete    | 2026-05-09 |
-| 23.1. Portal UI Polish | v2.2 | 3/4 | In progress | 2026-05-09 |
+| 23.1. Portal UI Polish | v2.2 | 4/4 | Complete    | 2026-05-10 |
 | 24. CI/CD Deploy Safety | v2.2 | 0/0 | Not started | - |
 | 25. Cutover | v2.2 | 0/0 | Not started | - |
 | 26. Sunset (T+90) | v2.2 | 0/0 | Not started | - |

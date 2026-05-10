@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: planning
-stopped_at: "Completed 23.1-03-PLAN.md (UX-03 empty-state copy on project tiles; portal v0.4.9; +7 Vitest cases page.test.tsx; portal suite 317 → 324). Awaiting Mike's review + merge of portal PR #24 (feat/23.1-03-empty-state) and admin docs PR (same branch name)."
-last_updated: "2026-05-09T22:58:00.000Z"
+stopped_at: "Completed 23.1-04-PLAN.md (UX-04 staff preview-as-customer toggle; portal v0.5.0; +47 Vitest cases across cookie helper / API route / banner / StaffCallout / cookie-aware userRole; portal suite 324 → 371; Phase 23.1 CLOSES 4/4 plans). Awaiting Mike's review + merge of portal PR #25 (feat/23.1-04-staff-preview-toggle) and admin docs PR (same branch name)."
+last_updated: "2026-05-10T00:17:32.000Z"
 progress:
   total_phases: 19
-  completed_phases: 15
+  completed_phases: 16
   total_plans: 62
-  completed_plans: 60
+  completed_plans: 61
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,13 +19,13 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 23.1 — Portal UI Polish (Plans 01–03 complete; Plan 04 next)
+**Current focus:** Phase 23.1 — Portal UI Polish COMPLETE (4/4 plans, UX-01..04 all shipped); Phase 24 (CI/CD Deploy Safety) next
 
 ## Current Position
 
-Phase: 23.1
-Plan: 04 (Staff preview-as-customer toggle — UX-04)
-Last completed: Phase 23.1 portal-ui-polish 23.1-03-PLAN.md (2026-05-09)
+Phase: 24 (CI/CD Deploy Safety, research_required)
+Plan: 01 (TBD — phase needs planning before plans land)
+Last completed: Phase 23.1 portal-ui-polish 23.1-04-PLAN.md (2026-05-10) — Phase 23.1 CLOSED
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -44,7 +44,7 @@ Last completed: Phase 23.1 portal-ui-polish 23.1-03-PLAN.md (2026-05-09)
 | 21 — Release Page Port (Read) | Lift-and-shift `/projects/[slug]/releases` + `/projects` list; 404 for non-members | PORTAL-01..04 | Complete |
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Complete (5/5 plans) |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Complete (4/4 plans — 23-01 foundations + 23-02 bugs read + 23-03 features read + 23-04 bug+feature write surface; portal v0.4.0; all 6 reqs shipped) |
-| 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | In progress (3/4 plans — 23.1-01 sub-nav v0.4.7; 23.1-02 status column rewrite v0.4.8; 23.1-03 empty-state copy v0.4.9) |
+| 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | Complete (4/4 plans — 23.1-01 sub-nav v0.4.7; 23.1-02 status column rewrite v0.4.8; 23.1-03 empty-state copy v0.4.9; 23.1-04 staff preview-as-customer toggle v0.5.0) |
 | 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
 | 25 — Cutover | Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch | CUT-01..05 | Not started |
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
