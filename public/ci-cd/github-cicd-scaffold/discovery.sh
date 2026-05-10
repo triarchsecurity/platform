@@ -97,6 +97,45 @@ if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
     section "GitHub: $ORG/$REPO rulesets"
     gh api "repos/$ORG/$REPO/rulesets" --jq '.[] | {name, enforcement, target}' 2>&1 | tee -a "$OUT"
 
+    # GHAS probe — detects whether the framework's ci.yml needs the GHAS-aware
+    # variant. The default-setup endpoint returns 403 with "Advanced Security
+    # must be enabled" when GHAS is unavailable on a private repo. Public repos
+    # get GHAS features (code scanning, secret scanning) free, so 200 there
+    # confirms availability.
+    section "GitHub: $ORG/$REPO GHAS state (Advanced Security availability)"
+    GHAS_PROBE=$(gh api "repos/$ORG/$REPO/code-scanning/default-setup" 2>&1)
+    if echo "$GHAS_PROBE" | grep -q "Advanced Security must be enabled"; then
+      echo "ghas: NOT AVAILABLE" | tee -a "$OUT"
+      echo "(this repo is private and the org does not have GHAS — the framework's ci.yml" | tee -a "$OUT"
+      echo " must be applied with security-events:write COMMENTED OUT and continue-on-error:true" | tee -a "$OUT"
+      echo " on each upload-sarif step, otherwise the workflow is rejected at scheduling)" | tee -a "$OUT"
+    elif echo "$GHAS_PROBE" | grep -q "state"; then
+      echo "ghas: AVAILABLE" | tee -a "$OUT"
+      echo "$GHAS_PROBE" | head -3 | tee -a "$OUT"
+    else
+      echo "ghas: UNKNOWN — probe returned:" | tee -a "$OUT"
+      echo "$GHAS_PROBE" | head -3 | tee -a "$OUT"
+    fi
+
+    # Plan-tier capability inference (read-only — no state change).
+    # Org Free locks branch protection, rulesets, AND environments-with-reviewers
+    # on PRIVATE repos. The 2020 "branch protection became free" change applies
+    # to PERSONAL Free accounts, NOT org Free. Public repos under org Free have
+    # full features.
+    section "GitHub: $ORG/$REPO plan-tier capability inference"
+    PLAN_TIER=$(gh api "orgs/$ORG" --jq '.plan.name' 2>/dev/null)
+    VIS=$(gh api "repos/$ORG/$REPO" --jq '.visibility' 2>/dev/null)
+    echo "plan=$PLAN_TIER visibility=$VIS" | tee -a "$OUT"
+    if [ "$PLAN_TIER" = "free" ] && [ "$VIS" = "private" ]; then
+      echo "capability: BRANCH PROTECTION + RULESETS + PROTECTED ENVIRONMENTS = BLOCKED" | tee -a "$OUT"
+      echo "(org Free + private repo cannot enforce R-4, C-1, C-4, C-5, C-8, etc." | tee -a "$OUT"
+      echo " upgrade to Team or make repo public to unlock; deploy.md will surface this)" | tee -a "$OUT"
+    elif [ "$PLAN_TIER" = "free" ] && [ "$VIS" = "public" ]; then
+      echo "capability: ALL FEATURES AVAILABLE (public repo on Free has full GitHub feature set)" | tee -a "$OUT"
+    else
+      echo "capability: branch protection + rulesets + environments AVAILABLE on this plan" | tee -a "$OUT"
+    fi
+
     section "GitHub: $ORG/$REPO environments (names only)"
     gh api "repos/$ORG/$REPO/environments" --jq '.environments[] | {name, protection_rules}' 2>&1 | tee -a "$OUT"
 
@@ -124,6 +163,27 @@ if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
     section "GitHub: $ORG/$REPO IaC presence (terraform/opentofu files)"
     gh api "repos/$ORG/$REPO/git/trees/$DEFAULT_BRANCH?recursive=1" \
       --jq '.tree[] | select(.path | test("\\.(tf|tofu)$")) | .path' 2>&1 | tee -a "$OUT" || echo "(none found)" | tee -a "$OUT"
+
+    # Workflow-success-rate probe — detects "ci.yml present but never succeeds"
+    # (the symptom of shipping the wrong variant of the framework). If ci.yml
+    # exists but has 0 successful runs in its last 20, the deploy.md applier
+    # likely shipped ci-full.yml on a repo that should have gotten ci-lite.yml.
+    section "GitHub: $ORG/$REPO ci.yml health (last 20 runs)"
+    if gh api "repos/$ORG/$REPO/contents/.github/workflows/ci.yml" >/dev/null 2>&1; then
+      TOTAL=$(gh run list --repo "$ORG/$REPO" --workflow ci.yml --limit 20 --json conclusion --jq 'length' 2>/dev/null || echo 0)
+      SUCCESS=$(gh run list --repo "$ORG/$REPO" --workflow ci.yml --limit 20 --json conclusion --jq '[.[] | select(.conclusion=="success")] | length' 2>/dev/null || echo 0)
+      FAILURE=$(gh run list --repo "$ORG/$REPO" --workflow ci.yml --limit 20 --json conclusion --jq '[.[] | select(.conclusion=="failure")] | length' 2>/dev/null || echo 0)
+      echo "ci.yml runs: total=$TOTAL success=$SUCCESS failure=$FAILURE" | tee -a "$OUT"
+      if [ "$TOTAL" -gt 0 ] && [ "$SUCCESS" -eq 0 ]; then
+        echo "ci.yml-health: WORKFLOW NEVER SUCCEEDS — likely shipped wrong variant" | tee -a "$OUT"
+        echo "(if you applied the framework's ci.yml: replace with ci-lite.yml)" | tee -a "$OUT"
+        echo "(see deploy.md §5/R-2 decision tree for which variant fits this repo)" | tee -a "$OUT"
+      elif [ "$TOTAL" -eq 0 ]; then
+        echo "ci.yml-health: workflow file present but no runs yet — push or PR will trigger" | tee -a "$OUT"
+      fi
+    else
+      echo "ci.yml not present in repo — see deploy.md §5/R-2 to choose lite vs full" | tee -a "$OUT"
+    fi
   fi
 else
   section "GitHub — NOT AUTHENTICATED"

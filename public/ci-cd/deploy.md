@@ -58,6 +58,26 @@ firebase projects:list 2>/dev/null | head -3
 az account show
 ```
 
+**Plan-tier + GHAS probes (run these BEFORE applying the scaffold's ci.yml):**
+
+```bash
+# Org plan tier — informs whether branch protection / rulesets / environments work
+gh api orgs/$ORG --jq '.plan.name'
+
+# Repo visibility — public repos under org Free have full features; private don't
+gh api repos/$ORG/$REPO --jq '.visibility'
+
+# GHAS state — controls whether the workflow can use security-events:write + SARIF upload
+gh api repos/$ORG/$REPO/code-scanning/default-setup 2>&1 | head -3
+# 200 + JSON state → GHAS available; apply ci.yml as-shipped
+# 403 "Advanced Security must be enabled" → must apply the Free-plan-safe variant
+#   (comment out `security-events: write` on 4 scanner jobs;
+#    add `continue-on-error: true` to each upload-sarif step)
+# Public repos always pass this even on Free.
+```
+
+If `plan=free` AND `visibility=private`: surface to the user that **R-4, C-1, C-4, C-5, C-8 cannot be enforced** on this repo. Recommend Team upgrade or making the repo public; otherwise mark these items blocked-by-plan and continue with the file-based remediations only (CODEOWNERS, Dependabot, threat model, ci.yml, pre-commit). Do NOT attempt `gh api -X PUT .../branches/main/protection` or `gh api -X POST .../rulesets` — both return HTTP 403 "Upgrade to GitHub Pro" and waste an iteration.
+
 If a check fails, print the matching login command and stop until the user confirms they've run it:
 
 #### GitHub (always required)
@@ -153,8 +173,47 @@ Each entry maps a gap-analysis ID to the action you take. Use `github-cicd-scaff
 - **Verify:** `gh api repos/ORG/REPO --jq '.has_actions'`
 
 ### R-2 — Add a CI workflow
-- **Action:** Copy `github-cicd-scaffold/.github/workflows/ci.yml` into the user's `.github/workflows/`. Adjust language-specific steps (Node version, package manager) if the repo isn't standard `npm`. **Do not modify the security scanning steps.**
-- **Verify:** Once committed and a PR opened, all 7 status checks should appear.
+
+**Choose `ci-lite.yml` or `ci-full.yml` per the decision tree below.** The scaffold ships both. Always copy the chosen file to the customer's `.github/workflows/ci.yml` (rename on copy — the workflow itself is named "CI" / "CI (full)" via its `name:` field).
+
+```
+                        ┌───────────────────────────────────────────────────────────┐
+                        │ Does the repo have iac/**/*.tf, **/Dockerfile,            │
+                        │ OR .threatmodel/?                                          │
+                        └───────────────────────────────────────────────────────────┘
+                                          │              │
+                                       NO │              │ YES
+                                          ▼              ▼
+                            ┌─────────────────────┐  ┌─────────────────────────────────┐
+                            │ ship ci-lite.yml    │  │ Does the repo have GHAS?        │
+                            │ (default for SMBs)  │  │ (gh api .../code-scanning/      │
+                            │                     │  │  default-setup → 200)           │
+                            └─────────────────────┘  └─────────────────────────────────┘
+                                                          │              │
+                                                       NO │              │ YES
+                                                          ▼              ▼
+                                           ┌─────────────────────┐  ┌─────────────────────┐
+                                           │ ship ci-lite.yml    │  │ ship ci-full.yml    │
+                                           │ (no SARIF possible) │  │ (with SARIF upload  │
+                                           │                     │  │  to Security tab)   │
+                                           └─────────────────────┘  └─────────────────────┘
+```
+
+**Why two variants:** earlier framework versions shipped a single `ci.yml` with `if: hashFiles('iac/**/*.tf') != ''` job-level conditionals. When matched paths didn't exist (typical SMB starter state), GitHub Actions rejected the workflow at scheduling — `jobs: []`, no log, "workflow file issue." See FINDINGS-2026-05-10.md. The two-variant model avoids this by removing the conditional pattern from the lite path entirely.
+
+#### `ci-lite.yml` (default — SMB-friendly)
+- **Jobs:** lint-test + semgrep + osv-scanner + gitleaks (4 unconditional jobs).
+- **Action:** Copy `github-cicd-scaffold/.github/workflows/ci-lite.yml` to the user's `.github/workflows/ci.yml`. Adjust the `lint-test` job's npm script names (the scaffold uses `npm run lint`; uncomment the typecheck/test lines if the customer's `package.json` has them). **Do not modify the security scanning jobs themselves.**
+- **No SARIF upload** — findings appear in workflow logs only (works on any plan).
+- **Trigger:** `on: pull_request: branches: [main]` + `on: push: branches: [main]` (post-merge sweep) + `workflow_dispatch`. Dependabot pushes are covered via the pull_request trigger.
+
+#### `ci-full.yml` (opt-in — repos with IaC + GHAS)
+- **Jobs:** lint-test + semgrep + osv-scanner + gitleaks + **detect** + checkov + tfsec + threat-model-drift + ci-passed (9 jobs).
+- **Action:** Copy `github-cicd-scaffold/.github/workflows/ci-full.yml` to the user's `.github/workflows/ci.yml`. Same npm-script adjustment as lite. **Do not modify scanners.**
+- **GHAS opt-in:** `security-events: write` is commented out by default on the 4 SARIF-uploading jobs (semgrep, osv-scanner, checkov, tfsec); `upload-sarif` steps are `continue-on-error: true`. If GHAS is available (`gh api .../code-scanning/default-setup → 200`), un-comment the `security-events: write` lines and remove `continue-on-error: true` so findings flow to the Security tab.
+- **Detect job:** `detect` evaluates the repo for `iac/`, `Dockerfile`, `.threatmodel/` and emits outputs that gate `checkov`, `tfsec`, `threat-model-drift`. This replaces the earlier broken `if: hashFiles(...)` pattern. **Never re-add `if: hashFiles(...)` at job level** — that's the bug we're avoiding.
+
+- **Verify after either variant:** Once the PR opens, run `gh run list --repo $ORG/$REPO --workflow ci.yml --limit 5 --json conclusion,event` and confirm at least one run succeeded. If conclusion is `failure` with `jobs: 0`, the workflow file was rejected at scheduling — re-check that you shipped the right variant for the repo's GHAS / IaC state.
 
 ### R-3 — Add deploy workflows
 - **Action:** Copy `deploy-dev.yml`, `deploy-staging.yml`, `deploy-prod.yml`, and `build.yml` from the scaffold. Update the `vars.APP_DOMAIN` reference if the user provides one (otherwise leave the default). **Do not** put any cloud account IDs or role ARNs in these files — they reference `${{ secrets.AWS_DEPLOY_ROLE_ARN }}`.
@@ -246,8 +305,8 @@ Each entry maps a gap-analysis ID to the action you take. Use `github-cicd-scaff
   Re-apply with R-4's command.
 
 ### C-6 — Add SAST + SCA + secrets scanning
-- **Action:** This is the same as R-2 (drop the scaffold's `ci.yml`). It bundles Semgrep, OSV, Gitleaks, Checkov, tfsec, and threat-model-drift.
-- **Verify:** PR opens; check that all 7 status checks run and report results.
+- **Action:** Same as R-2 — choose lite or full per the decision tree. `ci-lite.yml` covers C-6 with Semgrep + OSV + Gitleaks (3 of {SAST, SCA, secrets}). `ci-full.yml` adds Checkov + tfsec + threat-model-drift when the repo has IaC / threat model / Dockerfile.
+- **Verify:** Run `gh run list --workflow ci.yml --limit 5 --json conclusion --jq '[.[] | select(.conclusion=="success")] | length'`. Result must be ≥ 1 (otherwise the file shipped doesn't actually run on this repo — investigate variant choice).
 
 ### C-7 — Configure Dependabot
 - **Action:** Copy `github-cicd-scaffold/.github/dependabot.yml`. Adjust ecosystem mix if the repo isn't `npm` + Docker + Terraform.
@@ -369,7 +428,10 @@ Validation:
 | User pastes a credential value despite the rule | Stop. Tell them to rotate that credential immediately. Don't proceed until they confirm rotation. |
 | Findings file unreadable / corrupt | Ask user to re-run gap-analysis or to list items inline. |
 | Repo doesn't exist or no access | Stop. Confirm the org/repo and that `gh auth status` shows the right user. |
-| User on Free plan | Required items C-1, C-4, C-8 will fail (no protection rules on Free private repos). Mark them blocked, recommend Team upgrade, continue with what's possible. |
+| User on **org Free** plan with private repo | **R-4, C-1, C-4, C-5, C-8 all fail** — org Free locks branch protection, rulesets, AND environments-with-reviewers on private repos. (The 2020 "branch protection became free" change applies to **personal** Free, not org Free.) Mark these blocked-by-plan, recommend Team upgrade, do NOT attempt the `gh api -X PUT .../protection` or `-X POST .../rulesets` calls (they 403 with "Upgrade to GitHub Pro"). Continue with file-based remediations only. Public repos under Free have full features and pass all of these. |
+| User's repo lacks **GitHub Advanced Security** | Ship `ci-lite.yml` (R-2 default). It declares no `security-events: write` and uploads no SARIF, so it works without GHAS. If you must ship `ci-full.yml`, leave its GHAS comments closed (`security-events: write` commented out, `upload-sarif` `continue-on-error: true`). Verify GHAS state in advance via `gh api .../code-scanning/default-setup` (§1). |
+| User's repo has none of `iac/`, `Dockerfile`, `.threatmodel/` | Ship `ci-lite.yml` unconditionally. **Never ship `ci-full.yml` on such a repo** — the gated jobs (checkov, tfsec, threat-model-drift) are not the issue (the new `detect`-job pattern handles missing files cleanly), but they're noise. Lite is the right shape. |
+| `ci.yml` was applied but `gh run list --workflow ci.yml --json conclusion` shows zero successful runs | Workflow file was likely rejected at scheduling. Most common cause: shipping `ci-full.yml` (or an old single-`ci.yml` from pre-redesign framework) on a repo without GHAS / without IaC. Replace with `ci-lite.yml` and verify. |
 | User says "skip the threat model" | Honor that. Skip C-9. Note in the summary. |
 | Conflict — file already exists with different content | Diff the two; show the user; ask whether to overwrite, merge, or skip. Default skip. |
 | User wants something not in this library | Tell them honestly: "That's not in the scaffold. Would you like me to scope a custom approach, or stick to the framework?" |
