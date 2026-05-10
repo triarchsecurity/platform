@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: planning
-stopped_at: "Completed 23.1-04-PLAN.md (UX-04 staff preview-as-customer toggle; portal v0.5.0; +47 Vitest cases across cookie helper / API route / banner / StaffCallout / cookie-aware userRole; portal suite 324 → 371; Phase 23.1 CLOSES 4/4 plans). Awaiting Mike's review + merge of portal PR #25 (feat/23.1-04-staff-preview-toggle) and admin docs PR (same branch name)."
-last_updated: "2026-05-10T00:17:32.000Z"
+stopped_at: "Completed 23.1-03-PLAN.md (UX-03 empty-state copy; portal v0.4.9; +7 Vitest cases page.test.tsx; portal suite 317 → 324). Portal PR #24 open against `triarchsecurity/dev-portal` main; admin docs PR open against `triarchsecurity/platform` main. Awaiting Mike's review + merge of both PRs."
+last_updated: "2026-05-10T00:32:02.704Z"
 progress:
-  total_phases: 19
-  completed_phases: 16
-  total_plans: 62
+  total_phases: 20
+  completed_phases: 12
+  total_plans: 46
   completed_plans: 61
 ---
 
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 24 (CI/CD Deploy Safety, research_required)
-Plan: 01 (TBD — phase needs planning before plans land)
+Phase: 24
+Plan: Not started
 Last completed: Phase 23.1 portal-ui-polish 23.1-04-PLAN.md (2026-05-10) — Phase 23.1 CLOSED
 
 ## Active Milestone: v2.2 — Customer Portal Split
