@@ -4,14 +4,15 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   transpilePackages: ['@myalterlego/shared-ui'],
   serverExternalPackages: ['@google-cloud/secret-manager', '@myalterlego/secrets'],
-  async rewrites() {
+  async redirects() {
     return [
       // Static customer deliverable bundles in public/ — Next.js's default
-      // trailingSlash:false means /folder/ → 308 → /folder which 404s. Rewrite
-      // these directory URLs to the bundled index.html so both /folder and
-      // /folder/ resolve to the landing page cleanly.
-      { source: '/triarch-cicd-package', destination: '/triarch-cicd-package/index.html' },
-      { source: '/triarch-cicd-package/', destination: '/triarch-cicd-package/index.html' },
+      // trailingSlash:false means /folder/ → 308 → /folder, then /folder 404s
+      // because Next.js doesn't auto-resolve index.html for directories in
+      // public/. Redirect both forms to the explicit index.html URL.
+      // (Tried rewrites first — they didn't fire for static-file destinations.)
+      { source: '/triarch-cicd-package', destination: '/triarch-cicd-package/index.html', permanent: false },
+      { source: '/triarch-cicd-package/', destination: '/triarch-cicd-package/index.html', permanent: false },
     ];
   },
 };
