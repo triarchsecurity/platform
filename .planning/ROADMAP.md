@@ -61,7 +61,7 @@
 - [x] **Phase 22: Release Page Port (Write)** — Approve/reject/feedback + branch preview swap; portal-owned `FAH_PROMOTER_SA_KEY`; HMAC-proxy to admin for GitHub dispatch (completed 2026-05-08)
 - [x] **Phase 23: Bug + Feature Customer Surface** — `/bugs/*` and `/features/*` list/detail/new routes (the two net-new primitives) (completed 2026-05-09; portal v0.4.0)
 - [x] **Phase 23.1: Portal UI Polish** — Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle (decimal phase inserted between 23 and 24; UX-01..04) — completed 2026-05-10
-- [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts`
+- [ ] **Phase 24: CI/CD Deploy Safety** — `verify-deploy-target` job, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` (24-02 shipped CI-03; 24-01 + 24-04 skipped per scope)
 - [ ] **Phase 25: Cutover** — Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch
 - [ ] **Phase 26: Sunset (T+90)** — Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred 90 days)
 
@@ -328,10 +328,10 @@
   3. Booting portal with a missing required env var (e.g. unset `PORTAL_NEXTAUTH_SECRET`) fails container start with a clear error message; container does not serve a partially-broken surface
   4. CI step `validate-apphosting.ts` reads `apphosting.yaml` and `apphosting.dev.yaml` against an env-name TypeScript schema and fails the build on a missing or typo'd binding (proven by a deliberately broken test branch)
 **Plans**: 4 plans
-- [ ] 24-01-PLAN.md — Per-repo verify-deploy-target job + .github/deploy-targets.yml lookup table in BOTH admin and portal (CI-01)
-- [ ] 24-02-PLAN.md — instrumentation.ts + assertEnv.ts + env-schema.ts + Vitest in BOTH repos (CI-03)
+- [ ] 24-01-PLAN.md — Per-repo verify-deploy-target job + .github/deploy-targets.yml lookup table in BOTH admin and portal (CI-01) — SKIPPED per scope decision (2026-05-10)
+- [x] 24-02-PLAN.md — instrumentation.ts + assertEnv.ts + env-schema.ts + Vitest in BOTH repos (CI-03) — admin v2.11.0 commit 42e29b3 + portal v0.5.1 commit cafeb44 (completed 2026-05-10)
 - [ ] 24-03-PLAN.md — scripts/validate-apphosting.ts + new CI step + Vitest in BOTH repos (CI-04)
-- [ ] 24-04-PLAN.md — HUMAN-VERIFY runbook for portal-deployer SA + IAM + missing portal Actions secrets + live CI-01/CI-04 acceptance tests (CI-02)
+- [ ] 24-04-PLAN.md — HUMAN-VERIFY runbook for portal-deployer SA + IAM + missing portal Actions secrets + live CI-01/CI-04 acceptance tests (CI-02) — SKIPPED per scope decision (2026-05-10)
 
 ### Phase 25: Cutover
 **Goal**: Customers are routed from admin to portal — 301 redirect, email blast, Slack message URL refresh, telemetry on residual traffic, and a kill-switch in case portal regresses.
