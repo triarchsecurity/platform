@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Customer Portal Split
 status: planning
-stopped_at: "Completed 23.1-03-PLAN.md (UX-03 empty-state copy; portal v0.4.9; +7 Vitest cases page.test.tsx; portal suite 317 → 324). Portal PR #24 open against `triarchsecurity/dev-portal` main; admin docs PR open against `triarchsecurity/platform` main. Awaiting Mike's review + merge of both PRs."
-last_updated: "2026-05-10T00:32:02.704Z"
+stopped_at: "Completed 24-02-PLAN.md (CI-03; instrumentation.ts + assertEnv() boot guard in BOTH admin v2.11.0 and portal v0.5.1; +12 Vitest cases total). Admin PR open against `triarchsecurity/platform` main (commit 42e29b3); portal PR open against `triarchsecurity/dev-portal` main (commit cafeb44). Awaiting Mike's review + merge. Phase 24-01 + 24-04 SKIPPED per scope decision; 24-03 (validate-apphosting.ts CI lint) is next plan in Phase 24."
+last_updated: "2026-05-10T00:42:06Z"
 progress:
   total_phases: 20
   completed_phases: 12
   total_plans: 46
-  completed_plans: 61
+  completed_plans: 62
 ---
 
 # Triarch Dev Admin — Project State
@@ -19,13 +19,13 @@ progress:
 See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 **Core value:** One control plane to create, manage, and ship Triarch projects — including a dev-to-prod gating workflow that lets customers approve releases before they go live.
-**Current focus:** Phase 23.1 — Portal UI Polish COMPLETE (4/4 plans, UX-01..04 all shipped); Phase 24 (CI/CD Deploy Safety) next
+**Current focus:** Phase 24 — CI/CD Deploy Safety in progress; CI-03 shipped via 24-02. Phase 24-01 + 24-04 skipped per scope decision; only 24-02 + 24-03 land this round.
 
 ## Current Position
 
 Phase: 24
-Plan: Not started
-Last completed: Phase 23.1 portal-ui-polish 23.1-04-PLAN.md (2026-05-10) — Phase 23.1 CLOSED
+Plan: 24-02 complete; 24-03 next (validate-apphosting.ts CI lint, CI-04)
+Last completed: Phase 24-02 instrumentation+assertEnv (2026-05-10; admin v2.11.0 commit 42e29b3; portal v0.5.1 commit cafeb44)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -45,7 +45,7 @@ Last completed: Phase 23.1 portal-ui-polish 23.1-04-PLAN.md (2026-05-10) — Pha
 | 22 — Release Page Port (Write, research_required) | Approve/reject/feedback + branch swap; portal-owned FAH key; HMAC-proxy to admin for GH dispatch | WRITE-01..05 | Complete (5/5 plans) |
 | 23 — Bug + Feature Customer Surface | `/bugs/*` and `/features/*` list/detail/new routes (two net-new primitives) | BUG-01..03, FEAT-01..03 | Complete (4/4 plans — 23-01 foundations + 23-02 bugs read + 23-03 features read + 23-04 bug+feature write surface; portal v0.4.0; all 6 reqs shipped) |
 | 23.1 — Portal UI Polish | Sub-nav, status column rewrite, empty-state copy, staff preview-as-customer toggle | UX-01..04 | Complete (4/4 plans — 23.1-01 sub-nav v0.4.7; 23.1-02 status column rewrite v0.4.8; 23.1-03 empty-state copy v0.4.9; 23.1-04 staff preview-as-customer toggle v0.5.0) |
-| 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | Not started |
+| 24 — CI/CD Deploy Safety (research_required) | `verify-deploy-target`, per-repo deploy SAs, `assertEnv()`, `validate-apphosting.ts` | CI-01..04 | In progress (24-02 shipped CI-03; 24-01 + 24-04 skipped per scope; 24-03 next) |
 | 25 — Cutover | Admin 301 → portal; customer email blast; Slack URL sweep; redirect telemetry; kill-switch | CUT-01..05 | Not started |
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
