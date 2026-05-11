@@ -140,8 +140,12 @@ jobs:
           fetch-depth: 0
 
       - name: Semgrep diff scan (PR) / full scan (push)
+        # SECURITY: env: + quoted var (avoid run-shell-injection per Semgrep).
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_BASE_REF: ${{ github.base_ref }}
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "$GH_EVENT_NAME" == "pull_request" ]]; then
             semgrep ci \
               --config p/ci \
               --config p/owasp-top-ten \
@@ -150,7 +154,7 @@ jobs:
               --config p/javascript \
               --config p/nodejs \
               --config p/secrets \
-              --baseline-ref origin/${{ github.base_ref }} \
+              --baseline-ref "origin/$GH_BASE_REF" \
               --sarif --output=semgrep.sarif || true
           else
             semgrep ci \
@@ -230,11 +234,15 @@ jobs:
           sudo mv /tmp/gitleaks /usr/local/bin/
 
       - name: Run gitleaks
+        # SECURITY: env: + quoted var pattern.
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_BASE_REF: ${{ github.base_ref }}
         run: |
           set +e
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "$GH_EVENT_NAME" == "pull_request" ]]; then
             gitleaks protect --source=. --redact --config=.gitleaks.toml \
-              --log-opts="--no-merges origin/${{ github.base_ref }}..HEAD" \
+              --log-opts="--no-merges origin/$GH_BASE_REF..HEAD" \
               --report-format=sarif --report-path=gitleaks.sarif
           else
             gitleaks detect --source=. --redact --config=.gitleaks.toml \
@@ -321,9 +329,14 @@ jobs:
 
       - name: Detect architectural changes
         id: detect
+        # SECURITY: env: + quoted var pattern (avoid run-shell-injection).
+        # github.event.pull_request.base.sha is a 40-char hex (low injection risk)
+        # but Semgrep flags any github.event.* in shell — env-ize anyway.
+        env:
+          GH_PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           # Heuristic: any change under src/ or iac/ requires the threat model to be touched.
-          base="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          base="${GH_PR_BASE_SHA:-HEAD~1}"
           arch_changed=$(git diff --name-only "$base"...HEAD -- 'src/' 'iac/' 'docs/architecture/' | wc -l)
           tm_touched=$(git diff --name-only "$base"...HEAD -- '.threatmodel/' | wc -l)
 
