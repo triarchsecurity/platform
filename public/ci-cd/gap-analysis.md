@@ -213,6 +213,13 @@ gh api repos/$ORG/$REPO/vulnerability-alerts -i 2>&1 | head -1
 
 # Code scanning alerts (requires GHAS or public repo)
 gh api repos/$ORG/$REPO/code-scanning/alerts 2>/dev/null --jq '.[] | {rule: .rule.id, severity: .rule.severity, state}' | head -50
+
+# GHAS availability probe — determines whether the framework's ci.yml can use
+# `security-events: write` + SARIF upload. 403 with "Advanced Security must be
+# enabled" → must apply the Free-plan-safe variant of ci.yml (security-events
+# permission commented out, upload-sarif steps continue-on-error). Public repos
+# get GHAS features free; private repos need a paid GHAS license.
+gh api repos/$ORG/$REPO/code-scanning/default-setup 2>&1 | head -3
 ```
 
 ### Step 3 — If cloud access is granted, also run
@@ -259,7 +266,7 @@ For each row below, evaluate the discovery output and assign a status. Use the e
 | C-3 | CODEOWNERS file present | `.github/CODEOWNERS` exists and references at least one team or user | Pass: covers `/.github/`, `/iac/`, default · Partial: file exists but minimal · Fail: missing |
 | C-4 | Required signed commits | Branch protection has `required_signatures` or ruleset has `required_signatures` rule | Pass / Fail |
 | C-5 | Required PR review (CODEOWNERS-aware) | Protection requires ≥1 review AND `require_code_owner_reviews=true` | Pass / Partial / Fail |
-| C-6 | Required status checks (security scans) | Status check list includes Semgrep / OSV / Gitleaks / Checkov / similar | Pass: ≥3 of {SAST, SCA, secrets, IaC} · Partial: 1–2 · Fail: none |
+| C-6 | Required status checks (security scans) | Status check list includes Semgrep / OSV / Gitleaks / Checkov / similar. **Also probe workflow health**: `gh run list --repo $ORG/$REPO --workflow ci.yml --limit 20 --json conclusion` — if `total > 0` AND `[? conclusion=="success"] | length == 0`, the workflow file is being rejected at scheduling (likely wrong variant shipped — see deploy.md §5/R-2 decision tree). **Also flag GHAS mismatch**: if any workflow declares `security-events: write` or uses `codeql-action/upload-sarif` AND the repo lacks GHAS (`gh api .../code-scanning/default-setup` returns 403), the workflow will be rejected at scheduling. | Pass: ≥3 of {SAST, SCA, secrets, IaC} **AND** workflow has ≥1 successful run. · Partial: scanners present but workflow never succeeds (recommend `ci-lite.yml`). · Fail: none. Add a ⚠️ on any case where workflow content suggests scanning but `gh run list` shows 0 successful runs. |
 | C-7 | Dependabot or Renovate configured | `.github/dependabot.yml` exists OR Renovate config present | Pass / Fail |
 | C-8 | Linear history required | Protection has `required_linear_history=true` | Pass / Fail |
 | C-9 | Threat model checked into repo | `.threatmodel/` directory exists OR `THREATMODEL.md` / `docs/threat-model.md` | Pass / Partial (file but minimal) / Fail |
@@ -1024,7 +1031,9 @@ Each list item is one sentence pointing at the gap. Example:
 | `gh` not authenticated | Stop. Print the `gh auth login` command and exit. |
 | Repo doesn't exist or no access | Stop. Tell the user the org/repo combination is invalid or they lack access. |
 | AWS credentials not present but cloud=AWS | Note this in the report header; mark cloud-side checks as "not evaluated — credentials not provided" rather than failing them. |
-| Customer is on Free GitHub plan | Mark C-1 and C-4 as `fail` with remediation "upgrade to Team — environments + rulesets aren't available on Free for private repos". |
+| Customer is on **org Team** (or higher) GitHub plan | The framework's **assumed baseline**. All gates available. Score R-4/C-1/C-4/C-5/C-8 normally — they pass when configured. |
+| Customer is on **org Free** GitHub plan with private repos (degraded fallback) | Mark **R-4, C-1, C-4, C-5, C-8** as `fail` with remediation "upgrade to Team — branch protection, rulesets, and environments-with-reviewers are all unavailable on org Free for private repos". The 2020 "branch protection became free" change applies to **personal** Free accounts only, NOT org Free. Public repos under org Free have full features (so the same checks pass on them). |
+| Customer's repo lacks **GitHub Advanced Security** (private + no GHAS license) | When recommending the scaffold's `ci.yml`, surface that the security-events:write permission + SARIF upload steps will reject the workflow at scheduling. Tell the user to apply the Free-plan-safe variant: comment out `security-events: write` in the 4 scanner jobs and add `continue-on-error: true` to each upload-sarif step. Verify via `gh api repos/$ORG/$REPO/code-scanning/default-setup` returning 403 with "Advanced Security must be enabled". |
 | Repo has zero workflows | All R-2, R-3 fail. Most C-* items will fail too. Recommend running `bootstrap.sh` from the scaffold as the fastest path to remediation. |
 | Customer hasn't picked a cloud yet | Skip cloud-side checks. Tier R-6 fails. Recommend Stage 1 + Stage 2 of the walkthrough first. |
 

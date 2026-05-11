@@ -22,7 +22,8 @@ github-cicd-scaffold/
 │   ├── rulesets/
 │   │   └── main-protection.json       ← applied via gh api
 │   └── workflows/
-│       ├── ci.yml                     ← every PR + push
+│       ├── ci-lite.yml                ← DEFAULT — pick this first; 4 unconditional jobs (lint, semgrep, osv, gitleaks); works on ANY plan tier including Free org private (no GHAS / no IaC required)
+│       ├── ci-full.yml                ← OPT-IN — adds checkov+tfsec+threat-model-drift via a `detect` job; pick this only when repo has iac/ or Dockerfile or .threatmodel/ AND has GHAS (or is public). See deploy.md §5/R-2 decision tree.
 │       ├── build.yml                  ← reusable build+sign+provenance
 │       ├── deploy-dev.yml             ← auto on merge to main
 │       ├── deploy-staging.yml         ← manual promote, 1 reviewer

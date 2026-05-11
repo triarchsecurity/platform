@@ -1,10 +1,52 @@
-name: CI
+name: CI (full)
+
+# Triarch SMB CI/CD framework — FULL variant.
+# ===========================================
+# Use this workflow ONLY when ALL of the following are true:
+#   - Repo has `iac/**/*.tf` or `iac/**/*.tofu` OR `**/Dockerfile` OR `.threatmodel/`
+#     (otherwise the IaC scanners and threat-model-drift job add no value)
+#   - Repo has GitHub Advanced Security available (public repo on any plan,
+#     OR a paid GHAS license — verify via `gh api .../code-scanning/default-setup`)
+#
+# If those aren't met, ship `ci-lite.yml` instead (the SMB default).
+# `ci-lite.yml` has 4 unconditional scanner jobs and works on Free org private.
+#
+# This file uses a `detect` job (instead of job-level `if: hashFiles(...)`)
+# to gate the conditional scanners. The earlier `if: hashFiles(...)` pattern
+# triggered a GitHub Actions startup-failure bug when the matched paths didn't
+# exist AND a downstream summary job listed the gated job in `needs:`.
+# See FINDINGS-2026-05-10.md for the diagnostic story.
+#
+# IMPORTANT — GitHub Advanced Security (GHAS) note
+# ------------------------------------------------
+# The 4 scanner jobs below (semgrep, osv-scanner, checkov, tfsec) upload SARIF
+# results to GitHub's Security tab via `github/codeql-action/upload-sarif@v3`.
+# That step requires the `security-events: write` permission, which in turn
+# requires GHAS on PRIVATE repos.
+#
+# As shipped, this workflow is FREE-PLAN-SAFE: scanner jobs declare permissions
+# WITHOUT `security-events: write`, and the SARIF-upload steps are
+# `continue-on-error: true`. Findings appear in workflow logs; the upload step
+# silently no-ops on Free private repos (those repos lack GHAS, so GitHub
+# rejects the workflow at scheduling otherwise — `jobs: []`, no log).
+#
+# When you purchase GHAS (or are on a public repo), un-comment the
+# `security-events: write` line in each of the 4 scanner jobs and remove the
+# `continue-on-error: true` from each upload-sarif step to get findings into
+# the Security tab.
+#
+# (Public repos under Free already have GHAS — the security-events permission
+# works as-is for them.)
 
 on:
   pull_request:
     branches: [main]
   push:
-    branches-ignore: [main]
+    # Only fire on push to main (post-merge). Feature-branch + Dependabot pushes
+    # are covered by pull_request above. Dependabot push events have a read-only
+    # GITHUB_TOKEN that fails per-job permission requests on private repos and
+    # surfaces as `jobs: []` startup failures.
+    branches: [main]
   workflow_dispatch:
 
 # Deny by default; jobs request what they need.
@@ -12,13 +54,47 @@ permissions: {}
 
 # Auto-cancel previous runs on the same PR/branch
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-full-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   NODE_VERSION: "20"
 
 jobs:
+  # ---------------------------------------------------------------- detect
+  # Centralized detect job whose outputs gate the conditional scanners.
+  # Replaces the earlier `if: hashFiles(...)` pattern at job level, which
+  # triggered a GitHub Actions startup-failure bug when paths didn't exist
+  # AND ci-passed listed the gated jobs in `needs:`.
+  detect:
+    name: detect
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      has_iac: ${{ steps.scan.outputs.has_iac }}
+      has_dockerfile: ${{ steps.scan.outputs.has_dockerfile }}
+      has_threatmodel: ${{ steps.scan.outputs.has_threatmodel }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: scan
+        run: |
+          if find iac -type f \( -name '*.tf' -o -name '*.tofu' \) 2>/dev/null | grep -q .; then
+            echo "has_iac=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_iac=false" >> "$GITHUB_OUTPUT"
+          fi
+          if find . -name 'Dockerfile' -not -path './node_modules/*' -not -path './.git/*' 2>/dev/null | grep -q .; then
+            echo "has_dockerfile=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_dockerfile=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -d ".threatmodel" ]; then
+            echo "has_threatmodel=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_threatmodel=false" >> "$GITHUB_OUTPUT"
+          fi
+
   # ---------------------------------------------------------------- lint+test
   lint-test:
     name: lint-test
@@ -54,7 +130,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-      security-events: write
+      # security-events: write   # un-comment when GHAS is enabled (required for SARIF upload)
     container:
       # Pin to SHA before merge — replace tag with full commit SHA + comment.
       image: semgrep/semgrep:latest
@@ -86,6 +162,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Security
         if: always()
+        continue-on-error: true   # remove once GHAS is enabled (see header note)
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep.sarif
@@ -102,21 +179,25 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
+      # security-events: write   # un-comment when GHAS is enabled
     steps:
       - uses: actions/checkout@v4
 
       - name: Run OSV-Scanner
-        uses: google/osv-scanner-action/osv-scanner-action@v1.7.0   # TODO: pin to commit SHA
+        # google/osv-scanner-action is a monorepo; sub-action lives in /osv-scanner-action.
+        # v2 dropped --skip-git; SARIF output via --format=sarif --output=path.
+        uses: google/osv-scanner-action/osv-scanner-action@v2.3.5   # TODO: pin to commit SHA
         with:
           scan-args: |-
             --recursive
-            --skip-git
-            --sarif=osv.sarif
+            --format=sarif
+            --output=osv.sarif
             ./
+        continue-on-error: true
 
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true   # remove once GHAS is enabled
         with:
           sarif_file: osv.sarif
           category: osv-scanner
@@ -129,24 +210,47 @@ jobs:
           fi
 
   # ---------------------------------------------------------------- gitleaks
+  # Direct binary install (NOT gitleaks-action). The official Action requires a
+  # paid license for ORG accounts. Direct binary has no license requirement.
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2.3.7   # TODO: pin to commit SHA
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: .gitleaks.toml
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
-          GITLEAKS_ENABLE_SUMMARY: true
+      - name: Install gitleaks (binary)
+        run: |
+          GITLEAKS_VERSION="8.30.1"
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp
+          sudo mv /tmp/gitleaks /usr/local/bin/
+
+      - name: Run gitleaks
+        run: |
+          set +e
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            gitleaks protect --source=. --redact --config=.gitleaks.toml \
+              --log-opts="--no-merges origin/${{ github.base_ref }}..HEAD" \
+              --report-format=sarif --report-path=gitleaks.sarif
+          else
+            gitleaks detect --source=. --redact --config=.gitleaks.toml \
+              --report-format=sarif --report-path=gitleaks.sarif
+          fi
+          rc=$?
+          if [[ $rc -eq 1 ]]; then
+            echo "::error::gitleaks found one or more secrets"; exit 1
+          fi
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        continue-on-error: true   # remove once GHAS is enabled
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
 
   # ---------------------------------------------------------------- iac scans
   checkov:
@@ -154,8 +258,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
-    if: ${{ hashFiles('iac/**/*.tf', 'iac/**/*.tofu') != '' || hashFiles('**/Dockerfile') != '' }}
+      # security-events: write   # un-comment when GHAS is enabled
+    needs: detect
+    if: needs.detect.outputs.has_iac == 'true' || needs.detect.outputs.has_dockerfile == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -171,6 +276,7 @@ jobs:
 
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true   # remove once GHAS is enabled
         with:
           sarif_file: checkov.sarif
           category: checkov
@@ -180,8 +286,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write
-    if: ${{ hashFiles('iac/**/*.tf', 'iac/**/*.tofu') != '' }}
+      # security-events: write   # un-comment when GHAS is enabled
+    needs: detect
+    if: needs.detect.outputs.has_iac == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -193,6 +300,7 @@ jobs:
 
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true   # remove once GHAS is enabled
         with:
           sarif_file: tfsec.sarif
           category: tfsec
@@ -204,7 +312,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    if: ${{ hashFiles('.threatmodel/**') != '' }}
+    needs: detect
+    if: needs.detect.outputs.has_threatmodel == 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -239,7 +348,7 @@ jobs:
   # ---------------------------------------------------------------- summary
   ci-passed:
     name: ci-passed
-    needs: [lint-test, semgrep, osv-scanner, gitleaks, checkov, tfsec, threat-model-drift]
+    needs: [detect, lint-test, semgrep, osv-scanner, gitleaks, checkov, tfsec, threat-model-drift]
     if: always()
     runs-on: ubuntu-latest
     steps:
