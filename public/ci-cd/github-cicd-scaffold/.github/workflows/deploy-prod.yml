@@ -133,17 +133,22 @@ jobs:
             "https://${{ vars.APP_DOMAIN || 'example.com' }}/healthz"
 
       - name: Audit log
+        # SECURITY: github.actor + needs.* via env: + quoted vars (avoid run-shell-injection).
         env:
           CT: ${{ inputs.change_ticket }}
           BG: ${{ inputs.break_glass }}
+          GH_ACTOR: ${{ github.actor }}
+          DEPLOY_TAG: ${{ needs.preflight.outputs.tag }}
+          DEPLOY_IMAGE: ${{ needs.build.outputs.image }}
+          GH_RUN_ID: ${{ github.run_id }}
         run: |
           jq -n --arg env "prod" \
-                --arg actor "${{ github.actor }}" \
-                --arg tag "${{ needs.preflight.outputs.tag }}" \
-                --arg image "${{ needs.build.outputs.image }}" \
+                --arg actor "$GH_ACTOR" \
+                --arg tag "$DEPLOY_TAG" \
+                --arg image "$DEPLOY_IMAGE" \
                 --arg ticket "$CT" \
                 --arg break_glass "$BG" \
-                --arg run_id "${{ github.run_id }}" \
+                --arg run_id "$GH_RUN_ID" \
                 '{event:"deploy", env:$env, actor:$actor, tag:$tag, image:$image, change_ticket:$ticket, break_glass:$break_glass, run_id:$run_id, ts:now}' \
               > deploy-event.json
           # aws s3 cp deploy-event.json s3://acme-audit-prod/deploys/$(date -u +%FT%TZ)-$RUN_ID.json

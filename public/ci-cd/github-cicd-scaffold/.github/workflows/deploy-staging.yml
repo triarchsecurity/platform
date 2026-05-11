@@ -82,15 +82,20 @@ jobs:
           # npm run test:integration -- --base-url=https://staging.${{ vars.APP_DOMAIN }}
 
       - name: Audit log
+        # SECURITY: github.actor + needs.* via env: + quoted vars (avoid run-shell-injection).
         env:
           SUMMARY: ${{ inputs.change_summary }}
+          GH_ACTOR: ${{ github.actor }}
+          DEPLOY_SHA: ${{ inputs.sha }}
+          DEPLOY_IMAGE: ${{ needs.build.outputs.image }}
+          GH_RUN_ID: ${{ github.run_id }}
         run: |
           jq -n --arg env "staging" \
-                --arg actor "${{ github.actor }}" \
-                --arg sha "${{ inputs.sha }}" \
-                --arg image "${{ needs.build.outputs.image }}" \
+                --arg actor "$GH_ACTOR" \
+                --arg sha "$DEPLOY_SHA" \
+                --arg image "$DEPLOY_IMAGE" \
                 --arg summary "$SUMMARY" \
-                --arg run_id "${{ github.run_id }}" \
+                --arg run_id "$GH_RUN_ID" \
                 '{event:"deploy", env:$env, actor:$actor, sha:$sha, image:$image, summary:$summary, run_id:$run_id, ts:now}' \
               > deploy-event.json
           # forward to your audit sink (CloudWatch / Loki / S3)
