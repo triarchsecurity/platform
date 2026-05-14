@@ -6,7 +6,7 @@
 
 ## The Triarch default is **2 environments** (dev → prod)
 
-Most SMBs ship with two environments. The promotion model is cloud-agnostic; this doc captures the Firebase App Hosting implementation specifically — backend provisioning, `apphosting.yaml` overlay loading, the `dev_backend` workflow input, and the 4-layer bypass-prevention model that prevents accidental prod deploys.
+Most SMBs ship with two environments. The promotion model is cloud-agnostic; this doc captures the Firebase App Hosting implementation specifically — backend provisioning, `apphosting.yaml` overlay loading, the `dev_backend` workflow input, and the **5-layer no-bypass enforcement model** that prevents prod deploys without a dev pass-through (updated 2026-05-14 — bypass token removed per directive: *"regardless of how many corners I want to cut myself"*).
 
 **Staging is an optional, recommended middle state.** Add a third environment when team size, release-candidate discipline, or compliance scope justify the ceremony. See [SMB-CICD-Framework.md §3.1](SMB-CICD-Framework.md#31-promotion-model--2-env-default-3-env-optional) for when to upgrade. The migration is additive — create a third backend, add `apphosting.staging.yaml`, extend `env-select`. Nothing in this doc has to be undone.
 
@@ -155,7 +155,7 @@ jobs:
           fi
 
   # 3. Verify the commit being deployed to prod has already been deployed
-  #    to dev. The mechanical bypass-prevention layer.
+  #    to dev. The mechanical bypass-prevention layer. NO escape hatch.
   verify-dev-deployed:
     needs: env-select
     if: needs.env-select.outputs.environment == 'prod'
@@ -164,45 +164,70 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # full history needed for ancestor check
-      - name: Assert HEAD is on origin/dev (or carries hotfix-bypass token)
+      - name: Assert HEAD is on origin/dev
         run: |
-          COMMIT_MSG=$(git log -1 --format=%B HEAD)
-          if echo "$COMMIT_MSG" | grep -qF "[hotfix-bypass-dev]"; then
-            echo "::warning::Bypassing dev-deployed check — commit message contains [hotfix-bypass-dev]."
-            echo "::warning::This bypass is logged here and visible in git log forever. Use only for genuine hotfixes."
-            echo "## ⚠️ Hotfix bypass used" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Commit \`$(git rev-parse HEAD)\` reached prod without passing through dev." >> "$GITHUB_STEP_SUMMARY"
-            echo "Commit message contained \`[hotfix-bypass-dev]\` token. Reason should be in the commit body." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
           git fetch origin dev
           if ! git merge-base --is-ancestor HEAD origin/dev; then
             echo "::error::Refusing to deploy to prod: $(git rev-parse HEAD) has not been deployed to dev yet."
             echo "::error::Merge this commit to dev first, verify it deploys cleanly, then promote to main."
-            echo "::error::For genuine hotfixes, add [hotfix-bypass-dev] to the commit message (deliberate, traceable bypass)."
+            echo "::error::No bypass — every prod deploy passes through dev."
             exit 1
           fi
           echo "Verified: $(git rev-parse HEAD) is an ancestor of origin/dev — safe to promote to prod."
 
-  # 4. GitHub Environment gate — binds to "prod" Environment so reviewer
-  #    rules, wait timers, and deployment-branch policies are enforced.
+  # 4. Read target version (for the gate to compare against).
+  version:
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.read.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: |
+          VER=$(node -p "require('./package.json').version" 2>/dev/null || echo unknown)
+          echo "version=${VER}" >> $GITHUB_OUTPUT
+
+  # 5. Version-monotonicity gate (no bypass). Five invariants:
+  #    INV-1 dev release exists
+  #    INV-2 target_version <= dev_version
+  #    INV-3 target_version > prod_version
+  #    INV-4 target_version == dev_version (exact match)
+  #    INV-5 dev_age >= 300s (bake time)
+  gate-prod-version:
+    needs: [env-select, version, verify-dev-deployed]
+    if: needs.env-select.outputs.environment == 'prod'
+    uses: triarchsecurity/shared-workflows/.github/workflows/gate-prod-version.yml@v8.1
+    with:
+      project_key: my-app                   # must match projects.key in admin.triarch.dev
+      target_version: ${{ needs.version.outputs.version }}
+    secrets:
+      ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+
+  # 6. GitHub Environment binding — branch policy + reviewer rules layer.
   gate-prod:
-    needs: [env-select, verify-dev-deployed]
+    needs: [env-select, verify-dev-deployed, gate-prod-version]
     if: needs.env-select.outputs.environment == 'prod'
     runs-on: ubuntu-latest
     environment: prod
     steps:
       - run: echo "Production deploy approved for my-app."
 
-  # 5. Deploy — calls shared workflow with branch-resolved environment
+  # 7. Deploy — calls shared workflow with branch-resolved environment.
+  # always() prefix REQUIRED: without it, GH Actions auto-skips deploy when
+  # any needs dep is in skipped state (legitimate for dev pushes).
   deploy:
-    needs: [quality-gate, env-select, gate-prod]
+    needs: [quality-gate, env-select, verify-dev-deployed, gate-prod-version, gate-prod]
     if: |
+      always() &&
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') &&
+      needs.quality-gate.result == 'success' &&
+      needs.env-select.result == 'success' &&
+      (needs.verify-dev-deployed.result == 'success' || needs.verify-dev-deployed.result == 'skipped') &&
+      (needs.gate-prod-version.result == 'success' || needs.gate-prod-version.result == 'skipped') &&
       (needs.gate-prod.result == 'success' || needs.gate-prod.result == 'skipped')
-    uses: triarchsecurity/shared-workflows/.github/workflows/deploy-firebase.yml@v7.1
+    uses: triarchsecurity/shared-workflows/.github/workflows/deploy-firebase.yml@v8
     with:
       firebase_project_id: my-gcp-project
       app_hosting_backend: my-app           # prod backend
@@ -230,14 +255,14 @@ jobs:
 
 ## How to prevent bypassing dev → straight to prod
 
-There are **four layers of defense**, applied together. Each one is a separate enforcement mechanism — they compound.
+There are **five layers of defense**, applied together. Each one is a separate enforcement mechanism — they compound. **No bypass token exists** — the prior `[hotfix-bypass-dev]` commit-message escape was removed 2026-05-14.
 
 ### Layer 1: Branch protection on `main` (required)
 
 Configure on the repo: Settings → Branches → Add rule for `main`:
 
 - ✅ **Require a pull request before merging** — no direct pushes to main
-- ✅ **Require status checks to pass** — list `quality-gate`, `verify-dev-deployed` at minimum
+- ✅ **Require status checks to pass** — list `quality-gate`, `verify-dev-deployed`, `gate-prod-version` at minimum
 - ✅ **Require branches to be up to date before merging** — forces rebase against latest main
 - ✅ **Restrict deletions** — main can't be force-deleted
 
@@ -247,7 +272,7 @@ This stops `git push origin main` from working at all. Every change to main must
 
 When opening a PR, the base branch should be **`dev`** (not `main`) for feature work. After the feature lands in dev and is verified, open a **second PR** with base `main`, head `dev` — this promotes the verified state of dev to prod.
 
-If you prefer a single-PR flow (base `main`, head feature), Layer 3 (below) catches the bypass.
+Single-PR flow (base `main`, head feature) is caught by Layer 3.
 
 ### Layer 3: `verify-dev-deployed` job (CI hard gate)
 
@@ -257,28 +282,33 @@ This is the **mechanical block** built into the workflow above. Before the prod 
 git merge-base --is-ancestor HEAD origin/dev
 ```
 
-If `HEAD` (the commit being deployed to prod) is **not** an ancestor of `origin/dev`, the job fails with a clear error. This means: a commit can only reach prod if it has already been pushed to dev. There is no way around this short of force-pushing dev to include the commit just-in-time — which would be a deliberate end-run, not an accident.
-
-**Hotfix bypass token**: the gate honors `[hotfix-bypass-dev]` in the commit message. If present, the check is skipped and a warning is emitted to the run log + step summary. This is a deliberate, traceable bypass — the token lives forever in `git log`, so the audit trail is preserved. Use only for genuine emergencies (e.g., a customer-impacting security fix where adding a dev pass-through would extend the outage). For everything else, route through dev first.
-
-```bash
-# Example hotfix commit:
-git commit -m "fix(auth): patch session-fixation CVE-2026-XXXX [hotfix-bypass-dev]
-
-The fix removes the cookie-name reuse path identified in the vulnerability
-report. Going through dev would add 30+ minutes to remediation and customers
-are actively impacted."
-```
-
-After the hotfix lands on main, merge or cherry-pick the same commit to `dev` so future deploys aren't blocked by the divergence.
+If `HEAD` (the commit being deployed to prod) is **not** an ancestor of `origin/dev`, the job fails with a clear error. **No bypass token.** A commit can only reach prod if it has already been pushed to dev. The only way around this would be force-pushing dev to include the commit just-in-time — a deliberate end-run, not an accident, and visible in dev's reflog.
 
 ### Layer 4: GitHub Environment `prod` with branch policy
 
 Configure: Settings → Environments → `prod` → Deployment branches and tags → **Selected branches and tags** → `main` only.
 
-This adds **a defense-in-depth check at the GitHub layer**: even if all the workflow checks were bypassed, GitHub itself refuses to bind `environment: prod` to a job triggered by any branch except `main`. Useful as a backstop against `workflow_dispatch` triggered runs targeting prod from arbitrary branches.
+This adds **a defense-in-depth check at the GitHub layer**: even if all the workflow checks were bypassed, GitHub itself refuses to bind `environment: prod` to a job triggered by any branch except `main`. Backstop against `workflow_dispatch` runs targeting prod from arbitrary branches.
 
-### Layer 5 (optional): GitHub Environment reviewer rules
+### Layer 5: Version-monotonicity gate (`gate-prod-version`)
+
+Added 2026-05-14. Calls `triarchsecurity/shared-workflows/.github/workflows/gate-prod-version.yml@v8.1` which enforces five invariants by querying `admin.triarch.dev/api/platform/version-snapshot`:
+
+| ID | Rule |
+|----|------|
+| INV-1 | A dev release exists for the project |
+| INV-2 | `target_version ≤ dev_version` |
+| INV-3 | `target_version > prod_version` (no rolling backward via prod deploy) |
+| INV-4 | `target_version == dev_version` (exact match) |
+| INV-5 | `dev_age ≥ 300s` (bake time before promotion) |
+
+No bypass. No `force` input. No `[skip gate]` commit-message magic. The gate is a `needs:` prerequisite — without a pass, the deploy job doesn't run.
+
+Visible at [admin.triarch.dev/admin/modules/ci-cd](https://admin.triarch.dev/admin/modules/ci-cd) — shows per-project current dev/prod versions and what verdict the gate would issue right now.
+
+Per-project requirement: ADMIN_API_TOKEN secret (= projects.apiKey from admin DB) must be set on the repo.
+
+### Layer 6 (optional): GitHub Environment reviewer rules
 
 For multi-developer teams, add: `prod` → **Required reviewers** → list 1+ reviewers. This pauses the deploy at `gate-prod` for human approval before the rollout fires. For solo-dev orgs, this is theater — you'd be approving your own work — and the practical layers above are sufficient.
 
@@ -427,11 +457,7 @@ git push --force-with-lease origin dev
 # Future pushes flow feature → dev → main, satisfying the gate.
 ```
 
-**Option B — use the hotfix bypass token on the bootstrap commit**:
-
-The PR that introduces `verify-dev-deployed` to the workflow has its merge commit on main. That commit can carry `[hotfix-bypass-dev]` in its message so the first post-merge push doesn't fail. Subsequent pushes go via dev as designed.
-
-Option A is cleaner (no commits carry a bypass token). Option B is faster if you don't want to touch the dev branch.
+Option A is the only supported approach as of 2026-05-14 — there is no bypass token. Reset dev once during bootstrap so its first state matches main; from then on, every prod deploy flows through dev.
 
 ---
 
