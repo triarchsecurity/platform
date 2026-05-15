@@ -176,6 +176,23 @@ gh api repos/$ORG/$REPO/environments --jq '.environments[] | {name, protection_r
 # Workflows
 gh api repos/$ORG/$REPO/contents/.github/workflows 2>/dev/null --jq '.[].name'
 
+# Promotion-flow probe (R-7, R-8, C-12, C-13) — added 2026-05-15
+# 1. Does a non-default promotion branch exist?
+for cand in dev staging; do
+  if gh api repos/$ORG/$REPO/branches/$cand --silent >/dev/null 2>&1; then
+    echo "promotion_branch=$cand"
+    break
+  fi
+done
+# 2. Per workflow: extract push/pr branch lists and check for verify-dev-deployed / gate-prod-version
+for wf in $(gh api repos/$ORG/$REPO/contents/.github/workflows --jq '.[].name'); do
+  body=$(gh api "repos/$ORG/$REPO/contents/.github/workflows/$wf" --jq '.content' | base64 -d)
+  push_b=$(printf '%s' "$body" | awk '/^on:/,/^[a-zA-Z]/' | grep -oE -- "- (main|dev|staging)" | sort -u | tr '\n' ',')
+  v_dev=$(printf '%s' "$body" | grep -c "verify[-_]dev[-_]deployed")
+  g_prod=$(printf '%s' "$body" | grep -c "gate[-_]prod[-_]version")
+  echo "$wf push=[$push_b] verify-dev=$v_dev gate-prod-version=$g_prod"
+done
+
 # CODEOWNERS
 gh api repos/$ORG/$REPO/contents/.github/CODEOWNERS 2>/dev/null --jq '.content' | base64 -d 2>/dev/null
 
@@ -256,6 +273,8 @@ For each row below, evaluate the discovery output and assign a status. Use the e
 | R-4 | Branch protection on default branch | `gh api repos/$ORG/$REPO/branches/$BRANCH/protection` returns 200, OR a ruleset targets `refs/heads/$BRANCH` | Direct pushes to default branch blocked |
 | R-5 | Deploy credentials configured | Either env-secret `AWS_DEPLOY_ROLE_ARN` (OIDC) OR static creds (`AWS_ACCESS_KEY_ID`) exist for at least one env | At least one path to deploy auth exists |
 | R-6 | A target hosting environment | Customer-stated cloud + at least one resource visible (account, project, Firebase project, etc.) | Confirmed in inputs |
+| R-7 | Non-default promotion branch exists | `gh api repos/$ORG/$REPO/branches/dev` (or `/staging`) returns 200 | At least one of `dev` or `staging` exists on origin. **Fail** if only the default branch exists — without a promotion branch the framework's 4-layer bypass-prevention model (firebase-2env-pattern.md §"Layer 3") cannot apply. |
+| R-8 | CI workflow listens on the promotion branch | Parse each workflow's `on.push.branches` and `on.pull_request.branches`; at least one must include `dev` (or `staging`) | At least one workflow triggers on the promotion branch. **Fail** if all workflows trigger on `main` only — promoting to dev would be a no-op deploy. |
 
 ### TIER: RECOMMENDED — framework defaults
 
@@ -272,6 +291,8 @@ For each row below, evaluate the discovery output and assign a status. Use the e
 | C-9 | Threat model checked into repo | `.threatmodel/` directory exists OR `THREATMODEL.md` / `docs/threat-model.md` | Pass / Partial (file but minimal) / Fail |
 | C-10 | IaC checked into repo | `iac/`, `terraform/`, `infra/`, or `infrastructure/` dir contains `.tf` / `.tofu` files | Pass / Partial (some IaC) / Fail (click-ops) |
 | C-11 | Audit log routed somewhere | GitHub Enterprise audit-log streaming OR `aws s3 ls` shows audit bucket OR Loki/Splunk visible | Pass / Partial / Fail |
+| C-12 | `verify-dev-deployed` CI gate (Layer 3 of the bypass-prevention model) | Grep each workflow body for a job containing `verify-dev-deployed` / `verify_dev_deployed` / "assert HEAD ... origin/dev" | Pass: a job exists whose body asserts HEAD is on `origin/dev` before any prod-only job runs. Partial: a job is named but its assertion is commented out or weakened (e.g. `[hotfix-bypass-dev]` token still wired). Fail: no such job. Without it, a force-merge to `main` can ship code that never deployed to the dev backend — the exact failure mode this framework exists to prevent. |
+| C-13 | Version-invariants gate on prod promotion (`gate-prod-version` or equivalent) | Grep each workflow body for `gate-prod-version` / `gate_prod_version` / a step that POSTs to a version-registry endpoint before prod deploy | Pass: a job verifies the prod-target version satisfies the framework's INV-1..INV-5 invariants (target ≤ dev_version, target > prod_version, target == dev_version, dev_age ≥ bake_minimum). Partial: a callback exists but doesn't enforce all five invariants. Fail: no callback, prod can deploy any commit that passes earlier gates. See `firebase-2env-pattern.md` §"GATE-12 promotion callback". |
 
 ### TIER: OPTIONAL — capacity-allowing additions
 
@@ -328,6 +349,27 @@ R-5:
 R-6:
   fix: "Provision the cloud account (Firebase / AWS / GCP / Azure). See Walkthrough Stage 4 Step 1 — it includes the signup links and account-creation flow per cloud."
   reference: "Walkthrough Stage 4 Step 1"
+
+R-7:
+  fix: |
+    Create the promotion branch from the current default and push:
+      git checkout main
+      git pull
+      git checkout -b dev
+      git push -u origin dev
+    Then add a branch protection rule (or extend the ruleset) covering `dev` so it can't be force-pushed or deleted. The 4-layer bypass-prevention model (firebase-2env-pattern.md §"Layer 3") assumes this branch exists.
+  reference: "firebase-2env-pattern.md §'Bootstrap caveat'"
+
+R-8:
+  fix: |
+    Update each deploy workflow's `on:` trigger to include the promotion branch:
+      on:
+        push:
+          branches: [main, dev]      # add dev
+        pull_request:
+          branches: [main, dev]
+    Then add an `env-select` job (firebase-2env-pattern.md §"env-select pattern") that maps the ref to dev/prod backends. Without this, a push to `dev` is a no-op — there's no entry point for the promotion gate.
+  reference: "firebase-2env-pattern.md §'env-select pattern'"
 
 C-1:
   fix: |
@@ -391,6 +433,41 @@ C-11:
       1. GitHub Enterprise: Settings → Audit log → Streaming → S3.
       2. GitHub Team: poll the audit-log API nightly via a scheduled workflow and push to S3 / Loki.
   reference: "Framework markdown §7 (audit log)"
+
+C-12:
+  fix: |
+    Add the verify-dev-deployed job to your CI/CD workflow. Canonical implementation:
+      verify-dev-deployed:
+        needs: env-select
+        if: needs.env-select.outputs.environment == 'prod'
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+            with: { fetch-depth: 0 }
+          - name: Assert HEAD is on origin/dev
+            run: |
+              git fetch origin dev --depth=50
+              git merge-base --is-ancestor HEAD origin/dev || {
+                echo "::error::HEAD is not an ancestor of origin/dev. Promote via dev → main."
+                exit 1
+              }
+    Then list it in the prod deploy job's `needs:` block AND in the ruleset's `required_status_checks`. This is Layer 3 of the 4-layer bypass-prevention model.
+  reference: "firebase-2env-pattern.md §'Layer 3: verify-dev-deployed'"
+
+C-13:
+  fix: |
+    Add a version-invariants gate that calls back to a version registry before prod deploy. The framework's canonical implementation lives in shared-workflows as `gate-prod-version.yml@v8.1` and validates INV-1..INV-5:
+      gate-prod-version:
+        needs: [env-select, version, verify-dev-deployed]
+        if: needs.env-select.outputs.environment == 'prod'
+        uses: <org>/shared-workflows/.github/workflows/gate-prod-version.yml@v8.1
+        with:
+          project_key: <project-slug>
+          target_version: ${{ needs.version.outputs.version }}
+        secrets:
+          ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+    Without this gate, a prod merge can ship a version that's lower than dev (rollback hidden as a forward deploy) or that never deployed to the dev backend.
+  reference: "firebase-2env-pattern.md §'GATE-12 promotion callback'"
 
 O-1:
   fix: |
@@ -1036,6 +1113,9 @@ Each list item is one sentence pointing at the gap. Example:
 | Customer's repo lacks **GitHub Advanced Security** (private + no GHAS license) | When recommending the scaffold's `ci.yml`, surface that the security-events:write permission + SARIF upload steps will reject the workflow at scheduling. Tell the user to apply the Free-plan-safe variant: comment out `security-events: write` in the 4 scanner jobs and add `continue-on-error: true` to each upload-sarif step. Verify via `gh api repos/$ORG/$REPO/code-scanning/default-setup` returning 403 with "Advanced Security must be enabled". |
 | Repo has zero workflows | All R-2, R-3 fail. Most C-* items will fail too. Recommend running `bootstrap.sh` from the scaffold as the fastest path to remediation. |
 | Customer hasn't picked a cloud yet | Skip cloud-side checks. Tier R-6 fails. Recommend Stage 1 + Stage 2 of the walkthrough first. |
+| Repo has main-only flow (no `dev` or `staging` branch) | R-7 and R-8 fail; C-12 and C-13 also fail since the gate jobs have nothing to anchor to. Sequence the remediation as R-7 first (create `dev`), then R-8 (workflow triggers), then C-12, then C-13. Direct merges to `main` are the failure mode this stack of gaps allows; flag it prominently in the "Next steps" section. |
+| Repo has `dev` branch but workflow ignores it | R-8 fails. Fix R-8 first — the dev branch is dormant otherwise. |
+| `verify-dev-deployed` job present but body weakened (`[hotfix-bypass-dev]` token honored, or `git merge-base` check commented out) | Mark C-12 as **partial**. The job is decorative; flag in remediation that any in-band bypass token defeats the gate. |
 
 ---
 
