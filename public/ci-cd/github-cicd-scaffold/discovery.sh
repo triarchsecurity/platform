@@ -146,6 +146,64 @@ if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
     section "GitHub: $ORG/$REPO workflow files"
     gh api "repos/$ORG/$REPO/contents/.github/workflows" --jq '.[].name' 2>&1 | tee -a "$OUT"
 
+    # Promotion-flow probe — added 2026-05-15. The framework's SMB-CICD-Framework.md and
+    # firebase-2env-pattern.md prescribe a non-default promotion branch (dev or staging)
+    # with a verify-dev-deployed CI gate so prod can only deploy commits that already
+    # baked on the dev backend. The previous gap-analysis only scored branch protection
+    # on the default branch and missed cases where main was protected but no dev branch
+    # existed (security-admin shape: PRs land straight on main with no dev path).
+    section "GitHub: $ORG/$REPO promotion-flow state (dev/staging branch + gate jobs)"
+    PROMOTION_BRANCH=""
+    for cand in dev staging; do
+      if gh api "repos/$ORG/$REPO/branches/$cand" --silent >/dev/null 2>&1; then
+        PROMOTION_BRANCH="$cand"
+        echo "promotion_branch: $cand (exists on origin)" | tee -a "$OUT"
+        gh api "repos/$ORG/$REPO/branches/$cand/protection" --jq '{required_pull_request_reviews:.required_pull_request_reviews.required_approving_review_count, restrict_pushes:.restrictions != null, signatures:.required_signatures.enabled}' 2>&1 | tee -a "$OUT" || echo "  (no protection on $cand)" | tee -a "$OUT"
+        break
+      fi
+    done
+    if [ -z "$PROMOTION_BRANCH" ]; then
+      echo "promotion_branch: NONE — neither origin/dev nor origin/staging exists" | tee -a "$OUT"
+      echo "(R-7 fails — without a promotion branch, all merges go straight to the default branch)" | tee -a "$OUT"
+    fi
+
+    # Per-workflow: extract on.push.branches and on.pull_request.branches, plus job-name fingerprints
+    # for verify-dev-deployed / gate-prod-version. These are framework-prescribed and the gap-analysis
+    # validators (R-8, C-12, C-13) read this section.
+    section "GitHub: $ORG/$REPO workflow promotion-gate fingerprints"
+    WFLIST=$(gh api "repos/$ORG/$REPO/contents/.github/workflows" --jq '.[] | select(.name | test("\\.(yml|yaml)$")) | .name' 2>/dev/null)
+    if [ -z "$WFLIST" ]; then
+      echo "(no workflow files)" | tee -a "$OUT"
+    else
+      ANY_DEV_TRIGGER=0
+      ANY_VERIFY_DEV=0
+      ANY_GATE_PROD_VERSION=0
+      while IFS= read -r wf; do
+        [ -z "$wf" ] && continue
+        body=$(gh api "repos/$ORG/$REPO/contents/.github/workflows/$wf" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null || echo "")
+        push_branches=$(printf '%s' "$body" | awk '/^on:/,/^[a-zA-Z]/' | awk '/push:/,/pull_request:|workflow_/' | grep -oE "(main|dev|staging|master|release/[*][*]|hotfix/[*][*])" | sort -u | tr '\n' ',' | sed 's/,$//')
+        pr_branches=$(printf '%s' "$body" | awk '/pull_request:/,/^[a-zA-Z_]+:/' | grep -oE "(main|dev|staging|master)" | sort -u | tr '\n' ',' | sed 's/,$//')
+        # Strip comments before fingerprinting so a `# TODO add gate-prod-version` line
+        # doesn't read as a present gate. We look for two canonical shapes:
+        #   1. job declaration:  `^  verify-dev-deployed:` (or _underscore variant)
+        #   2. shared-workflow uses ref: `uses: .../verify-dev-deployed.yml@...`
+        body_nocomments=$(printf '%s' "$body" | sed 's/#.*$//')
+        has_verify_dev=$(printf '%s' "$body_nocomments" | grep -cE "(^[[:space:]]+verify[-_]dev[-_]deployed:|uses:.*verify[-_]dev[-_]deployed\.ya?ml)" || true)
+        has_gate_prod_ver=$(printf '%s' "$body_nocomments" | grep -cE "(^[[:space:]]+gate[-_]prod[-_]version:|uses:.*gate[-_]prod[-_]version\.ya?ml)" || true)
+        has_env_select=$(printf '%s' "$body_nocomments" | grep -cE "^[[:space:]]+env-select:" || true)
+        echo "$wf: push=[${push_branches:-none}] pr=[${pr_branches:-none}] verify-dev-deployed=$has_verify_dev gate-prod-version=$has_gate_prod_ver env-select=$has_env_select" | tee -a "$OUT"
+        if printf '%s' ",$push_branches,$pr_branches," | grep -qE ",(dev|staging),"; then
+          ANY_DEV_TRIGGER=1
+        fi
+        [ "$has_verify_dev" -gt 0 ] && ANY_VERIFY_DEV=1
+        [ "$has_gate_prod_ver" -gt 0 ] && ANY_GATE_PROD_VERSION=1
+      done <<< "$WFLIST"
+      echo "SUMMARY: any_workflow_listens_on_dev_or_staging=$ANY_DEV_TRIGGER verify_dev_deployed_present=$ANY_VERIFY_DEV gate_prod_version_present=$ANY_GATE_PROD_VERSION" | tee -a "$OUT"
+      [ "$ANY_DEV_TRIGGER" -eq 0 ] && echo "(R-8 fails — no workflow triggers on a non-default branch; promotion gate has no entry point)" | tee -a "$OUT"
+      [ "$ANY_VERIFY_DEV" -eq 0 ] && echo "(C-12 fails — no verify-dev-deployed job; prod can deploy commits never seen by dev)" | tee -a "$OUT"
+      [ "$ANY_GATE_PROD_VERSION" -eq 0 ] && echo "(C-13 fails — no gate-prod-version job; version-invariants on prod promotion not enforced)" | tee -a "$OUT"
+    fi
+
     section "GitHub: $ORG/$REPO CODEOWNERS errors (empty array = clean)"
     gh api "repos/$ORG/$REPO/codeowners/errors" --jq '.errors' 2>&1 | tee -a "$OUT"
 

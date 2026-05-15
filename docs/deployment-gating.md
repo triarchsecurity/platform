@@ -4,7 +4,7 @@
 
 ## The five invariants
 
-The reusable workflow [`shared-workflows/gate-prod-version.yml@v8`](https://github.com/triarchsecurity/shared-workflows/blob/main/.github/workflows/gate-prod-version.yml) enforces all of these before any prod deploy is allowed to proceed:
+The reusable workflow [`shared-workflows/gate-prod-version.yml@v8.1`](https://github.com/triarchsecurity/shared-workflows/blob/main/.github/workflows/gate-prod-version.yml) enforces all of these before any prod deploy is allowed to proceed:
 
 | ID | Rule | Failure mode |
 |----|------|--------------|
@@ -16,15 +16,17 @@ The reusable workflow [`shared-workflows/gate-prod-version.yml@v8`](https://gith
 
 ## Where the gate gets its data
 
-The gate calls `GET https://admin.triarch.dev/api/platform/projects/{key}/versions` with the per-project bearer token (`projects.apiKey`). The endpoint returns:
+The gate calls `GET https://admin.triarch.dev/api/platform/version-snapshot` with the per-project bearer token (`projects.apiKey`). The project is derived from the Bearer apiKey — there's no path param. The endpoint returns:
 
 ```json
 {
   "project": "triarchsecurity-admin",
-  "dev":  { "version": "v3.54.0", "deployed_at": "2026-05-14T00:18:13Z", "commit_sha": "...", "released_by": "...", "status": "dev" },
-  "prod": { "version": "v3.36.1", "deployed_at": "2026-05-05T03:06:16Z", "commit_sha": "...", "released_by": "...", "status": "promoted" }
+  "dev":  { "version": "v3.54.0", "deployed_at": "2026-05-14T00:18:13Z" },
+  "prod": { "version": "v3.36.1", "deployed_at": "2026-05-05T03:06:16Z" }
 }
 ```
+
+(The earlier path `/api/platform/projects/{key}/versions` was retired 2026-05-14 — it crashed FAH due to a route conflict with static siblings in the same directory. Static-path version-snapshot replaced it.)
 
 Either side can be `null` for projects with no release in that environment yet.
 
