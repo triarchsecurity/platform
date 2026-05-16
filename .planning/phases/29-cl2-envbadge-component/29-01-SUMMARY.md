@@ -150,6 +150,20 @@ _Note: Plan instructed no interim RED commit — single atomic commit covers tes
 - Consumer plans CAN write/commit their layout.tsx + apphosting.dev.yaml changes without the published package (the commit is correct; CI will fail until publish, but local commits are valid)
 - Phase 35 (compliance scan) can target `data-env="dev"` HTML attribute once consumers mount the component
 
+## Self-Check: PASSED
+
+| Item | Result |
+|------|--------|
+| `src/components/EnvBadge/index.tsx` | FOUND |
+| `__tests__/EnvBadge.test.tsx` | FOUND |
+| `29-01-SUMMARY.md` | FOUND |
+| commit `78f2771` | FOUND |
+| `package.json` version 1.5.0 | FOUND |
+| `EnvBadge` in `dist/index.js` | FOUND (3 occurrences) |
+| `EnvBadge` in `dist/index.d.ts` | FOUND (3 occurrences) |
+| Branch `feat/v1.5.0-envbadge` | CONFIRMED |
+| 6/6 vitest tests pass | CONFIRMED |
+
 ---
 *Phase: 29-cl2-envbadge-component*
 *Completed: 2026-05-16*
