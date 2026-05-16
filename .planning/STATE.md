@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Dev/Prod Contract Adoption
 status: planning
-stopped_at: "Completed 34-01 (security-portal two-env restructure: apphosting.dev.yaml + ci-cd.yml + EnvBadge + v0.15.0)"
-last_updated: "2026-05-16T21:49:30.178Z"
+stopped_at: Completed Phase 35 Plan 01 (CL-1..CL-6 compliance matrix UI on admin ci-cd page; v2.13.17)
+last_updated: "2026-05-16T21:55:14.162Z"
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 13
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Triarch Dev Admin — Project State
@@ -217,6 +217,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 32-03 truthtreason]: gate-prod-version job renamed to cl4-gate + bumped @v8.1→@v8.2; needs aligned to [env-select, version] matching platform pattern; v2.13.10 verify-dev-deployed direction was already correct (no back-patch needed); version 1.1.18→1.1.20 on feat/cl4-consumer-gate branch
 - [Phase 33-01 security-admin]: quality-gate bumped from @v1.8 to @v8.2 to match full v8 adoption; deploy split into deploy-dev + deploy-prod; verify-dev-deployed uses v2.13.10 direction (is-ancestor origin/dev HEAD); cl4-gate project_key=triarchsecurity-admin; apphosting.dev.yaml is standalone (full env + _DEV secret variants); NEXTAUTH_SECRET_DEV added alongside DATABASE_URL_DEV; EnvBadge from @triarchsecurity/shared-ui mounted as last body child; v3.54.1→v3.55.0 on feat/dev-path-cl4-cl2-cl3 off fix/bump-shared-workflows-v8
 - [Phase 34-01 security-portal]: quality-gate bumped from @v1 to @v8.2; deploy split into deploy-dev (portal-dev backend) + deploy-prod; verify-dev-deployed uses v2.13.10 direction; cl4-gate project_key=triarchsecurity-portal; apphosting.dev.yaml expanded from stub (was DATABASE_URL only) to full _DEV secret set (PORTAL_JWT_SECRET_DEV, PORTAL_TOTP_ENCRYPTION_KEY_DEV, DATABASE_URL_DEV); HUMAN-UAT includes dormant dev branch resolution (Option A: delete + recreate recommended); v0.14.8→v0.15.0 on feat/dev-path-cl4-cl2-cl3 off fix/bump-shared-workflows-v8
+- [Phase 35]: CL-1 derives expected dev hostname from deployedUrl (green=pattern derivable); CL-6 uses single inArray batch query; CL-4 reuses existing verdict; CL-2/3/5 scaffolded grey with deferred HTTP/GitHub fetch reason
 
 ### Pending Todos
 
@@ -234,8 +235,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-16T22:30:00.000Z
-Stopped at: Completed 34-01 (security-portal two-env restructure: apphosting.dev.yaml + ci-cd.yml + EnvBadge + v0.15.0)
+Last session: 2026-05-16T21:55:09.677Z
+Stopped at: Completed Phase 35 Plan 01 (CL-1..CL-6 compliance matrix UI on admin ci-cd page; v2.13.17)
 Resume file: None
 Next action: Complete HUMAN-UAT A-G for security-portal (resolve dormant dev branch, FAH portal-dev backend, DNS, GCP secrets, ADMIN_API_TOKEN, npm install after shared-ui publishes, merge PR). See 34-HUMAN-UAT.md.
 

@@ -248,7 +248,7 @@ Every project's dev URL MUST be `<short>-dev.<zone>`; prod is `<short>.<zone>` o
 
 - [ ] **CL1-01**: Six missing dev shortnames claimed in Firebase + DNS — `admin-dev.triarch.dev`, `portal-dev.triarch.dev`, `tmi-dev.triarch.dev`, `truthtreason-dev.triarch.dev`, `admin-dev.triarchsecurity.com`, `portal-dev.triarchsecurity.com`
 - [ ] **CL1-02**: TLS provisioning verified on all 6 new hostnames (cert subject matches expected, expiry > 60d)
-- [ ] **CL1-03**: Admin compliance scan (in `/admin/modules/ci-cd`) flags any project whose `dev_url` doesn't end with `-dev.` segment (exception allowed when project carries documented external-brand record)
+- [x] **CL1-03**: Admin compliance scan (in `/admin/modules/ci-cd`) flags any project whose `dev_url` doesn't end with `-dev.` segment (exception allowed when project carries documented external-brand record)
 
 ### CL-2 Persistent Environment Badge
 
@@ -301,9 +301,9 @@ Admin `/api/platform/ingest/release-logs` MUST reject `env=prod` ingests without
 
 Live per-project, per-clause status on `/admin/modules/ci-cd`.
 
-- [ ] **MATRIX-01**: Page renders one row per project × 6 columns (CL-1..CL-6) plus existing CL-4 readiness column
-- [ ] **MATRIX-02**: Each cell shows green/red/grey badge with one-line reason on hover
-- [ ] **MATRIX-03**: Page recomputes live on each render (no stale cache); under 2s response time for portfolio-wide scan
+- [x] **MATRIX-01**: Page renders one row per project × 6 columns (CL-1..CL-6) plus existing CL-4 readiness column
+- [x] **MATRIX-02**: Each cell shows green/red/grey badge with one-line reason on hover
+- [x] **MATRIX-03**: Page recomputes live on each render (no stale cache); under 2s response time for portfolio-wide scan
 
 ### Traceability
 
@@ -311,7 +311,7 @@ Live per-project, per-clause status on `/admin/modules/ci-cd`.
 |-----|-------|--------|
 | CL1-01 | Phase 30 | Pending |
 | CL1-02 | Phase 30 | Pending |
-| CL1-03 | Phase 35 | Pending |
+| CL1-03 | Phase 35 | Complete |
 | CL2-01 | Phase 29 | Complete |
 | CL2-02 | Phase 29 | Complete |
 | CL2-03 | Phase 29 (5 projects) + 33 (security-admin) + 34 (security-portal) | Complete |
@@ -334,9 +334,9 @@ Live per-project, per-clause status on `/admin/modules/ci-cd`.
 | CL6-02 | Phase 27 | Complete |
 | CL6-03 | Phase 27 | Complete |
 | CL6-04 | Phase 27 | Complete |
-| MATRIX-01 | Phase 35 | Pending |
-| MATRIX-02 | Phase 35 | Pending |
-| MATRIX-03 | Phase 35 | Pending |
+| MATRIX-01 | Phase 35 | Complete |
+| MATRIX-02 | Phase 35 | Complete |
+| MATRIX-03 | Phase 35 | Complete |
 
 **Coverage:**
 - v2.3 requirements: 28 total (CL-1: 3 · CL-2: 4 · CL-3: 4 · CL-4: 7 · CL-5: 3 · CL-6: 4 · MATRIX: 3)
