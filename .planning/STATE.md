@@ -214,6 +214,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 29-cl2-envbadge-component]: Version bump 4.44.1->4.44.2 (not 4.44.4): plan context referenced stale branch version; corrected to patch increment from actual main baseline
 - [Phase 29-cl2-envbadge-component]: Replaced @myalterlego/shared-ui with @triarchsecurity/shared-ui in transpilePackages after confirming 0 src imports of stale name
 - [Phase Phase 29]: Phase 29 closes CL2-01..CL2-04 for 5 of 7 projects; security-admin/portal mounts deferred to Phases 33/34; consumer CI blocked on shared-ui v1.5.0 publish until HUMAN-UAT B1 completes
+- [Phase 32-03 truthtreason]: gate-prod-version job renamed to cl4-gate + bumped @v8.1→@v8.2; needs aligned to [env-select, version] matching platform pattern; v2.13.10 verify-dev-deployed direction was already correct (no back-patch needed); version 1.1.18→1.1.20 on feat/cl4-consumer-gate branch
 
 ### Pending Todos
 
@@ -232,9 +233,9 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 ## Session Continuity
 
 Last session: 2026-05-16T21:21:46.131Z
-Stopped at: Completed 29-cl2-envbadge-component-29-07-PLAN.md (phase close: verification + HUMAN-UAT)
+Stopped at: Completed 32-03 (truthtreason cl4-gate @v8.2, parallel with darksouls + tmi executors)
 Resume file: None
-Next action: Continue consumer mount plans (29-03..29-06) for dev-portal, darksouls, tmi, truthtreason. All mounts blocked on shared-ui v1.5.0 publish for npm install + CI pass. Then run 29-07 verify gate.
+Next action: Merge darksouls + tmi + truthtreason feat/cl4-consumer-gate PRs after HUMAN-UAT secret provisioning (ADMIN_API_TOKEN per repo). Then run Phase 32 verify gate.
 
 ## Performance Metrics (24-03)
 
@@ -250,3 +251,5 @@ Next action: Continue consumer mount plans (29-03..29-06) for dev-portal, darkso
 | Phase 29 P04 | 8 | 2 tasks | 4 files |
 | Phase 29-cl2-envbadge-component P06 | 8 | 2 tasks | 4 files |
 | Phase 29-cl2-envbadge-component P05 | 8 | 2 tasks | 4 files |
+| Phase 32 P03 (truthtreason cl4-gate) | ~5 min | 1 task | 2 files |
+| Phase 32 P02 (tmi cl4-gate + v2.13.10 backpatch) | ~5 min | 1 task | 2 files |
