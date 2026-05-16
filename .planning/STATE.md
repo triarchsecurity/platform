@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Dev/Prod Contract Adoption
-status: verifying
+status: planning
 stopped_at: Completed 27-03-PLAN.md (CL-6 ingest pre-check; 9/9 Vitest GREEN; tsc + next build clean; TDD RED+GREEN committed; apphosting yamls + v2.13.14 shipped)
-last_updated: "2026-05-16T17:27:25.089Z"
+last_updated: "2026-05-16T17:32:35.234Z"
 progress:
   total_phases: 9
   completed_phases: 1
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 27 (CL-6 Server-Side Adoption Enforcement) — EXECUTING
-Plan: 3 of 3
+Phase: 28
+Plan: Not started
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -49,7 +49,7 @@ Plan: 3 of 3
 | 26 — Sunset (T+90) | Delete admin `/projects/[slug]/*` + dead hostname guards; admin v3.0.0 bump (deferred) | SUN-01..03 | Not started |
 
 **Requirements:** 47 total, all mapped (100% coverage, no orphans)
-**Status:** Phase complete — ready for verification
+**Status:** Ready to plan
 
 ## Performance Metrics
 
