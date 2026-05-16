@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Dev/Prod Contract Adoption
 status: planning
-stopped_at: "Completed 29-cl2-envbadge-component-29-07-PLAN.md (phase close: verification + HUMAN-UAT)"
-last_updated: "2026-05-16T21:27:07.865Z"
+stopped_at: Completed 32-03 (truthtreason cl4-gate @v8.2, parallel with darksouls + tmi executors)
+last_updated: "2026-05-16T21:34:51.424Z"
 progress:
   total_phases: 9
   completed_phases: 2
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 15
 ---
 
 # Triarch Dev Admin — Project State
@@ -23,7 +23,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 
 ## Current Position
 
-Phase: 32
+Phase: 33
 Plan: Not started
 
 ## Active Milestone: v2.2 — Customer Portal Split
