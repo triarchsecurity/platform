@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Dev/Prod Contract Adoption
 status: planning
-stopped_at: Completed 29-cl2-envbadge-component-29-06-PLAN.md (truthtreason EnvBadge mount)
-last_updated: "2026-05-16T21:15:22.439Z"
+stopped_at: "Completed 29-cl2-envbadge-component-29-07-PLAN.md (phase close: verification + HUMAN-UAT)"
+last_updated: "2026-05-16T21:21:52.336Z"
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Triarch Dev Admin — Project State
@@ -213,6 +213,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 29-cl2-envbadge-component]: truthtreason first-time shared-ui consumer: added dep + transpilePackages + EnvBadge mount in single atomic v1.1.19 commit
 - [Phase 29-cl2-envbadge-component]: Version bump 4.44.1->4.44.2 (not 4.44.4): plan context referenced stale branch version; corrected to patch increment from actual main baseline
 - [Phase 29-cl2-envbadge-component]: Replaced @myalterlego/shared-ui with @triarchsecurity/shared-ui in transpilePackages after confirming 0 src imports of stale name
+- [Phase Phase 29]: Phase 29 closes CL2-01..CL2-04 for 5 of 7 projects; security-admin/portal mounts deferred to Phases 33/34; consumer CI blocked on shared-ui v1.5.0 publish until HUMAN-UAT B1 completes
 
 ### Pending Todos
 
@@ -230,8 +231,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-16T21:15:22.436Z
-Stopped at: Completed 29-cl2-envbadge-component-29-06-PLAN.md (truthtreason EnvBadge mount)
+Last session: 2026-05-16T21:21:46.131Z
+Stopped at: Completed 29-cl2-envbadge-component-29-07-PLAN.md (phase close: verification + HUMAN-UAT)
 Resume file: None
 Next action: Continue consumer mount plans (29-03..29-06) for dev-portal, darksouls, tmi, truthtreason. All mounts blocked on shared-ui v1.5.0 publish for npm install + CI pass. Then run 29-07 verify gate.
 

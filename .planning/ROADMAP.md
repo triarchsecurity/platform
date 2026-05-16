@@ -56,7 +56,7 @@ Adopt the [Dev/Prod Distinction Contract](../public/ci-cd/dev-prod-customer-cont
 
 - [x] **Phase 27: CL-6 Server-Side Adoption Enforcement (P0)** — `/api/platform/ingest/release-logs` REJECTS `env=prod` release ingests without a paired pass-verdict `deploy_gate_check` audit row in the prior 15 min. Without this, CL-4 is opt-out — a consumer that strips its workflow gate still gets prod recorded. (completed 2026-05-16)
 - [x] **Phase 28: CL-4 Platform Self-Adopt** — Wire `gate-prod-version.yml@v8.1` into platform's own `ci-cd.yml` as a `needs:` prereq of every prod deploy. Self-eats the dog food + provides golden template for phase 32. (completed 2026-05-16)
-- [ ] **Phase 29: CL-2 EnvBadge Component** — Build `<EnvBadge env={NEXT_PUBLIC_ENV}/>` in `@triarchsecurity/shared-ui` (repo: `triarchsecurity/shared-ui`); mount in root layout of 5 clean projects (platform, dev-portal, darksouls, tmi, truthtreason). security-admin + security-portal mounts deferred to Phase 33/34 (they restructure to add dev paths first). Admin compliance scan fetches dev URL and asserts presence.
+- [x] **Phase 29: CL-2 EnvBadge Component** — Build `<EnvBadge env={NEXT_PUBLIC_ENV}/>` in `@triarchsecurity/shared-ui` (repo: `triarchsecurity/shared-ui`); mount in root layout of 5 clean projects (platform, dev-portal, darksouls, tmi, truthtreason). security-admin + security-portal mounts deferred to Phase 33/34 (they restructure to add dev paths first). Admin compliance scan fetches dev URL and asserts presence. (completed 2026-05-16)
 - [ ] **Phase 30: DNS Sweep — CL-1 Hostnames** — Claim 6 missing `*-dev.<zone>` hostnames (admin-dev / portal-dev on both `.triarch.dev` AND `.triarchsecurity.com`, tmi-dev, truthtreason-dev). Interactive Firebase Console + GoDaddy MCP per the 2026-05-14 walkthrough. Verify TLS provisioning per host.
 - [ ] **Phase 31: CL-3 DB Namespace Audit + Migration** — For every project: confirm `apphosting.dev.yaml` DATABASE_URL points to `<project>_dev` database and `apphosting.yaml` points to `<project>` (same cluster OK, distinct database required). Create the missing `_dev` databases; migrate any shared-DB projects to namespaced.
 - [ ] **Phase 32: CL-4 Roll to Consumers** — Wire `gate-prod-version.yml@v8.1` into `dev-portal`, `darksouls-rpg`, `tmi`, `truthtreason` ci-cd.yml. Per repo: add gate job, add ADMIN_API_TOKEN secret bound to project's `apiKey` from CRDB, verify a dry-run blocks correctly. Also back-patch tmi + truthtreason to v2.13.10 framework (corrected C-12 direction; remove `[hotfix-bypass-dev]`).
@@ -109,7 +109,7 @@ Adopt the [Dev/Prod Distinction Contract](../public/ci-cd/dev-prod-customer-cont
 - [x] 29-04-PLAN.md — darksouls mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [x] 29-05-PLAN.md — tmi mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [x] 29-06-PLAN.md — truthtreason mount + new shared-ui dep + transpilePackages + NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
-- [ ] 29-07-PLAN.md — cross-repo verification + 29-SUMMARY.md + 29-HUMAN-UAT.md push/PR/merge/publish runbook
+- [x] 29-07-PLAN.md — cross-repo verification + 29-SUMMARY.md + 29-HUMAN-UAT.md push/PR/merge/publish runbook
 
 ### Phase 30: DNS Sweep — CL-1 Hostnames
 **Goal**: Claim the 6 missing `*-dev.<zone>` hostnames so every project has a customer-disambiguatable dev URL. Interactive per 2026-05-14 walkthrough — Firebase Console "Add custom domain" + GoDaddy DNS records + TLS provisioning verify.
