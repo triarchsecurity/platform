@@ -77,14 +77,18 @@ Adopt the [Dev/Prod Distinction Contract](../public/ci-cd/dev-prod-customer-cont
   4. Contrived test (strip `needs: gate` from a consumer workflow): release row never appears, compliance matrix flags red
 
 ### Phase 28: CL-4 Platform Self-Adopt
-**Goal**: Platform's own `ci-cd.yml` declares `gate-prod-version.yml@v8.1` as `needs:` prerequisite of every prod deploy job. Self-eats the dog food + provides golden template for Phase 32 rollout.
+**Goal**: Platform's own `ci-cd.yml` declares `gate-prod-version.yml@v8.2` as `needs:` prerequisite of every prod deploy job. Self-eats the dog food + provides golden template for Phase 32 rollout.
 **Depends on**: Phase 27 (CL-6 must be live so a misadoption fails closed)
 **Requirements**: CL4-01
 **Success Criteria** (what must be TRUE):
   1. `triarchsecurity/platform/.github/workflows/ci-cd.yml` declares gate job; deploy job has `needs: gate`
   2. `ADMIN_API_TOKEN` secret bound from `triarch-vault` to GitHub Actions
   3. Contrived dry-run (deploy with version dev hasn't seen) blocks correctly with INV-2 error
-  4. Real prod deploy of v2.13.13+ passes gate and ships normally
+  4. Real prod deploy of v2.13.15+ passes gate and ships normally
+**Plans**: 3 plans
+- [ ] 28-01-PLAN.md — shared-workflows v8.2: gate-prod-version posts verdict to /api/platform/cicd/gate-verdict (CL-6 paired-verdict round-trip)
+- [ ] 28-02-PLAN.md — platform ci-cd.yml: add `cl4-gate` + `version` jobs pinned to @v8.2, extend deploy.needs/deploy.if, bump v2.13.15
+- [ ] 28-03-PLAN.md — verification + write 28-SUMMARY.md + 28-HUMAN-UAT.md (push/PR/merge/tag, ADMIN_API_TOKEN secret, contrived dry-run, real prod-deploy)
 
 ### Phase 29: CL-2 EnvBadge Component
 **Goal**: Customers can tell at a glance whether they're on dev — `<EnvBadge env={NEXT_PUBLIC_ENV}/>` lives in shared package, mounts in every project's root layout, renders a persistent "DEV" pill in dev chrome.
