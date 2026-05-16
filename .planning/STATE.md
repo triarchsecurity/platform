@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Dev/Prod Contract Adoption
 status: planning
-stopped_at: "Completed 28-03-PLAN.md (phase close: 28-SUMMARY.md + 28-HUMAN-UAT.md; all 10 checks passed; feat/cl4-self-adopt-gate branch)"
-last_updated: "2026-05-16T18:36:35.932Z"
+stopped_at: "Completed 29-01-PLAN.md (EnvBadge component in shared-ui v1.5.0; feat/v1.5.0-envbadge branch; 6/6 tests GREEN; atomic commit 78f2771)"
+last_updated: "2026-05-16T21:09:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Triarch Dev Admin — Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 ## Current Position
 
 Phase: 29
-Plan: Not started
+Plan: 01 (complete)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -204,6 +204,9 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 28]: cl4-gate job named to avoid collision with existing gate-prod GitHub Environment binding; deploy.needs extended with both version and cl4-gate
 - [Phase 28]: version job extracts package.json version once (needs: quality-gate only); cl4-gate needs [env-select, version] so it only resolves on push paths
 - [Phase 28-cl4-platform-self-adopt]: Platform project_key is triarch-dev (not triarchsecurity-platform); cl4-gate job avoids gate-prod collision; version job added for deterministic gate input; deploy.if extended for dev-path safety
+- [Phase 29-01-envbadge]: EnvBadge uses inline CSS-in-JS (not className/Tailwind) — shared-ui component sources do not use Tailwind directly; themes/*.css is the CSS mechanism
+- [Phase 29-01-envbadge]: Yellow (#facc15) for dev, orange (#fb923c) for staging; zIndex 9000 (above app content, below modal overlays); data-env normalized to lowercase
+- [Phase 29-01-envbadge]: Consumer mount plans (29-02..29-06) are blocked on human push + PR + tag + npm publish of shared-ui v1.5.0 before npm install works
 
 ### Pending Todos
 
@@ -221,10 +224,10 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-16T18:35:25.471Z
-Stopped at: Completed 28-03-PLAN.md (phase close: 28-SUMMARY.md + 28-HUMAN-UAT.md; all 10 checks passed; feat/cl4-self-adopt-gate branch)
+Last session: 2026-05-16T21:09:00.000Z
+Stopped at: Completed 29-01-PLAN.md (EnvBadge component in shared-ui v1.5.0; feat/v1.5.0-envbadge branch; 6/6 tests GREEN; atomic commit 78f2771)
 Resume file: None
-Next action: After both 24-03 PRs merge, run `/gsd:verify-work 24` to audit Phase 24 under reduced scope, then `/gsd:plan-phase 25` for cutover (admin 301 → portal). Phase 24 is now done as a hard prerequisite for Phase 25.
+Next action: Human must push feat/v1.5.0-envbadge, PR → main, merge, tag v1.5.0, await CI npm publish to GitHub Packages. Then run consumer mount plans (29-02..29-06) to mount EnvBadge in platform + 4 other consumer repos.
 
 ## Performance Metrics (24-03)
 

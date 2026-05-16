@@ -254,8 +254,8 @@ Every project's dev URL MUST be `<short>-dev.<zone>`; prod is `<short>.<zone>` o
 
 Dev UIs MUST render a visible "DEV" badge in persistent chrome.
 
-- [ ] **CL2-01**: `<EnvBadge env={NEXT_PUBLIC_ENV} />` exists in `@triarchsecurity/shared-ui` (repo: `triarchsecurity/shared-ui`); renders only when env in `('dev','staging')`
-- [ ] **CL2-02**: Component emits `data-env="dev"` attribute so admin compliance scan can assert via HTML parse
+- [x] **CL2-01**: `<EnvBadge env={NEXT_PUBLIC_ENV} />` exists in `@triarchsecurity/shared-ui` (repo: `triarchsecurity/shared-ui`); renders only when env in `('dev','staging')`
+- [x] **CL2-02**: Component emits `data-env="dev"` attribute so admin compliance scan can assert via HTML parse
 - [ ] **CL2-03**: Mounted in root layout of all 7 projects — Phase 29 covers platform + dev-portal + darksouls + tmi + truthtreason; Phase 33 covers security-admin; Phase 34 covers security-portal
 - [ ] **CL2-04**: `NEXT_PUBLIC_ENV` set to `dev` in every project's `apphosting.dev.yaml`; set to `prod` (or unset) in `apphosting.yaml`. Phase 33/34 create the missing yamls for security-admin/portal.
 
@@ -312,8 +312,8 @@ Live per-project, per-clause status on `/admin/modules/ci-cd`.
 | CL1-01 | Phase 30 | Pending |
 | CL1-02 | Phase 30 | Pending |
 | CL1-03 | Phase 35 | Pending |
-| CL2-01 | Phase 29 | Pending |
-| CL2-02 | Phase 29 | Pending |
+| CL2-01 | Phase 29 | Complete |
+| CL2-02 | Phase 29 | Complete |
 | CL2-03 | Phase 29 (5 projects) + 33 (security-admin) + 34 (security-portal) | Pending |
 | CL2-04 | Phase 29 (5 projects) + 33 (security-admin) + 34 (security-portal) | Pending |
 | CL3-01 | Phase 31 | Pending |

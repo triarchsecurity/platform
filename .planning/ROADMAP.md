@@ -103,7 +103,7 @@ Adopt the [Dev/Prod Distinction Contract](../public/ci-cd/dev-prod-customer-cont
 **Scope corrections (2026-05-16):** Original roadmap text said `@myalterlego/triarch-shared` — corrected to `@triarchsecurity/shared-ui` (registry-confirmed via package.json in installed node_modules). shared-ui is its own private GitHub repo (`triarchsecurity/shared-ui`, last updated 2026-05-15), not a workspace package in platform. Per-consumer mounts are 1-line edits to `src/app/layout.tsx` + 1 env entry in `apphosting.dev.yaml`. Three consumer repos (dev-portal, darksouls, tmi) currently sit on stale `fix/deploy-skip-bug` branches (27h old; abandoned backport of platform v2.13.5 — never merged because platform v2.13.7+ superseded). Phase 29 work branches off origin/main in each repo, ignoring the stale branches (those can be cleaned up incidentally).
 
 **Plans**: 7 plans
-- [ ] 29-01-PLAN.md — shared-ui v1.5.0: EnvBadge component + TDD test suite (CL2-01, CL2-02)
+- [x] 29-01-PLAN.md — shared-ui v1.5.0: EnvBadge component + TDD test suite (CL2-01, CL2-02)
 - [ ] 29-02-PLAN.md — platform mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [ ] 29-03-PLAN.md — dev-portal mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [ ] 29-04-PLAN.md — darksouls mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
