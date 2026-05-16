@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (last updated 2026-05-08 — v2.2 milestone started)
 ## Current Position
 
 Phase: 33
-Plan: Not started
+Plan: Complete (1/1)
 
 ## Active Milestone: v2.2 — Customer Portal Split
 
@@ -215,6 +215,7 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 29-cl2-envbadge-component]: Replaced @myalterlego/shared-ui with @triarchsecurity/shared-ui in transpilePackages after confirming 0 src imports of stale name
 - [Phase Phase 29]: Phase 29 closes CL2-01..CL2-04 for 5 of 7 projects; security-admin/portal mounts deferred to Phases 33/34; consumer CI blocked on shared-ui v1.5.0 publish until HUMAN-UAT B1 completes
 - [Phase 32-03 truthtreason]: gate-prod-version job renamed to cl4-gate + bumped @v8.1→@v8.2; needs aligned to [env-select, version] matching platform pattern; v2.13.10 verify-dev-deployed direction was already correct (no back-patch needed); version 1.1.18→1.1.20 on feat/cl4-consumer-gate branch
+- [Phase 33-01 security-admin]: quality-gate bumped from @v1.8 to @v8.2 to match full v8 adoption; deploy split into deploy-dev + deploy-prod; verify-dev-deployed uses v2.13.10 direction (is-ancestor origin/dev HEAD); cl4-gate project_key=triarchsecurity-admin; apphosting.dev.yaml is standalone (full env + _DEV secret variants); NEXTAUTH_SECRET_DEV added alongside DATABASE_URL_DEV; EnvBadge from @triarchsecurity/shared-ui mounted as last body child; v3.54.1→v3.55.0 on feat/dev-path-cl4-cl2-cl3 off fix/bump-shared-workflows-v8
 
 ### Pending Todos
 
@@ -232,10 +233,10 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-16T21:21:46.131Z
-Stopped at: Completed 32-03 (truthtreason cl4-gate @v8.2, parallel with darksouls + tmi executors)
+Last session: 2026-05-16T22:00:00.000Z
+Stopped at: Completed 33-01 (security-admin two-env restructure: apphosting.dev.yaml + ci-cd.yml + EnvBadge + v3.55.0)
 Resume file: None
-Next action: Merge darksouls + tmi + truthtreason feat/cl4-consumer-gate PRs after HUMAN-UAT secret provisioning (ADMIN_API_TOKEN per repo). Then run Phase 32 verify gate.
+Next action: Complete HUMAN-UAT A-G for security-admin (FAH admin-dev backend, dev branch push, DNS, GCP secrets, ADMIN_API_TOKEN, npm install after shared-ui publishes, merge PR). Then Phase 34 (security-portal).
 
 ## Performance Metrics (24-03)
 
@@ -253,3 +254,4 @@ Next action: Merge darksouls + tmi + truthtreason feat/cl4-consumer-gate PRs aft
 | Phase 29-cl2-envbadge-component P05 | 8 | 2 tasks | 4 files |
 | Phase 32 P03 (truthtreason cl4-gate) | ~5 min | 1 task | 2 files |
 | Phase 32 P02 (tmi cl4-gate + v2.13.10 backpatch) | ~5 min | 1 task | 2 files |
+| Phase 33 P01 (security-admin two-env restructure) | ~25 min | 5 tasks | 5 files |
