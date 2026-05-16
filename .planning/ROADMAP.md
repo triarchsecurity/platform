@@ -107,8 +107,8 @@ Adopt the [Dev/Prod Distinction Contract](../public/ci-cd/dev-prod-customer-cont
 - [x] 29-02-PLAN.md — platform mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [x] 29-03-PLAN.md — dev-portal mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [x] 29-04-PLAN.md — darksouls mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
-- [ ] 29-05-PLAN.md — tmi mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
-- [ ] 29-06-PLAN.md — truthtreason mount + new shared-ui dep + transpilePackages + NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
+- [x] 29-05-PLAN.md — tmi mount + apphosting.dev.yaml NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
+- [x] 29-06-PLAN.md — truthtreason mount + new shared-ui dep + transpilePackages + NEXT_PUBLIC_ENV=dev (CL2-03, CL2-04)
 - [ ] 29-07-PLAN.md — cross-repo verification + 29-SUMMARY.md + 29-HUMAN-UAT.md push/PR/merge/publish runbook
 
 ### Phase 30: DNS Sweep — CL-1 Hostnames

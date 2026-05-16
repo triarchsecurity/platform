@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Dev/Prod Contract Adoption
 status: planning
-stopped_at: Completed 29-04-PLAN.md (darksouls EnvBadge mount; feat/cl2-envbadge-mount branch; atomic commit f0706fb; npm install deferred pending shared-ui v1.5.0 publish)
-last_updated: "2026-05-16T21:15:09.501Z"
+stopped_at: Completed 29-cl2-envbadge-component-29-06-PLAN.md (truthtreason EnvBadge mount)
+last_updated: "2026-05-16T21:15:22.439Z"
 progress:
   total_phases: 9
   completed_phases: 1
@@ -209,6 +209,9 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - [Phase 29-01-envbadge]: Consumer mount plans (29-02..29-06) are blocked on human push + PR + tag + npm publish of shared-ui v1.5.0 before npm install works
 - [Phase 29-02-platform-mount]: Replaced stale @myalterlego/shared-ui in transpilePackages — grep confirmed 0 source consumers; EnvBadge mounted as last child in body after Providers; NEXT_PUBLIC_ENV=dev bound with BUILD+RUNTIME in apphosting.dev.yaml; npm install deferred pending v1.5.0 publish
 - [Phase 29]: darksouls: @triarchsecurity/shared-ui added to transpilePackages keeping legacy @triarch/shared-ui + @myalterlego/shared-ui entries; EnvBadge mounted after Providers as last body child; NEXT_PUBLIC_ENV=dev wired in apphosting.dev.yaml BUILD+RUNTIME; version 7.7.12→7.7.13
+- [Phase 29-cl2-envbadge-component]: truthtreason first-time shared-ui consumer: added dep + transpilePackages + EnvBadge mount in single atomic v1.1.19 commit
+- [Phase 29-cl2-envbadge-component]: Version bump 4.44.1->4.44.2 (not 4.44.4): plan context referenced stale branch version; corrected to patch increment from actual main baseline
+- [Phase 29-cl2-envbadge-component]: Replaced @myalterlego/shared-ui with @triarchsecurity/shared-ui in transpilePackages after confirming 0 src imports of stale name
 
 ### Pending Todos
 
@@ -226,8 +229,8 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 
 ## Session Continuity
 
-Last session: 2026-05-16T21:15:02.204Z
-Stopped at: Completed 29-04-PLAN.md (darksouls EnvBadge mount; feat/cl2-envbadge-mount branch; atomic commit f0706fb; npm install deferred pending shared-ui v1.5.0 publish)
+Last session: 2026-05-16T21:15:22.436Z
+Stopped at: Completed 29-cl2-envbadge-component-29-06-PLAN.md (truthtreason EnvBadge mount)
 Resume file: None
 Next action: Continue consumer mount plans (29-03..29-06) for dev-portal, darksouls, tmi, truthtreason. All mounts blocked on shared-ui v1.5.0 publish for npm install + CI pass. Then run 29-07 verify gate.
 
@@ -244,3 +247,4 @@ Next action: Continue consumer mount plans (29-03..29-06) for dev-portal, darkso
 | Phase 28 P03 | 8 | 3 tasks | 2 files |
 | Phase 29 P04 | 8 | 2 tasks | 4 files |
 | Phase 29-cl2-envbadge-component P06 | 8 | 2 tasks | 4 files |
+| Phase 29-cl2-envbadge-component P05 | 8 | 2 tasks | 4 files |
