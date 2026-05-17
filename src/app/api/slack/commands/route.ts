@@ -32,20 +32,26 @@ import {
 } from '@/lib/slack-status';
 
 /**
- * Validates that `url` is a Slack-issued response_url. Slack always issues
- * https://hooks.slack.com/... — anything else is either a misconfigured
- * client or a forged request that slipped past HMAC verification (which
- * shouldn't happen, but defense in depth). CodeQL js/request-forgery flags
- * any fetch() to a URL derived from request parameters; this guard satisfies
- * the rule and tightens the attack surface.
+ * Parses + validates a Slack-issued response_url. Returns a URL object only
+ * if the input is https://hooks.slack.com/* — anything else returns null.
+ * Slack always issues from that host; anything else is a misconfigured
+ * client or a forged request that slipped past HMAC verification.
+ *
+ * Returns URL (not string) deliberately: CodeQL js/request-forgery recognizes
+ * fetch(URLobject) where the URL was constructed AND host-checked as
+ * sanitized, but does not recognize a string returned from a separate
+ * validator helper. The caller passes the URL object directly to fetch().
  */
-function isValidSlackResponseUrl(url: string): boolean {
+function parseSlackResponseUrl(url: string): URL | null {
+  let parsed: URL;
   try {
-    const u = new URL(url);
-    return u.protocol === 'https:' && u.hostname === 'hooks.slack.com';
+    parsed = new URL(url);
   } catch {
-    return false;
+    return null;
   }
+  if (parsed.protocol !== 'https:') return null;
+  if (parsed.hostname !== 'hooks.slack.com') return null;
+  return parsed;
 }
 
 const HELP_TEXT = [
@@ -373,13 +379,15 @@ export async function POST(req: NextRequest) {
     const [owner, repo] = projectStatus.project.githubRepo.split('/');
 
     // Fire-and-forget: merge + response_url follow-up per Slack 3-sec rule.
-    // response_url is HMAC-verified upstream + must hit hooks.slack.com (see
-    // isValidSlackResponseUrl); the latter satisfies CodeQL js/request-forgery.
-    const safeResponseUrl = responseUrl && isValidSlackResponseUrl(responseUrl) ? responseUrl : null;
+    // response_url is HMAC-verified upstream; we additionally parse it as a
+    // URL object and verify it points at hooks.slack.com before fetch. Passing
+    // the parsed URL object (not the raw string) to fetch is the pattern
+    // CodeQL js/request-forgery recognizes as sanitized.
+    const safeUrl = responseUrl ? parseSlackResponseUrl(responseUrl) : null;
     void (async () => {
       try {
         const result = await mergeBranchToMain({ owner, repo, headBranch, baseBranch });
-        if (!safeResponseUrl) return;
+        if (!safeUrl) return;
         let message: string;
         if (result.merged) {
           message =
@@ -394,15 +402,15 @@ export async function POST(req: NextRequest) {
             `:x: Merge failed for PR #${result.prNumber} (HTTP ${result.statusCode}): ` +
             `${result.message}`;
         }
-        await fetch(safeResponseUrl, {
+        await fetch(safeUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ response_type: 'ephemeral', replace_original: false, text: message }),
         });
       } catch (err) {
         console.error('[slack-commands] mergeBranchToMain failed', err);
-        if (safeResponseUrl) {
-          await fetch(safeResponseUrl, {
+        if (safeUrl) {
+          await fetch(safeUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
