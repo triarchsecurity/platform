@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   quality-gate:
-    uses: triarchsecurity/shared-workflows/.github/workflows/quality-gate.yml@v7.1
+    uses: triarchsecurity/shared-workflows/.github/workflows/quality-gate.yml@v9.0
     with:
       run_qa_tests: false
       run_pentest: false
@@ -106,38 +106,11 @@ jobs:
   # Layer 3 bypass-prevention: refuse to deploy to prod unless this commit
   # has already passed through dev. NO escape hatch — bypass token removed
   # 2026-05-14 per directive. See: public/ci-cd/firebase-2env-pattern.md
+  # Migrated to reusable workflow 2026-05-17 (shared-workflows v9.0).
   verify-dev-deployed:
     needs: env-select
     if: needs.env-select.outputs.environment == 'prod'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Assert dev tip is in main's ancestry
-        run: |
-          # The framework's promotion model is dev → main using "Create a merge
-          # commit" (NOT squash/rebase). A correct merge-commit on main has
-          # parents [old_main_tip, dev_tip], making origin/dev's tip an
-          # ancestor of HEAD. This check passes for the supported flow and
-          # blocks direct pushes to main (where dev's tip is not reachable
-          # from HEAD).
-          #
-          # The earlier direction (`HEAD ancestor of origin/dev`) required
-          # main's commit to literally exist on dev, which forced a manual
-          # "merge main back into dev" recovery step on every prod promotion
-          # regardless of merge method. Flipped 2026-05-15 per v2.13.10.
-          git fetch origin dev
-          if ! git merge-base --is-ancestor origin/dev HEAD; then
-            echo "::error::Refusing to deploy to prod: origin/dev tip ($(git rev-parse origin/dev)) is not reachable from HEAD ($(git rev-parse HEAD))."
-            echo "::error::dev → main must be merged using 'Create a merge commit' so dev's tip becomes a parent of main HEAD."
-            echo "::error::Recovery if you already squash-merged (pick ONE):"
-            echo "::error::  A) Re-merge dev → main locally with --no-ff and push: git checkout main && git merge --no-ff origin/dev -m 'merge dev (post-squash repair)' && git push origin main"
-            echo "::error::  B) Force-push dev to match main: git checkout dev && git reset --hard origin/main && git push --force-with-lease origin dev   (requires temporarily disabling the dev-protection ruleset's non_fast_forward rule)"
-            echo "::error::Do NOT 'git merge origin/main --no-ff' on dev — that creates a merge commit on dev that is newer than main HEAD and the check still fails."
-            exit 1
-          fi
-          echo "Verified: origin/dev is an ancestor of HEAD — safe to promote to prod."
+    uses: triarchsecurity/shared-workflows/.github/workflows/verify-dev-deployed.yml@v9.0
 
   # CL-4 platform self-adopt (Phase 28). Calls shared-workflows v8.2 which:
   #   1. GETs /api/platform/version-snapshot (dev + prod recorded versions)
