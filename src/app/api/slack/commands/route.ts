@@ -31,6 +31,23 @@ import {
   listProjectKeys,
 } from '@/lib/slack-status';
 
+/**
+ * Validates that `url` is a Slack-issued response_url. Slack always issues
+ * https://hooks.slack.com/... — anything else is either a misconfigured
+ * client or a forged request that slipped past HMAC verification (which
+ * shouldn't happen, but defense in depth). CodeQL js/request-forgery flags
+ * any fetch() to a URL derived from request parameters; this guard satisfies
+ * the rule and tightens the attack surface.
+ */
+function isValidSlackResponseUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && u.hostname === 'hooks.slack.com';
+  } catch {
+    return false;
+  }
+}
+
 const HELP_TEXT = [
   '*OttoBot — Triarch deploy automation*',
   '',
@@ -355,11 +372,14 @@ export async function POST(req: NextRequest) {
 
     const [owner, repo] = projectStatus.project.githubRepo.split('/');
 
-    // Fire-and-forget: merge + response_url follow-up per Slack 3-sec rule
+    // Fire-and-forget: merge + response_url follow-up per Slack 3-sec rule.
+    // response_url is HMAC-verified upstream + must hit hooks.slack.com (see
+    // isValidSlackResponseUrl); the latter satisfies CodeQL js/request-forgery.
+    const safeResponseUrl = responseUrl && isValidSlackResponseUrl(responseUrl) ? responseUrl : null;
     void (async () => {
       try {
         const result = await mergeBranchToMain({ owner, repo, headBranch, baseBranch });
-        if (!responseUrl) return;
+        if (!safeResponseUrl) return;
         let message: string;
         if (result.merged) {
           message =
@@ -374,15 +394,15 @@ export async function POST(req: NextRequest) {
             `:x: Merge failed for PR #${result.prNumber} (HTTP ${result.statusCode}): ` +
             `${result.message}`;
         }
-        await fetch(responseUrl, {
+        await fetch(safeResponseUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ response_type: 'ephemeral', replace_original: false, text: message }),
         });
       } catch (err) {
         console.error('[slack-commands] mergeBranchToMain failed', err);
-        if (responseUrl) {
-          await fetch(responseUrl, {
+        if (safeResponseUrl) {
+          await fetch(safeResponseUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
