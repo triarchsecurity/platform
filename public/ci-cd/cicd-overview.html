@@ -1021,6 +1021,218 @@
   </div>
 </section>
 
+<!-- =============== How to promote =============== -->
+<section class="container" id="how-to-promote">
+  <span class="section-eyebrow">Deploy flow</span>
+  <h2>How to promote — dev, staging (optional), and prod</h2>
+  <p class="section-lede">The 6 contract clauses (CL-1..CL-6) say WHAT must be true. This section says HOW you actually move code through each environment. Same branch-to-backend mapping for every project; the only choice is which UI/CLI you use to fire the prod promotion.</p>
+
+  <!-- Branch → environment mapping -->
+  <div style="background: linear-gradient(180deg, #2b2818 0%, #1f1d14 100%); border: 1px solid #5a4d2c; border-radius: 12px; padding: 2rem; margin: 1.5rem 0;">
+    <h3 style="margin-top: 0; color: #e8a317;">Branch → environment → backend</h3>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem;">
+        <thead>
+          <tr style="background: rgba(232,163,23,0.08); color: #c9b88a; text-align: left;">
+            <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">Branch</th>
+            <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">Deploy fires when</th>
+            <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">FAH backend</th>
+            <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">Customer-visible host</th>
+            <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">EnvBadge</th>
+          </tr>
+        </thead>
+        <tbody style="color: #f5ecd8;">
+          <tr>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code style="color: #c9b88a;">feature/*</code></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">never (PR only)</td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">—</td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">—</td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">—</td>
+          </tr>
+          <tr style="background: rgba(232,163,23,0.03);">
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code style="color: #f5a623;">dev</code></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">PR merged → dev</td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code>&lt;app&gt;-dev</code></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code>&lt;app&gt;-dev.&lt;zone&gt;</code></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><span style="background: #e8a317; color: #1f1d14; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.7rem;">DEV</span></td>
+          </tr>
+          <tr>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code style="color: #b794f6;">staging</code> <em style="color: #8a7956; font-size: 0.75rem;">(optional)</em></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">PR merged → staging</td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code>&lt;app&gt;-staging</code></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><code>&lt;app&gt;-staging.&lt;zone&gt;</code></td>
+            <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><span style="background: #d97706; color: #1f1d14; padding: 0.1rem 0.4rem; border-radius: 3px; font-weight: 700; font-size: 0.7rem;">STAGING</span></td>
+          </tr>
+          <tr style="background: rgba(34,197,94,0.04);">
+            <td style="padding: 0.6rem 0.8rem;"><code style="color: #22c55e;">main</code></td>
+            <td style="padding: 0.6rem 0.8rem;">PR merged → main <strong>+ all 5 gates pass</strong></td>
+            <td style="padding: 0.6rem 0.8rem;"><code>&lt;app&gt;</code></td>
+            <td style="padding: 0.6rem 0.8rem;"><code>&lt;app&gt;.&lt;zone&gt;</code></td>
+            <td style="padding: 0.6rem 0.8rem;">none</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top: 1rem; color: #c9b88a; font-size: 0.85rem;">
+      <strong style="color: #e8a317;">Staging is optional.</strong> Every project ships with <code style="color: #f5a623;">dev</code> + <code style="color: #22c55e;">main</code>. Add staging when team headcount, compliance, or release-cadence-discipline warrants the third slot. Stage promotion mechanics mirror dev exactly; the <code>staging → main</code> PR is gated by cl4-gate the same way <code>dev → main</code> is.
+    </p>
+  </div>
+
+  <!-- Three flows: dev / staging / prod -->
+  <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin: 1.5rem 0;">
+
+    <!-- Deploy to DEV -->
+    <div style="background: rgba(232,163,23,0.04); border: 1px solid #e8a317; border-radius: 12px; padding: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <span style="background: #e8a317; color: #1f1d14; padding: 0.3rem 0.7rem; border-radius: 4px; font-weight: 700;">DEPLOY TO DEV</span>
+        <span style="color: #c9b88a;">~2-5 min wallclock · zero gates</span>
+      </div>
+      <ol style="color: #f5ecd8; line-height: 1.7; padding-left: 1.5rem;">
+        <li>Cut a feature branch off <code style="color: #e8a317;">dev</code>: <code style="background: #14110a; padding: 0.1rem 0.4rem; border-radius: 3px; color: #c9b88a;">git checkout -b feat/&lt;name&gt; dev</code></li>
+        <li>Push commits</li>
+        <li>Open PR with <strong style="color: #e8a317;">base=<code>dev</code></strong></li>
+        <li>CI runs quality-gate; merge when green (squash or merge commit — your call for feature → dev)</li>
+        <li>Push to <code style="color: #e8a317;">dev</code> triggers <code>deploy-dev</code> job → deploys to <code>&lt;app&gt;-dev</code> FAH backend</li>
+        <li>Container starts → ingests <code>release_logs</code> with <code>env=dev</code> → admin's <code>version-snapshot</code> reflects new dev version</li>
+        <li>Customers see new code at <code>&lt;app&gt;-dev.&lt;zone&gt;</code> with the persistent DEV badge (CL-2)</li>
+      </ol>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.2); border-left: 3px solid #d97706; border-radius: 4px; color: #c9b88a; font-size: 0.85rem;">
+        <strong style="color: #d97706;">Failure modes:</strong> CI fails (quality-gate) → PR can't merge. Deploy-dev fails (build error / secret missing) → dev backend keeps the previous version, admin doesn't update.
+      </div>
+    </div>
+
+    <!-- Deploy to STAGING -->
+    <div style="background: rgba(183,148,246,0.04); border: 1px solid #b794f6; border-radius: 12px; padding: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <span style="background: #b794f6; color: #1f1d14; padding: 0.3rem 0.7rem; border-radius: 4px; font-weight: 700;">DEPLOY TO STAGING</span>
+        <span style="color: #c9b88a;">optional middle lane · stakeholder preview</span>
+      </div>
+      <ol style="color: #f5ecd8; line-height: 1.7; padding-left: 1.5rem;">
+        <li>Branch off <code style="color: #b794f6;">staging</code> from <code>dev</code> (or hotfix branch): <code style="background: #14110a; padding: 0.1rem 0.4rem; border-radius: 3px; color: #c9b88a;">git checkout -b promote/&lt;version&gt; staging</code></li>
+        <li>PR with <strong style="color: #b794f6;">base=<code>staging</code></strong></li>
+        <li>Merge → push to <code style="color: #b794f6;">staging</code> triggers deploy to <code>&lt;app&gt;-staging</code> backend</li>
+        <li>Customer-visible at <code>&lt;app&gt;-staging.&lt;zone&gt;</code> with STAGING badge (CL-2 renders for both dev and staging envs)</li>
+      </ol>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0,0,0,0.2); border-left: 3px solid #b794f6; border-radius: 4px; color: #c9b88a; font-size: 0.85rem;">
+        Use this lane to preview a release with stakeholders before opening the prod PR. Staging is the "customer-visible release-candidate" lane — same code that will ship to prod, on a separate URL with a visible badge.
+      </div>
+    </div>
+
+    <!-- Deploy to PROD -->
+    <div style="background: rgba(34,197,94,0.04); border: 2px solid #22c55e; border-radius: 12px; padding: 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+        <span style="background: #22c55e; color: #1f1d14; padding: 0.3rem 0.7rem; border-radius: 4px; font-weight: 700;">DEPLOY TO PROD</span>
+        <span style="color: #c9b88a;">~5-10 min wallclock · all 5 gates · NO BYPASS</span>
+      </div>
+      <p style="color: #f5ecd8; margin-bottom: 1rem;">Four equivalent paths — pick whichever your team prefers. All four converge on the same merge-to-main flow with the same gate chain.</p>
+
+      <!-- Tier 1: Plain PR -->
+      <div style="background: rgba(0,0,0,0.2); border: 1px solid #3a3424; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+          <span style="background: #22c55e; color: #1f1d14; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 700; font-size: 0.7rem;">TIER 1</span>
+          <strong style="color: #f5ecd8;">Plain PR — zero new tooling</strong>
+          <span style="color: #8a7956; font-size: 0.8rem;">(default for solo devs)</span>
+        </div>
+        <ol style="color: #c9b88a; line-height: 1.6; padding-left: 1.5rem; font-size: 0.88rem;">
+          <li>Open PR with <strong>base=<code style="color: #22c55e;">main</code></strong> <strong>head=<code style="color: #e8a317;">dev</code></strong> (or <code style="color: #b794f6;">staging</code> if you use it)</li>
+          <li>CI runs: quality-gate → version → cl4-gate → verify-dev-deployed (all must pass)</li>
+          <li>Merge with <strong style="color: #22c55e;">"Create a merge commit"</strong> (NOT squash — the merge commit makes dev's tip a parent of main HEAD; verify-dev-deployed requires that ancestry)</li>
+          <li>Push to <code>main</code> triggers <code>deploy-prod</code> → deploys to <code>&lt;app&gt;</code> backend</li>
+          <li>Customers see new code at <code>&lt;app&gt;.&lt;zone&gt;</code> (no badge — prod chrome)</li>
+        </ol>
+      </div>
+
+      <!-- Tier 2: Slack -->
+      <div style="background: rgba(0,0,0,0.2); border: 1px solid #3a3424; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+          <span style="background: #22c55e; color: #1f1d14; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 700; font-size: 0.7rem;">TIER 2</span>
+          <strong style="color: #f5ecd8;">Slack — <code style="color: #5ac8fa;">/triarch deploy</code></strong>
+          <span style="color: #8a7956; font-size: 0.8rem;">(for teams in Triarch-managed Slack)</span>
+        </div>
+        <pre style="background: #14110a; border: 1px solid #3a3424; border-radius: 4px; padding: 0.75rem; color: #5ac8fa; font-size: 0.85rem; overflow-x: auto;">/triarch deploy &lt;project-key&gt; &lt;version&gt;</pre>
+        <p style="color: #c9b88a; font-size: 0.85rem; margin: 0.5rem 0 0 0;">OttoBot looks up the project, finds the release_logs row, dispatches <code>promote-branch.yml</code> on the project's repo (rebase dev → main → merge), posts the GH Actions run URL back to channel. Customer setup cost: 0.</p>
+      </div>
+
+      <!-- Tier 3: gh CLI -->
+      <div style="background: rgba(0,0,0,0.2); border: 1px solid #3a3424; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+          <span style="background: #22c55e; color: #1f1d14; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 700; font-size: 0.7rem;">TIER 3</span>
+          <strong style="color: #f5ecd8;">CLI — <code style="color: #5ac8fa;">gh workflow run</code></strong>
+          <span style="color: #8a7956; font-size: 0.8rem;">(scriptable, no Slack)</span>
+        </div>
+        <pre style="background: #14110a; border: 1px solid #3a3424; border-radius: 4px; padding: 0.75rem; color: #5ac8fa; font-size: 0.85rem; overflow-x: auto;">gh workflow run promote-branch.yml --repo &lt;owner&gt;/&lt;repo&gt; --ref main \
+  --field branch=dev --field target_branch=main</pre>
+        <p style="color: #c9b88a; font-size: 0.85rem; margin: 0.5rem 0 0 0;">Requires <code>promote-branch.yml</code> wrapper (~30-line workflow_dispatch referencing <code>shared-workflows/promote-branch.yml@v4</code>). Same end result as Tier 2.</p>
+      </div>
+
+      <!-- Tier 4: Admin UI -->
+      <div style="background: rgba(0,0,0,0.2); border: 1px solid #3a3424; border-radius: 8px; padding: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+          <span style="background: #22c55e; color: #1f1d14; padding: 0.15rem 0.5rem; border-radius: 3px; font-weight: 700; font-size: 0.7rem;">TIER 4</span>
+          <strong style="color: #f5ecd8;">Admin pipeline UI</strong>
+          <span style="color: #8a7956; font-size: 0.8rem;">(Triarch-managed customers only)</span>
+        </div>
+        <p style="color: #c9b88a; font-size: 0.85rem; margin: 0;">Per-project staff page at <code style="color: #5ac8fa;">admin.triarch.dev/admin/modules/pipeline/&lt;slug&gt;</code> has a "Promote to production" button next to each approved RC. Two-step confirm modal → same dispatch path as Tier 2/3. Customer-facing release page at <code>/projects/&lt;slug&gt;/releases</code> has an Approve button that fires the same path.</p>
+      </div>
+
+      <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(248,113,113,0.08); border-left: 3px solid #f87171; border-radius: 4px; color: #c9b88a; font-size: 0.85rem;">
+        <strong style="color: #f87171;">No bypass.</strong> Every prod path runs the same 5 gates: quality-gate, version, cl4-gate (INV-1..5 + verdict POST), verify-dev-deployed, and CL-6 server-side. There is no force flag, no commit-message token, no admin override. The <code>[hotfix-bypass-dev]</code> token was removed 2026-05-14.
+      </div>
+    </div>
+  </div>
+
+  <!-- Hotfix path -->
+  <div style="background: rgba(217,119,6,0.04); border: 1px solid #d97706; border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0;">
+    <h3 style="margin-top: 0; color: #d97706;">Hotfix path — same gates, faster cadence</h3>
+    <p style="color: #c9b88a;">There is no hotfix bypass. Even urgent fixes go through dev:</p>
+    <ol style="color: #f5ecd8; line-height: 1.7; padding-left: 1.5rem;">
+      <li>Branch off <code style="color: #22c55e;">main</code>: <code style="background: #14110a; padding: 0.1rem 0.4rem; border-radius: 3px; color: #c9b88a;">git checkout -b hotfix/&lt;bug&gt; main</code></li>
+      <li>Bump version (patch — e.g., <code>v3.59.1</code>)</li>
+      <li>PR with <strong style="color: #e8a317;">base=<code>dev</code></strong> → merge → dev backend deploys the hotfix (verify there)</li>
+      <li>PR <code style="color: #e8a317;">dev</code> → <code style="color: #22c55e;">main</code> → merge with merge commit → prod deploys</li>
+    </ol>
+    <p style="color: #c9b88a; margin-bottom: 0;">Total wallclock: ~10 minutes including dev verification. The 2026-05-14 <code>[hotfix-bypass-dev]</code> removal was deliberate — if a fix needs to skip dev, the project's architecture is the problem, not the gate.</p>
+  </div>
+
+  <!-- Block reasons -->
+  <h3 style="color: #e8a317;">What blocks each promotion path</h3>
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem;">
+      <thead>
+        <tr style="background: rgba(248,113,113,0.08); color: #c9b88a; text-align: left;">
+          <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">Gate</th>
+          <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">When it fires</th>
+          <th style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">What you do to unblock</th>
+        </tr>
+      </thead>
+      <tbody style="color: #f5ecd8;">
+        <tr>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><strong>quality-gate</strong></td>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">every PR</td>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">fix the code (lint, test, build, or semgrep finding)</td>
+        </tr>
+        <tr style="background: rgba(232,163,23,0.03);">
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><strong>cl4-gate INV-1..5</strong></td>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">every prod PR</td>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">make sure dev has the exact version you're promoting (INV-4: target == dev_version). Wait 5 min if dev was just deployed (INV-5: dev age ≥ 300s).</td>
+        </tr>
+        <tr>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;"><strong>verify-dev-deployed</strong></td>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">every prod push</td>
+          <td style="padding: 0.6rem 0.8rem; border-bottom: 1px solid #3a3424;">merge with "Create a merge commit", not squash. If you squashed, push main HEAD back to dev to restore ancestry.</td>
+        </tr>
+        <tr style="background: rgba(232,163,23,0.03);">
+          <td style="padding: 0.6rem 0.8rem;"><strong>CL-6 server-side</strong></td>
+          <td style="padding: 0.6rem 0.8rem;">every prod ingest</td>
+          <td style="padding: 0.6rem 0.8rem;">if cl4-gate didn't post a verdict, admin's ingest returns 409 + audit row. Inspect the cl4-gate run logs.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="section-lede" style="margin-top: 1.5rem;">Full spec: <a href="dev-prod-customer-contract.md">dev-prod-customer-contract.md</a> "How to promote" section.</p>
+</section>
+
 <!-- =============== Capabilities =============== -->
 <section class="container" id="capabilities">
   <span class="section-eyebrow">What's in the box</span>

@@ -128,6 +128,112 @@ When the two lanes differ, the page surfaces "Pending promotion (v X.Y.Z)" with 
 
 ---
 
+## How to promote — by environment
+
+The 6 clauses say WHAT must be true. This section says HOW you actually move code through them. Every project follows the same branch → environment → backend mapping; the only choice is which UI/CLI you use to fire the promotion.
+
+### Branch → environment → backend mapping
+
+| Branch | Triggers deploy to | FAH backend | Customer-visible host |
+|--------|--------------------|--------------|------------------------|
+| feature branch | (nothing — opens PR) | — | — |
+| `dev` | dev backend (after PR merge) | `<app>-dev` | `<app>-dev.<zone>` (CL-1) |
+| `staging` *(optional)* | staging backend | `<app>-staging` | `<app>-staging.<zone>` |
+| `main` | prod backend (after PR merge + cl4-gate pass) | `<app>` | `<app>.<zone>` |
+
+Every project ships with `dev` + `main`. Staging is an optional third environment — recommended when team headcount, compliance, or release-cadence-discipline warrants the extra slot. If you add staging, the rules below apply identically: stage promotion mirrors dev promotion mechanics, and the `staging → main` PR is gated by cl4-gate the same way `dev → main` is.
+
+### Deploy to DEV
+
+1. Cut a feature branch off `dev`: `git checkout -b feat/<name> dev`
+2. Push commits
+3. Open PR with **base=`dev`**
+4. CI runs quality-gate; PR merges (squash or merge commit — your call for feature → dev)
+5. Push to `dev` triggers `deploy-dev` job → deploys to `<app>-dev` FAH backend
+6. Container starts → ingests `release_logs` with `env=dev` → admin's `version-snapshot` updates
+7. Customers see new code at `<app>-dev.<zone>` with the DEV badge (CL-2)
+
+**Failure cases:** CI fails (quality-gate) → PR can't merge. Deploy-dev fails (build error / secret missing) → dev backend keeps the previous version, admin doesn't update.
+
+### Deploy to STAGING *(if staging exists)*
+
+Same flow, just bump up one branch:
+
+1. Branch off `staging`: `git checkout -b promote/<version> staging`
+2. PR with **base=`staging`** from `dev` (or from a hotfix branch)
+3. Merge → push to `staging` triggers deploy to `<app>-staging` backend
+4. Customer-visible at `<app>-staging.<zone>` with STAGING badge (CL-2 renders for both dev and staging envs)
+
+Staging is the customer-visible "preview release" lane. You can preview a release branch here with stakeholders before opening the prod PR.
+
+### Deploy to PROD
+
+This is the big one. **Three equivalent paths** — pick whichever your team prefers:
+
+#### Tier 1 — Plain PR (zero new tooling)
+
+The default for solo devs and small teams.
+
+1. Open PR with **base=`main`** **head=`dev`** (or **`staging`** if you use it)
+2. CI runs: quality-gate → version → cl4-gate → verify-dev-deployed (all must pass)
+3. Merge with **"Create a merge commit"** (NOT squash — the merge commit makes dev's tip a parent of main HEAD; verify-dev-deployed requires that ancestry)
+4. Push to `main` triggers `deploy-prod` → deploys to `<app>` backend
+5. Customers see new code at `<app>.<zone>` (no badge — prod chrome)
+
+#### Tier 2 — Slack (`/triarch deploy`)
+
+For teams already in their Triarch-managed Slack.
+
+```
+/triarch deploy <project-key> <version>
+```
+
+OttoBot:
+- Looks up the project in admin's CRDB → finds the GitHub repo
+- Finds the release_logs row for `(project, version)` → extracts the branch (usually `dev`)
+- Dispatches `promote-branch.yml` on the project's repo → rebases the branch onto `main` and merges
+- Posts the resulting GitHub Actions run URL back to the channel
+
+Customer setup cost: 0 (the slash command works if your project is in admin and you're staff).
+
+#### Tier 3 — `gh workflow run` (CLI)
+
+For teams that want to script promotions but don't have Slack integration.
+
+```bash
+gh workflow run promote-branch.yml --repo <owner>/<repo> --ref main \
+  --field branch=dev --field target_branch=main
+```
+
+Requires the project's `promote-branch.yml` wrapper (a ~30-line workflow_dispatch file that references `shared-workflows/promote-branch.yml@v4`). Same end result as Tier 2.
+
+#### Tier 4 — Per-project admin pipeline page
+
+For teams running this Triarch platform — per-project staff UI at `admin.triarch.dev/admin/modules/pipeline/<slug>` includes a "Promote to production" button next to each approved RC. Two-step confirm modal, then same dispatch path as Tier 2/3.
+
+### What blocks each promotion path
+
+| Block | When it fires | What you do |
+|-------|---------------|-------------|
+| CI quality-gate | Every PR | Fix the code (lint/test/build error) |
+| cl4-gate INV-1..5 | Every prod PR | Make sure dev has the exact version you're promoting (INV-4: target == dev_version). Wait 5 min if dev was just deployed (INV-5: dev age ≥ 300s). |
+| verify-dev-deployed | Every prod push | Merge with "Create a merge commit", not squash. If you squashed, push main HEAD back to dev to restore ancestry. |
+| CL-6 server-side | Every prod ingest | If cl4-gate didn't run or didn't post a verdict, admin's ingest returns 409 + audit. Inspect the run logs. |
+
+### Hotfix path
+
+There is no hotfix bypass. Even hotfixes go through dev:
+
+1. Branch off `main`: `git checkout -b hotfix/<bug> main`
+2. Bump version (patch — e.g., `v3.59.1`)
+3. PR with **base=`dev`** → merge → dev backend deploys the hotfix (verify there)
+4. PR `dev → main` → merge with merge commit → prod deploys
+5. Total wallclock: ~10 minutes including dev verification
+
+The `[hotfix-bypass-dev]` token that previously skipped dev was removed 2026-05-14. Hotfixes follow the same gates as features.
+
+---
+
 ## Compliance matrix
 
 The matrix at [admin.triarch.dev/admin/modules/ci-cd](https://admin.triarch.dev/admin/modules/ci-cd) renders a row per project × column per clause:
