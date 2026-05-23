@@ -21,7 +21,7 @@
     "@triarchsecurity/shared-ui": "^1.5.0",
     "@triarchsecurity/triarch-shared": "^0.6.0",
     "drizzle-orm": "^0.45.2",
-    "jose": "^5",
+    "jose": "^6",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "next-auth": "^4.24.14",
