@@ -247,15 +247,13 @@ export default function ProjectsPage() {
                 {/* Expanded details */}
                 {expanded && (
                   <div className="border-t border-zinc-800 p-4 space-y-3">
-                    {project.pipelineState === 'dev-ahead' && (
-                      <div className="flex justify-end">
-                        <PromoteToProdButton
-                          projectId={project.id}
-                          projectKey={project.key}
-                          githubRepo={project.githubRepo}
-                        />
-                      </div>
-                    )}
+                    <div className="flex justify-end">
+                      <PromoteToProdButton
+                        projectId={project.id}
+                        projectKey={project.key}
+                        githubRepo={project.githubRepo}
+                      />
+                    </div>
                     <BuildTriggerSection project={project} onSaved={fetchProjects} />
                     {/* Infrastructure grid */}
                     <div className="grid grid-cols-2 gap-3 text-xs">
