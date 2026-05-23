@@ -4,7 +4,25 @@ import { getCurrentUserContext } from '@/lib/auth-context';
 import { db } from '@/lib/db';
 import { projects } from '@/db/schema';
 import { asc, inArray } from 'drizzle-orm';
+import { getProjectPipelineSummaries } from '@/lib/pipeline-summary';
 import crypto from 'crypto';
+
+// Attach dev/prod pipeline versions + state to each project row so the
+// Projects page can show both versions and gate the Promote button on a
+// real differential. Keyed by project.key (pipeline summaries use projectKey).
+async function withPipeline<T extends { key: string }>(rows: T[]) {
+  const summaries = await getProjectPipelineSummaries(rows.map((r) => r.key));
+  const byKey = new Map(summaries.map((s) => [s.projectKey, s]));
+  return rows.map((r) => {
+    const p = byKey.get(r.key);
+    return {
+      ...r,
+      devVersion: p?.devVersion ?? null,
+      prodVersion: p?.prodVersion ?? null,
+      pipelineState: p?.pipelineState ?? 'parity',
+    };
+  });
+}
 
 export async function GET() {
   const { error, session } = await requireSignedIn();
@@ -18,7 +36,7 @@ export async function GET() {
   // past the signIn callback is treated as trusted.
   if (!ctx || ctx.isStaff) {
     const rows = await db.select().from(projects).orderBy(asc(projects.createdAt));
-    return NextResponse.json({ projects: rows });
+    return NextResponse.json({ projects: await withPipeline(rows) });
   }
 
   // Non-staff: filter to projects where the user has a per-project membership.
@@ -36,7 +54,7 @@ export async function GET() {
     .where(inArray(projects.key, projectKeys))
     .orderBy(asc(projects.createdAt));
 
-  return NextResponse.json({ projects: rows });
+  return NextResponse.json({ projects: await withPipeline(rows) });
 }
 
 export async function POST(req: NextRequest) {

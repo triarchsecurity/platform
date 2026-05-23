@@ -25,6 +25,9 @@ interface Project {
   githubRepo: string | null;
   techStack: Record<string, string>;
   currentVersion: string | null;
+  devVersion: string | null;
+  prodVersion: string | null;
+  pipelineState: 'parity' | 'dev-ahead' | 'inverted';
   ecosystem: string;
   apiKey: string | null;
   buildTriggerMode?: string;
@@ -170,10 +173,21 @@ export default function ProjectsPage() {
                 <div className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-semibold text-white truncate">{project.name}</h3>
-                        {project.currentVersion && (
-                          <span className="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">{project.currentVersion}</span>
+                        {project.prodVersion && (
+                          <span className="text-[10px] font-mono text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">
+                            prod {project.prodVersion}
+                          </span>
+                        )}
+                        {project.devVersion && (
+                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                            project.pipelineState === 'dev-ahead'
+                              ? 'text-amber-300 bg-amber-500/15 border border-amber-500/30'
+                              : 'text-zinc-400 bg-zinc-700/40'
+                          }`}>
+                            dev {project.devVersion}
+                          </span>
                         )}
                       </div>
                       <p className="text-xs text-zinc-500 truncate">{project.description}</p>
