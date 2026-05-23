@@ -34,8 +34,8 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
       - name: Flush changelog to triarch-dev
@@ -53,8 +53,8 @@ jobs:
     needs: quality-gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
@@ -74,7 +74,7 @@ jobs:
     outputs:
       version: ${{ steps.extract.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: extract
         run: |
           VER=$(node -p "require('./package.json').version")
@@ -121,7 +121,7 @@ jobs:
   cl4-gate:
     needs: [env-select, version]
     if: needs.env-select.outputs.environment == 'prod'
-    uses: triarchsecurity/shared-workflows/.github/workflows/gate-prod-version.yml@v8.2
+    uses: triarchsecurity/shared-workflows/.github/workflows/gate-prod-version.yml@v9.0
     with:
       project_key: triarch-dev
       target_version: ${{ needs.version.outputs.version }}
@@ -170,7 +170,7 @@ jobs:
   notify:
     needs: [quality-gate, deploy]
     if: always() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
-    uses: triarchsecurity/shared-workflows/.github/workflows/notify.yml@v1
+    uses: triarchsecurity/shared-workflows/.github/workflows/notify.yml@v8
     with:
       status: ${{ needs.deploy.result }}
       project_name: Triarch Dev
