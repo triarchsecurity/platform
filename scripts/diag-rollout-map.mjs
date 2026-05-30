@@ -1,0 +1,10 @@
+import { Pool } from 'pg';
+import { readFileSync } from 'fs';
+const env = readFileSync('/Users/mikegeehan/claude/triarch/development/admin/.env.local', 'utf-8');
+const url = env.match(/^DATABASE_URL=(.*)$/m)?.[1]?.replace(/^["']|["']$/g, '');
+const pool = new Pool({ connectionString: url });
+const TARGETS = ['truth-treason','darksouls-rpg','dev-portal','triarchsecurity-admin','triarchsecurity-portal','triarch-dev'];
+const r = await pool.query(`SELECT key, github_repo, firebase_project_id FROM projects WHERE key = ANY($1) ORDER BY key`, [TARGETS]);
+console.log('key                       firebase_project              github_repo');
+for (const row of r.rows) console.log(`${row.key.padEnd(26)}${(row.firebase_project_id||'?').padEnd(30)}${row.github_repo||'?'}`);
+await pool.end();
