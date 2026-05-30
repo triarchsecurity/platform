@@ -1,9 +1,42 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Header } from "@/components/Header";
+import { Hero } from "@/components/Hero";
+import { About } from "@/components/About";
+import { Services } from "@/components/Services";
+import { Process } from "@/components/Process";
+import { Contact } from "@/components/Contact";
+import { Footer } from "@/components/Footer";
 
-// The www.triarch.dev marketing site was extracted into its own repo
-// (triarchsecurity/triarch-dev-website) on 2026-05-29 and now serves via its own
-// App Hosting backend. This `platform` repo only serves admin.triarch.dev, so the
-// root path redirects to the login.
-export default function Home() {
-  redirect("/login");
+const ADMIN_HOSTS = new Set([
+  "admin.triarch.dev",
+  "admin-dev.triarch.dev",
+  "admin-dev--triarch-dev-website.us-central1.hosted.app",
+]);
+
+async function publicHost() {
+  const h = await headers();
+  const raw = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  return raw.toLowerCase().split(",")[0].trim().split(":")[0];
+}
+
+export default async function Home() {
+  const host = await publicHost();
+  if (ADMIN_HOSTS.has(host)) {
+    redirect("/login");
+  }
+
+  return (
+    <>
+      <Header />
+      <main className="flex-1">
+        <Hero />
+        <About />
+        <Services />
+        <Process />
+        <Contact />
+      </main>
+      <Footer />
+    </>
+  );
 }
