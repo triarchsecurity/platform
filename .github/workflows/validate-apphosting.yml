@@ -1,0 +1,26 @@
+name: Validate App Hosting Config
+
+# Repo-specific pre-deploy gate (kept local on consolidation): lints apphosting.yaml
+# against REQUIRED_ENV (src/lib/env-schema.ts). Make it a required check in branch
+# protection to block merge on env-binding drift.
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+jobs:
+  validate-apphosting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+      - name: Install deps for validate script
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm ci
+      - name: Validate apphosting.yaml against env schema
+        run: npx tsx scripts/validate-apphosting.ts
