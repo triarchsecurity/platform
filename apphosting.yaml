@@ -115,3 +115,14 @@ env:
   # build_plan_status='failed' on the row.
   - variable: ANTHROPIC_API_KEY
     secret: ANTHROPIC_API_KEY
+
+  # TMI writing-style proxy (style route): prod TMI deployment + job secret.
+  - variable: TMI_BASE_URL
+    value: https://tmiengine.com
+    availability:
+      - RUNTIME
+
+  # Authenticates admin's server-to-server call to TMI's GET /api/agents/style.
+  # Holds TMI's JOB_SECRET value. Create the secret VALUE manually (see below).
+  - variable: TMI_JOB_SECRET
+    secret: TMI_JOB_SECRET

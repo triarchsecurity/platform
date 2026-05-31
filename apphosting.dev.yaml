@@ -39,3 +39,13 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  # TMI writing-style proxy — dev points at TMI's DEV deployment.
+  - variable: TMI_BASE_URL
+    value: https://tmi-dev--triarch-dev-tmi.us-central1.hosted.app
+    availability:
+      - RUNTIME
+
+  # Same TMI_JOB_SECRET binding as prod (re-bound here so both files grep-match).
+  - variable: TMI_JOB_SECRET
+    secret: TMI_JOB_SECRET
