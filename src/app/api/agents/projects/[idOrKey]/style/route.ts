@@ -30,7 +30,8 @@ export const GET = withAgent(
     }
 
     // Only TMI has a writing style; return a clear 404 for all other projects.
-    if (project.key !== 'tmi') {
+    // The admin project key for TMI is 'triarch-dev-tmi' (not 'tmi').
+    if (project.key !== 'triarch-dev-tmi') {
       return NextResponse.json(
         { ok: false, error: 'no writing style for this project', project_key: project.key },
         { status: 404 },
