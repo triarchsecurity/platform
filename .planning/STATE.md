@@ -253,6 +253,12 @@ v2.2 decisions captured at roadmap creation (2026-05-08):
 - Phase 24 is blocked on shared-workflows immutability research — whether v4 immutable in practice, whether v5 tag accepts new `verify-deploy-target` job + `repo_name` input, or whether per-repo equivalent is needed
 - Phase 26 (Sunset) execution gated on T+90 grace period after Phase 25 cutover lands; not a code blocker but a calendar-driven deferral
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260531-l3s | v2.23.0: GET /api/agents/projects/[idOrKey]/style — TMI writing-style proxy (repo 2/3 of MCP feature; needs manual TMI_JOB_SECRET) | 2026-05-31 | 51890a7 | [260531-l3s-add-get-api-agents-projects-idorkey-styl](./quick/260531-l3s-add-get-api-agents-projects-idorkey-styl/) |
+
 ## Session Continuity
 
 Last session: 2026-05-18T20:26:16.000Z
