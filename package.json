@@ -1,6 +1,6 @@
 {
   "name": "triarch-dev",
-  "version": "2.21.0",
+  "version": "2.22.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.88.0",
+    "@anthropic-ai/sdk": "^0.98.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@triarchsecurity/secrets": "^0.1.0",
@@ -22,10 +22,10 @@
     "@triarchsecurity/triarch-shared": "^0.6.0",
     "drizzle-orm": "^0.45.2",
     "jose": "^5",
-    "lucide-react": "^1.7.0",
+    "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "next-auth": "^4.24.14",
-    "pg": "^8.20.0",
+    "pg": "^8.21.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "swr": "^2.4.1"
@@ -35,20 +35,20 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^22.19.18",
+    "@types/node": "^25.9.1",
     "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/ui": "^4.1.5",
+    "@vitest/ui": "^4.1.7",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.6",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
-    "tsx": "^4.21.0",
-    "typescript": "^5",
+    "tsx": "^4.22.3",
+    "typescript": "^6",
     "vitest": "^4.1.5",
-    "yaml": "^2.8.4"
+    "yaml": "^2.9.0"
   },
   "overrides": {
     "esbuild": "0.25.12"
