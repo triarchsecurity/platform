@@ -328,6 +328,9 @@ export const bugReports = pgTable('bug_reports', {
   fixCommitSha: varchar('fix_commit_sha', { length: 64 }),
   fixVersion: varchar('fix_version', { length: 32 }),
   triarchNotes: text('triarch_notes'),
+  // TRI-16 (AC2 of TRI-9) — customer-visible note set by staff during triage.
+  // Counterpart to triarchNotes (internal); only this one is exposed to the requester.
+  publicNote: text('public_note'),
   // ── v2.4 Phase 36 INCL-01..02: inclusion state machine ──
   inclusionState: varchar('inclusion_state', { length: 32 }).notNull().default('triaged'),
   nextReleaseLogId: uuid('next_release_log_id').references(() => releaseLogs.id, { onDelete: 'set null' }),
@@ -355,6 +358,9 @@ export const featureRequests = pgTable('feature_requests', {
   targetVersion: varchar('target_version', { length: 32 }),
   shippedVersion: varchar('shipped_version', { length: 32 }),
   triarchNotes: text('triarch_notes'),
+  // TRI-16 (AC2 of TRI-9) — customer-visible note set by staff during triage.
+  // Counterpart to triarchNotes (internal); only this one is exposed to the requester.
+  publicNote: text('public_note'),
   // ── v2.4 Phase 36 INCL-01..02: inclusion state machine ──
   inclusionState: varchar('inclusion_state', { length: 32 }).notNull().default('triaged'),
   nextReleaseLogId: uuid('next_release_log_id').references(() => releaseLogs.id, { onDelete: 'set null' }),

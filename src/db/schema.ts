@@ -37,11 +37,17 @@ export type AgentIdentity = typeof agentIdentities.$inferSelect;
 export type NewAgentIdentity = typeof agentIdentities.$inferInsert;
 
 // Scope constants — single source of truth, import in route handlers
-// to avoid typo drift. Dev-side surface is read-only at v1; triage/write
-// scopes can be added later if/when agents need to mutate project state.
+// to avoid typo drift. Dev-side surface began read-only at v1; a narrow
+// write surface (feature-record status/version) was added in v2.24.0 so
+// engineering agents can flip a feature to "shipped" after deploy.
 export const AGENT_SCOPES = {
   // Reads
   READ_PROJECTS:   'read:projects',
+
+  // Writes — narrow, audited mutation of project-tracking records
+  // (currently: feature_requests status / shipped_version / target_version /
+  // triarch_notes). Does NOT grant bug or project mutation.
+  WRITE_PROJECTS:  'write:projects',
 
   // Universal
   WRITE_AUDIT:     'write:audit',  // every agent has this
@@ -139,6 +145,8 @@ export const bugReportsWithPlan = pgTable('bug_reports', {
   fixCommitSha:       varchar('fix_commit_sha', { length: 64 }),
   fixVersion:         varchar('fix_version', { length: 32 }),
   triarchNotes:       text('triarch_notes'),
+  // TRI-16 (AC2 of TRI-9) — customer-visible note (mirrors shared bugReports).
+  publicNote:         text('public_note'),
   // Phase 36 INCL-01..02 — shared schema
   inclusionState:     varchar('inclusion_state', { length: 32 }).notNull().default('triaged'),
   nextReleaseLogId:   uuid('next_release_log_id').references(() => releaseLogs.id, { onDelete: 'set null' }),

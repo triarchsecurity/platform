@@ -1,12 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSignedIn } from '@/lib/api-auth';
+import { requireApiKey } from '@/lib/api-key-auth';
 import { getCurrentUserContext } from '@/lib/auth-context';
 import { db } from '@/lib/db';
 import { featureRequests, workflowTransitions } from '@/db/schema';
 import { eq, desc, and, sql, inArray } from 'drizzle-orm';
 import { INCLUSION_STATES, type InclusionState } from '@/lib/inclusion-state';
 
+// Public-safe projection for the customer-app read path (TRI-9). Excludes
+// internal fields (triarchNotes, buildPlan, slack ids, inclusion state).
+const PUBLIC_FEATURE_COLUMNS = {
+  id: featureRequests.id,
+  project: featureRequests.project,
+  title: featureRequests.title,
+  status: featureRequests.status,
+  priority: featureRequests.priority,
+  buildPlanStatus: featureRequests.buildPlanStatus,
+  upvotes: featureRequests.upvotes,
+  shippedVersion: featureRequests.shippedVersion,
+  createdAt: featureRequests.createdAt,
+  updatedAt: featureRequests.updatedAt,
+} as const;
+
+/**
+ * Customer-app read path (TRI-9): API-key authenticated, scoped to a single
+ * requester's own feature requests for the given project. See bug-reports route.
+ */
+async function getForApiKey(req: NextRequest): Promise<NextResponse> {
+  const { error } = await requireApiKey(req);
+  if (error) return error;
+
+  const { searchParams } = new URL(req.url);
+  const project = searchParams.get('project');
+  const userId = searchParams.get('userId');
+  const limit = parseInt(searchParams.get('limit') ?? '50', 10);
+  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+
+  if (!project) return NextResponse.json({ error: 'project query param is required' }, { status: 400 });
+  if (!userId) return NextResponse.json({ error: 'userId query param is required for API-key reads' }, { status: 400 });
+
+  const where = and(eq(featureRequests.project, project), eq(featureRequests.requestedByUserId, userId));
+
+  const rows = await db.select(PUBLIC_FEATURE_COLUMNS).from(featureRequests).where(where).orderBy(desc(featureRequests.createdAt)).limit(limit).offset(offset);
+  const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(featureRequests).where(where);
+
+  return NextResponse.json({ features: rows, total: Number(countResult.count), limit, offset });
+}
+
 export async function GET(req: NextRequest) {
+  // Service-to-service (customer apps): Bearer project API key → user-scoped read.
+  if (req.headers.get('authorization')?.startsWith('Bearer ')) {
+    return getForApiKey(req);
+  }
+
+  // Central console: session-authed, membership-scoped (unchanged).
   const { error, session } = await requireSignedIn();
   if (error) return error;
 
