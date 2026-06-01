@@ -43,6 +43,9 @@ export const AGENT_SCOPES = {
   // Reads
   READ_PROJECTS:   'read:projects',
 
+  // Writes (board-approved per-agent grant — see TRI-6 / approval 152e44e8)
+  WRITE_BUGS:      'write:bugs',   // mutate bug-report status / fix metadata
+
   // Universal
   WRITE_AUDIT:     'write:audit',  // every agent has this
 } as const;
