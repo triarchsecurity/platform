@@ -22,6 +22,7 @@ import { Pool } from 'pg';
 const KNOWN_SCOPES = new Set([
   'read:projects',
   'write:projects',
+  'write:bugs',
   'write:audit',
 ]);
 
