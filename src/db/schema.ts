@@ -45,9 +45,11 @@ export const AGENT_SCOPES = {
   READ_PROJECTS:   'read:projects',
 
   // Writes — narrow, audited mutation of project-tracking records
-  // (currently: feature_requests status / shipped_version / target_version /
-  // triarch_notes). Does NOT grant bug or project mutation.
+  // (feature_requests status / shipped_version / target_version / triarch_notes).
+  // Does NOT grant bug mutation.
   WRITE_PROJECTS:  'write:projects',
+  // Writes (board-approved per-agent grant — see TRI-6 / approval 152e44e8)
+  WRITE_BUGS:      'write:bugs',   // mutate bug-report status / fix metadata
 
   // Universal
   WRITE_AUDIT:     'write:audit',  // every agent has this
