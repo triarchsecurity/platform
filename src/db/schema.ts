@@ -139,6 +139,8 @@ export const bugReportsWithPlan = pgTable('bug_reports', {
   fixCommitSha:       varchar('fix_commit_sha', { length: 64 }),
   fixVersion:         varchar('fix_version', { length: 32 }),
   triarchNotes:       text('triarch_notes'),
+  // TRI-16 (AC2 of TRI-9) — customer-visible note (mirrors shared bugReports).
+  publicNote:         text('public_note'),
   // Phase 36 INCL-01..02 — shared schema
   inclusionState:     varchar('inclusion_state', { length: 32 }).notNull().default('triaged'),
   nextReleaseLogId:   uuid('next_release_log_id').references(() => releaseLogs.id, { onDelete: 'set null' }),
