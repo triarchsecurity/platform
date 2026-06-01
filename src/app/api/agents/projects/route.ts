@@ -16,11 +16,12 @@
 // }
 
 import { NextRequest, NextResponse } from 'next/server';
-import { asc, eq, and, ne, desc, sql } from 'drizzle-orm';
+import { asc, eq, and, desc, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { projects, bugReports, featureRequests, releaseLogs, AGENT_SCOPES } from '@/db/schema';
 import { withAgent, logAgentActivity } from '@/lib/agent-auth';
 import { computeHealth } from './_health';
+import { openBugFilter } from './_bug-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,8 +38,7 @@ export const GET = withAgent(
           .where(
             and(
               eq(bugReports.project, p.key),
-              ne(bugReports.status, 'resolved'),
-              ne(bugReports.status, 'wontfix'),
+              openBugFilter(),
             ),
           );
         const openBugsN = Number(openBugs ?? 0);

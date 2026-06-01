@@ -4,12 +4,13 @@
 // Scope: read:projects.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { bugReports, AGENT_SCOPES } from '@/db/schema';
 import { withAgent, logAgentActivity } from '@/lib/agent-auth';
 import { projectBug } from '@/lib/agent-projections';
 import { findProject } from '../../_lookup';
+import { openBugFilter } from '../../_bug-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,8 +36,7 @@ export const GET = withAgent(
 
     const conditions = [eq(bugReports.project, project.key)];
     if (status === 'open') {
-      conditions.push(ne(bugReports.status, 'resolved'));
-      conditions.push(ne(bugReports.status, 'wontfix'));
+      conditions.push(openBugFilter());
     } else if (status) {
       conditions.push(eq(bugReports.status, status));
     }

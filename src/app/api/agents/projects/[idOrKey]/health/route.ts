@@ -5,13 +5,14 @@
 // Scope: read:projects.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { bugReports, featureRequests, releaseLogs, AGENT_SCOPES } from '@/db/schema';
 import { withAgent, logAgentActivity } from '@/lib/agent-auth';
 import { projectRelease } from '@/lib/agent-projections';
 import { findProject } from '../../_lookup';
 import { computeHealth } from '../../_health';
+import { openBugFilter } from '../../_bug-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,8 +50,7 @@ export const GET = withAgent(
       .where(
         and(
           eq(bugReports.project, project.key),
-          ne(bugReports.status, 'resolved'),
-          ne(bugReports.status, 'wontfix'),
+          openBugFilter(),
         ),
       )
       .groupBy(bugReports.severity);
