@@ -1,12 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSignedIn } from '@/lib/api-auth';
+import { requireApiKey } from '@/lib/api-key-auth';
 import { getCurrentUserContext } from '@/lib/auth-context';
 import { db } from '@/lib/db';
 import { bugReports, workflowTransitions } from '@/db/schema';
 import { eq, desc, and, sql, inArray } from 'drizzle-orm';
 import { INCLUSION_STATES, type InclusionState } from '@/lib/inclusion-state';
 
+// Public-safe projection for the customer-app read path (TRI-9). Excludes
+// internal fields (triarchNotes, browserInfo, slack ids, inclusion state) so a
+// requester only ever sees their own submission's status — never staff notes.
+const PUBLIC_BUG_COLUMNS = {
+  id: bugReports.id,
+  project: bugReports.project,
+  title: bugReports.title,
+  status: bugReports.status,
+  severity: bugReports.severity,
+  priority: bugReports.priority,
+  pageUrl: bugReports.pageUrl,
+  fixVersion: bugReports.fixVersion,
+  createdAt: bugReports.createdAt,
+  updatedAt: bugReports.updatedAt,
+} as const;
+
+/**
+ * Customer-app read path (TRI-9): authenticated by a project API key and scoped
+ * to a single requester's own items. admin.triarchsecurity.com and the customer
+ * portal proxy here so a requester sees only the bugs/features they submitted,
+ * with current status. A valid service key may read on behalf of any project
+ * (the proxy fronts portal reads with the admin key), but results are always
+ * filtered to the supplied `userId` — never the full project list.
+ */
+async function getForApiKey(req: NextRequest): Promise<NextResponse> {
+  const { error } = await requireApiKey(req);
+  if (error) return error;
+
+  const { searchParams } = new URL(req.url);
+  const project = searchParams.get('project');
+  const userId = searchParams.get('userId');
+  const limit = parseInt(searchParams.get('limit') ?? '50', 10);
+  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+
+  if (!project) return NextResponse.json({ error: 'project query param is required' }, { status: 400 });
+  if (!userId) return NextResponse.json({ error: 'userId query param is required for API-key reads' }, { status: 400 });
+
+  const where = and(eq(bugReports.project, project), eq(bugReports.reportedByUserId, userId));
+
+  const rows = await db.select(PUBLIC_BUG_COLUMNS).from(bugReports).where(where).orderBy(desc(bugReports.createdAt)).limit(limit).offset(offset);
+  const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(bugReports).where(where);
+
+  return NextResponse.json({ bugs: rows, total: Number(countResult.count), limit, offset });
+}
+
 export async function GET(req: NextRequest) {
+  // Service-to-service (customer apps): Bearer project API key → user-scoped read.
+  if (req.headers.get('authorization')?.startsWith('Bearer ')) {
+    return getForApiKey(req);
+  }
+
+  // Central console: session-authed, membership-scoped (unchanged).
   const { error, session } = await requireSignedIn();
   if (error) return error;
 
