@@ -17,6 +17,7 @@ import {
   Columns3,
   HeartPulse,
   AlarmClock,
+  Coins,
 } from 'lucide-react';
 import Link from 'next/link';
 import { getProjectPipelineSummaries, type PipelineSummary } from '@/lib/pipeline-summary';
@@ -127,6 +128,7 @@ const modules = [
   { title: 'Project Tools', description: 'CI/CD, Firebase, nav template generators', icon: Wrench, href: '/admin/platform/tools', color: 'text-emerald-400' },
   { title: 'LLM Provider Health', description: 'TMI provider status, live key-test & remediation runbook', icon: HeartPulse, href: '/admin/modules/llm-health', color: 'text-rose-400' },
   { title: 'Cron Health', description: 'Per-tenant scheduled-job health, read live from Cloud Scheduler', icon: AlarmClock, href: '/admin/modules/cron-health', color: 'text-rose-400' },
+  { title: 'LLM Usage', description: 'Cross-tenant LLM spend, usage, and key posture', icon: Coins, href: '/admin/modules/llm-usage', color: 'text-amber-400' },
   { title: 'Release Logs', description: 'Track releases across all projects', icon: FileText, href: '/admin/modules/release-logs', color: 'text-blue-400' },
   { title: 'Bug Reports', description: 'Triage and track bugs across projects', icon: Bug, href: '/admin/modules/bug-reports', color: 'text-red-400' },
   { title: 'Feature Requests', description: 'Review and prioritize feature requests', icon: Lightbulb, href: '/admin/modules/feature-requests', color: 'text-amber-400' },

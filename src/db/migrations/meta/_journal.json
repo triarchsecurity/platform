@@ -134,6 +134,13 @@
       "when": 1779134234000,
       "tag": "0021_build_trigger_and_approval_events",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1781999999000,
+      "tag": "0024_tenant_llm_usage",
+      "breakpoints": true
     }
   ]
 }
