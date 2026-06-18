@@ -1,0 +1,38 @@
+# apphosting.prod.yaml — prod environment overlay
+# Auto-loaded by Firebase App Hosting when a backend's "Environment Name" is set to "prod"
+# (Console: Backend → Settings → Environment). Merged on top of apphosting.yaml.
+# Mirrors apphosting.dev.yaml's variable SET with prod values, so the prod backend
+# (admin-prod) loads an environment overlay exactly like admin-dev does — required for
+# correct serving on a freshly-created backend.
+# https://firebase.google.com/docs/app-hosting/multiple-environments
+
+env:
+  - variable: NEXTAUTH_URL
+    value: https://admin.triarch.dev
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: DEPLOY_WEBHOOK_URL
+    value: https://admin.triarch.dev/api/webhooks/github-deploy
+    availability:
+      - RUNTIME
+
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+
+  - variable: INTERNAL_HMAC_SECRET
+    secret: INTERNAL_HMAC_SECRET
+
+  - variable: CL6_ENFORCEMENT_MODE
+    value: enforce
+    availability:
+      - RUNTIME
+
+  - variable: TMI_BASE_URL
+    value: https://tmiengine.com
+    availability:
+      - RUNTIME
+
+  - variable: TMI_JOB_SECRET
+    secret: TMI_JOB_SECRET
