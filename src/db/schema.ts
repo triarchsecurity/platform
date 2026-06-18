@@ -5,7 +5,7 @@
 export * from '@triarchsecurity/triarch-shared/schema';
 
 // Imports needed for the local additions below.
-import { pgTable, uuid, text, jsonb, timestamp, index, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, index, varchar, bigint, unique } from 'drizzle-orm/pg-core';
 import { releaseLogs } from '@triarchsecurity/triarch-shared/schema';
 
 // ─── Agent identities (Sitting H — migration 0018) ─────────────────────────
@@ -163,3 +163,46 @@ export const bugReportsWithPlan = pgTable('bug_reports', {
 
 export type BugReportWithPlan = typeof bugReportsWithPlan.$inferSelect;
 export type NewBugReportWithPlan = typeof bugReportsWithPlan.$inferInsert;
+
+// ─── Cross-tenant LLM usage (v2.27.0 — migration 0024) ─────────────────────
+// Central receiver store for LLM usage/cost summaries pushed daily by each
+// Atlas tenant to POST /api/platform/ingest/llm-usage. The platform is the
+// RECEIVER; the per-tenant push cron lives in the atlas repo.
+//
+// period_kind is 'day' (mapped from the wire window 'last_24h') or 'mtd'.
+// key_posture is denormalized onto every row (identical for all rows in a
+// tenant+period push) so the dashboard reads posture per tenant from any row.
+// cost_micros / tokens / calls are bigint — CRDB returns these as STRINGS,
+// so dashboard aggregates must Number()-wrap before summing.
+//
+// A re-push for a (tenant_slug, period_kind) fully replaces that window's
+// rows (delete-then-insert in the ingest route). The unique index backstops
+// duplicate natural-key rows via onConflictDoUpdate.
+
+export const tenantLlmUsage = pgTable('tenant_llm_usage', {
+  id:           uuid('id').defaultRandom().primaryKey(),
+  tenantSlug:   text('tenant_slug').notNull(),
+  periodKind:   text('period_kind').notNull(),          // 'day' | 'mtd' — CHECK constraint in migration 0024
+  provider:     text('provider').notNull(),
+  model:        text('model').notNull(),
+  feature:      text('feature').notNull(),
+  project:      text('project').notNull(),
+  costMicros:   bigint('cost_micros', { mode: 'number' }).notNull().default(0),
+  tokens:       bigint('tokens', { mode: 'number' }).notNull().default(0),
+  calls:        bigint('calls', { mode: 'number' }).notNull().default(0),
+  keyPosture:   jsonb('key_posture'),                   // { reasoning, reasoningNoTrain, embedding }
+  generatedAt:  timestamp('generated_at', { withTimezone: true }).notNull(),
+  updatedAt:    timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  unique('tenant_llm_usage_unique').on(
+    table.tenantSlug,
+    table.periodKind,
+    table.provider,
+    table.model,
+    table.feature,
+    table.project,
+  ),
+]);
+
+export type TenantLlmUsage = typeof tenantLlmUsage.$inferSelect;
+export type NewTenantLlmUsage = typeof tenantLlmUsage.$inferInsert;

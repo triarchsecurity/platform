@@ -95,6 +95,15 @@ env:
   - variable: INTERNAL_HMAC_SECRET
     secret: INTERNAL_HMAC_SECRET
 
+  # Cross-tenant LLM-usage ingest auth (v2.27.0). Shared value across all
+  # Atlas tenants + platform; tenant senders POST to /api/platform/ingest/llm-usage
+  # with this as x-ingest-secret. Set with:
+  #   firebase apphosting:secrets:set LLM_USAGE_INGEST_SECRET --project triarch-dev-website
+  - variable: LLM_USAGE_INGEST_SECRET
+    secret: LLM_USAGE_INGEST_SECRET
+    availability:
+      - RUNTIME
+
   # CL-6 server-side adoption enforcement mode (Phase 27).
   # Values: 'off' | 'warn' | 'enforce'
   #   off     - gate check skipped entirely (rollback escape hatch)
