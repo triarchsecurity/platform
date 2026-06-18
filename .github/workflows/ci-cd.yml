@@ -21,7 +21,7 @@ jobs:
       app_type: next-app
       project_key: triarch-dev
       firebase_project_id: triarch-dev-website
-      app_hosting_backend: triarch-dev
+      app_hosting_backend: admin-prod
       dev_backend: admin-dev
       prod_url: https://admin.triarch.dev
       dev_url: https://admin-dev.triarch.dev
