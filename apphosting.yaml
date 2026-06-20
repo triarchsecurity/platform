@@ -104,6 +104,17 @@ env:
     availability:
       - RUNTIME
 
+  # Shared ingest secret for the cross-tenant Foundry portfolio rollup (Atlas
+  # Situational Awareness, Phase 51 PRT). Atlas tenants POST their PII-free
+  # rollup to /api/platform/ingest/portfolio-rollup with this as x-ingest-secret.
+  # ONE shared value across every Atlas tenant project AND here. Provision FIRST
+  # (a missing secret fails the App Hosting rollout). Set with:
+  #   gcloud secrets create PORTFOLIO_ROLLUP_INGEST_SECRET --project triarch-dev-website --data-file=- < value
+  - variable: PORTFOLIO_ROLLUP_INGEST_SECRET
+    secret: PORTFOLIO_ROLLUP_INGEST_SECRET
+    availability:
+      - RUNTIME
+
   # CL-6 server-side adoption enforcement mode (Phase 27).
   # Values: 'off' | 'warn' | 'enforce'
   #   off     - gate check skipped entirely (rollback escape hatch)
