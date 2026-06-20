@@ -206,3 +206,31 @@ export const tenantLlmUsage = pgTable('tenant_llm_usage', {
 
 export type TenantLlmUsage = typeof tenantLlmUsage.$inferSelect;
 export type NewTenantLlmUsage = typeof tenantLlmUsage.$inferInsert;
+
+// Cross-tenant Foundry Situational-Awareness portfolio rollup — receiver table.
+// Each Atlas tenant pushes its OWN PII-free portfolio rollup here daily (atlas
+// repo: /api/internal/portfolio-rollup-report cron). The platform is the RECEIVER
+// and aggregates across tenants. Frozen wire contract (header x-ingest-secret):
+//   POST /api/platform/ingest/portfolio-rollup
+//   { tenantSlug, generatedAt, rollup: { categories: [ { category, count,
+//     maxSeverity, severityCounts: {critical,warn,info,unknown}, totalAtRiskUsd } ] } }
+// The payload is PII-FREE by construction (per-category counts + max severity +
+// an at-risk-$ SUM — never an entity, contact, or per-record value). Idempotent:
+// a re-push REPLACES that tenant's rows. total_at_risk_micros stores the $ SUM as
+// integer micros (mirrors tenant_llm_usage cost_micros) — null when absent.
+export const tenantPortfolioRollup = pgTable('tenant_portfolio_rollup', {
+  id:                uuid('id').defaultRandom().primaryKey(),
+  tenantSlug:        text('tenant_slug').notNull(),
+  category:          text('category').notNull(),         // 'health' | 'ingest' | 'intelGaps' | 'focus' — CHECK in migration
+  count:             bigint('count', { mode: 'number' }).notNull().default(0),
+  maxSeverity:       text('max_severity'),               // 'critical' | 'warn' | 'info' | 'unknown' | null (count===0)
+  severityCounts:    jsonb('severity_counts').notNull(), // { critical, warn, info, unknown }
+  totalAtRiskMicros: bigint('total_at_risk_micros', { mode: 'number' }), // $ SUM × 1e6; null when absent
+  generatedAt:       timestamp('generated_at', { withTimezone: true }).notNull(),
+  updatedAt:         timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  unique('tenant_portfolio_rollup_unique').on(table.tenantSlug, table.category),
+]);
+
+export type TenantPortfolioRollup = typeof tenantPortfolioRollup.$inferSelect;
+export type NewTenantPortfolioRollup = typeof tenantPortfolioRollup.$inferInsert;
