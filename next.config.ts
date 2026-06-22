@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   images: { unoptimized: true },
   transpilePackages: ['@triarchsecurity/shared-ui'],
   serverExternalPackages: ['@google-cloud/secret-manager', '@myalterlego/secrets'],
